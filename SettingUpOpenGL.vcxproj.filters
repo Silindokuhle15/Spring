@@ -18,20 +18,41 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EventHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\VertexShader.glsl" />
     <None Include="Shaders\FragmentShader.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="vec3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VertexData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EventHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Objects\Basic_shapes\triangle.txt" />
   </ItemGroup>
 </Project>

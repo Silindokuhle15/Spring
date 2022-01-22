@@ -1,12 +1,13 @@
 #pragma once
-#include "vec3.h"
+#include "glm/glm.hpp"
 
 namespace color {
 
-	class color : public vec3
+	class color : glm::vec3
 	{
 	public:
-		color(float x, float y, float z) : vec3(x, y, z) {} // Constructor...
+		color() :glm::vec3() {}
+		color(float x, float y, float z) : glm::vec3(x, y, z) {} // Constructor...
 		~color() {} // Destructor
 	public:
 		// Just the constants I wanna use...

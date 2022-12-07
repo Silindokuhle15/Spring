@@ -1,8 +1,14 @@
-#version 330 core
-in vec3 m_Color;
-out vec4 fragColor;
+#version 450 core
 
-void main(void)
+uniform isampler2D tex;
+in vec3 color;
+in vec2 vs_tex_out;
+
+layout(location = 0) out vec4 Color;
+
+void main()
 {
-	fragColor = vec4(m_Color, 1.0f);
+    vec4 fs_tex_out = texture(tex, vs_tex_out);
+    Color = fs_tex_out;
+    Color = vec4(0.50f, 0.50f, .50f, .50f); 
 }

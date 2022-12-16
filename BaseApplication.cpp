@@ -4,6 +4,7 @@
 
 Camera* BaseApplication::cam_ptr = nullptr;
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
+PointLight* BaseApplication::m_PointLight = nullptr;
 
 void BaseApplication::Run(Application* App)
 {
@@ -20,14 +21,14 @@ void BaseApplication::Run(Application* App)
 
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 130";
+    const char* glsl_version = "#version 450 core";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-    m_pWindow = glfwCreateWindow(1280, 720, "Simple example", NULL, NULL);
+    m_pWindow = glfwCreateWindow(1920, 1057, "Simple example", NULL, NULL);
     if (!m_pWindow)
     {
         glfwTerminate();
@@ -85,9 +86,10 @@ void BaseApplication::Run(Application* App)
         ImGui::NewFrame();
      
         BaseApplication::cam_ptr->Present();
-        /*
-        ImGui::Begin("Menu Bar");
-        ImGui::MenuItem("(demo menu)", NULL, false, true);
+       
+        
+        ImGui::Begin("File | Edit");
+        ImGui::MenuItem("(demo menu)", NULL, false, false);
         if (ImGui::MenuItem("New")) {}
         if (ImGui::MenuItem("Open", "Ctrl+O")) {}
         if (ImGui::BeginMenu("Open Recent"))
@@ -111,12 +113,18 @@ void BaseApplication::Run(Application* App)
 
         ImGui::Begin("Animation panel");
         ImGui::End();
-        */
 
+        ImGui::Begin("Viewing");
+        ImGui::Separator();
+
+        ImGui::Text("Lights and Shadow");
+        ImGui::End();
+        
         // ImGui EndFrame
         // Render ImGui stuff
-        ImGui::Render();
         App->OnRender();
+        ImGui::Render();
+
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -134,14 +142,19 @@ void BaseApplication::Run(Application* App)
 
 void BaseApplication::AttachCamera(Camera* cam)
 {
-    int m_Width  = 1280;
-    int m_Height = 720;
+    int m_Width  = 1920;
+    int m_Height = 1057;
 
     cam->SetWidth(m_Width);
     cam->SetHeight(m_Height);
     cam->OnCreate();
 
     BaseApplication::cam_ptr = cam;
+}
+
+void BaseApplication::AddPointLight(PointLight * point_light)
+{
+    BaseApplication::m_PointLight = point_light;
 }
 
 void BaseApplication::error_callback(int error, const char* description)

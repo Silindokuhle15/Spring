@@ -32,6 +32,27 @@ void KeyBoard::key_callback(GLFWwindow* window, int key, int scancode, int actio
             break;
         case GLFW_KEY_ESCAPE:
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+            break;
+
+        case GLFW_KEY_UP:
+            BaseApplication::m_PointLight->MoveUp();
+            break;
+
+        case GLFW_KEY_DOWN:
+            BaseApplication::m_PointLight->MoveDown();
+            break;
+
+        case GLFW_KEY_LEFT:
+            BaseApplication::m_PointLight->MoveLeft();
+            break;
+
+        case GLFW_KEY_RIGHT:
+            BaseApplication::m_PointLight->MoveRight();
+            break;
+
+        case GLFW_KEY_HOME:
+            BaseApplication::cam_ptr->Reset();
+            break;
         }
     }
 }

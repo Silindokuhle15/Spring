@@ -19,6 +19,8 @@ public:
     virtual void OnRender();
     virtual void OnDestroy();
 
+    float AmbientColor[4] = { 0.5, 0.5, 0.5, 1.0 };
+
 };
 
 

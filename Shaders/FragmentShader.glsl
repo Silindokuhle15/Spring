@@ -1,14 +1,18 @@
 #version 450 core
 
 uniform isampler2D tex;
-in vec3 color;
-in vec2 vs_tex_out;
+uniform vec4 AmbientColor;
+
+in VS_OUT
+{
+    vec2 tex_coord;
+    vec3 color;
+
+} fs_in;
 
 layout(location = 0) out vec4 Color;
 
 void main()
 {
-    vec4 fs_tex_out = texture(tex, vs_tex_out);
-    Color = fs_tex_out;
-    Color = vec4(0.50f, 0.50f, .50f, .50f); 
+    Color = vec4(fs_in.color, 1.0); 
 }

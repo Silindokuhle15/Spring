@@ -15,52 +15,50 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     // Now all the data is stored in whole_file
     // Now Extract the data and do the thingies
     std::string temp = "";
-    is >> std::ws; // skip whitespaces
+    std::string c_temp = "";
+    //is >> std::ws; // skip whitespaces
 
     std::string description;
     float x, y, z;
     float u, v;
-  
-    std::vector<std::string> descriptors = { "v", "vt", "f" };
-    while (std::getline(is, temp))
+
+    const char* descriptors[] = { "v", "vn", "vt", "f" };
+    unsigned int vindex, tindex;
+
+    for (std::string str; std::getline(is, str);)
     {
-        is >> description; // get the first word out and check it out
-        
-        if (description == descriptors[0])// Vertex Position
+        is >> description;
+        if (description == descriptors[0])
         {
+            // Vertex Position
+            is >> std::skipws;
             is >> x >> y >> z;
             m_Positions.push_back(glm::vec3(x, y, z));
         }
-        if (description == descriptors[1])// Texture Coordinate
+        if (description == descriptors[1])
         {
+            // Vertex Normal
+            is >> std::skipws;
+            is >> x >> y >> z;
+            m_Normals.push_back(glm::vec3(x, y, z));
+        }
+        if (description == descriptors[2])
+        {
+            // Texture Coordinate
+            is >> std::skipws;
             is >> u >> v;
             m_TexCoords.push_back(glm::vec2(u, v));
         }
-        if (description == descriptors[2]) // Face information
+        if (description == descriptors[3])
         {
-            struct PerVertex vertex;
-            while (is >> temp)
+            std::stringstream ss(str);
+            while(ss >> c_temp)
             {
-                if (temp == "f") continue;
-                else
-                {
-                    int vindex = atoi(temp.substr(0, 1).c_str());
-                    int tindex = atoi(temp.substr(2, 3).c_str());
-                    if (vindex && tindex)
-                    {
-                        m_VertexIndices.push_back(vindex - 1);
-
-                        memset(&vertex, 0, sizeof(struct PerVertex));
-                        vertex.Position = m_Positions[vindex - 1];
-                        vertex.TexCoord = m_TexCoords[tindex - 1];
-
-                        m_Vertices.push_back(vertex);
-                    }
-                }
+                ExtractDump(c_temp);
             }
         }
+        else continue;
     }
-
     // Now Upload the data to OpenGL
     // or Not
     return 0;
@@ -69,4 +67,29 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
 void ObjectLoader::LoadObject(const char* file_path)
 { 
     int ret = LoadObjectFromFile(file_path);
+}
+
+void ObjectLoader::ExtractDump(std::string dump)
+{
+    std::istringstream iss(dump);
+    unsigned int vindex;
+    iss >> vindex;
+    m_VertexIndices.push_back(--vindex);
+    char delim;
+    iss.read(&delim, 1);
+
+    unsigned int nindex;
+    unsigned int tindex;
+
+    iss.read(&delim, 1);
+    
+    /*
+    iss >> tindex;
+    m_TextureIndices.push_back(--tindex);
+    
+    */
+   
+    iss >> nindex;
+    m_NormalIndices.push_back(--nindex);
+    //iss.read(&delim, 1);
 }

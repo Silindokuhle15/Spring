@@ -26,25 +26,29 @@ private:
 
     // Uniforms
     int m_MVPlocation;
+    int m_MVlocation;
 
     // Shaders 
     unsigned int m_VertexShader;
     unsigned int m_FragmentShader;
-    unsigned int m_TessControlShader;
-    unsigned int m_TessEvaluationShader;
+    unsigned int m_Shaders[5];
 
     // Shader Programs
-    unsigned int m_VertexShaderProgram;
-    unsigned int m_FragmentShaderProgram;
-    unsigned int m_TessControlShaderProgram;
-    unsigned int m_TessEvaluationShaderProgram;
     unsigned int m_Program;
+    unsigned int m_ShaderPrograms[5];
 
     // Separable Pipelines
     unsigned int m_ProgramPipeLine;
 
     int LoadTextureFromFile(const char* file_path);
     ObjectLoader ob;
+
+    // Light and Shadiow Uniforms
+    unsigned int m_AmbientColorLocation;
+    unsigned int m_DiffuseColorLocation;
+    unsigned int m_SpecularColortLocation;
+
+    unsigned int m_PointLightLocation;
 
 public:
     unsigned int GetIndexBuffer() const { return m_IndexBuffer; }

@@ -1,17 +1,15 @@
 #pragma once
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#include <GL/glew.h>
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
-
-class Camera
+#include "Camera.h"
+class OrthographicCamera :
+    public Camera
 {
+
 private:
 	glm::vec3 m_eye;
 	glm::vec3 m_center;
 	glm::vec3 m_up;
 
+	glm::mat4 MV;
 	glm::mat4 MVP;
 
 	glm::mat4 m_ModelRotate;
@@ -26,20 +24,19 @@ private:
 	float m_AspectRatio;
 
 public:
-	Camera() :
+
+	OrthographicCamera() : Camera(), 
 		m_eye{ glm::vec3(0.0, .0, 5.0f) },
 		m_center{ glm::vec3(0.0f) },
 		m_up{ glm::vec3(0.0f, 1.0f, 0.0f) }
-	{	}
+	{}
 
-	void OnCreate();
-
-	glm::mat4 GetMVP() const { return MVP; }
-	void Present();
 	void OnResize(int new_width, int new_height);
+	void OnCreate();
+	void Present();
 
-	void SetWidth(int width)  { m_Width = width; }
-	void SetHeight(int height)  { m_Height = height; }
+	void SetWidth(int width) { m_Width = width; }
+	void SetHeight(int height) { m_Height = height; }
 	int GetWidth() const { return m_Width; }
 	int GetHeight() const { return m_Height; }
 
@@ -47,11 +44,15 @@ public:
 	void MoveBackward() { m_eye -= glm::normalize(glm::vec3(.0f, .0f, -1.0f)); }
 
 	void MoveRight() { m_eye += glm::normalize(glm::vec3(1.0f, .0f, .0f)); }
-	void MoveLeft(){ m_eye -= glm::normalize(glm::vec3(1.0f, .0f, 0.0f)); }
+	void MoveLeft() { m_eye -= glm::normalize(glm::vec3(1.0f, .0f, 0.0f)); }
 
-	void MoveUp(){ m_eye += glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
-	void MoveDown(){ m_eye -= glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
+	void MoveUp() { m_eye += glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
+	void MoveDown() { m_eye -= glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
 
 	void Focus(glm::vec3 move_dir) { m_eye += move_dir; }
+
+	void Reset() override;
+
+	glm::vec3 GetPosition() override;
 };
 

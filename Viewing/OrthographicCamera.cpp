@@ -45,7 +45,7 @@ void OrthographicCamera::Reset()
     MVP = glm::mat4(1.0);
 }
 
-glm::vec3 OrthographicCamera::GetPosition()
+glm::vec3& OrthographicCamera::GetPosition()
 {
     return m_eye;
 }

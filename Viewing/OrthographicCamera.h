@@ -53,6 +53,6 @@ public:
 
 	void Reset() override;
 
-	glm::vec3 GetPosition() override;
+	glm::vec3& GetPosition() override;
 };
 

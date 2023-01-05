@@ -159,13 +159,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="BaseApplication.cpp" />
+    <ClCompile Include="Engine\Application.cpp" />
+    <ClCompile Include="Engine\BaseApplication.cpp" />
     <ClCompile Include="LightAndShadow\PointLight.cpp" />
+    <ClCompile Include="Rendering\Renderer.cpp" />
+    <ClCompile Include="Rendering\Grid.cpp" />
+    <ClCompile Include="Rendering\Scene.cpp" />
+    <ClCompile Include="Rendering\Shader.cpp" />
     <ClCompile Include="Viewing\OrthographicCamera.cpp" />
     <ClCompile Include="Viewing\PerspectiveCamera.cpp" />
     <ClCompile Include="Viewing\Camera.cpp" />
-    <ClCompile Include="Cube.cpp" />
+    <ClCompile Include="Rendering\Cube.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui.cpp" />
@@ -177,25 +181,32 @@
     <ClCompile Include="Input\InputDevice.cpp" />
     <ClCompile Include="Input\Mouse.cpp" />
     <ClCompile Include="Input\KeyBoard.cpp" />
-    <ClCompile Include="ObjectLoader.cpp" />
+    <ClCompile Include="Engine\ObjectLoader.cpp" />
     <ClCompile Include="SpinningTriangleModified.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui.ini" />
-    <None Include="Shaders\FragmentShader.glsl" />
-    <None Include="Shaders\GeometryShader.glsl" />
-    <None Include="Shaders\TessellationControlShader.glsl" />
-    <None Include="Shaders\TessellationEvaluationShader.glsl" />
-    <None Include="Shaders\VertexShader.glsl" />
+    <None Include="Shaders\Cube\FragmentShader.glsl" />
+    <None Include="Shaders\Cube\GeometryShader.glsl" />
+    <None Include="Shaders\Cube\HemisphereLightingVertexShader.glsl" />
+    <None Include="Shaders\Cube\TessellationControlShader.glsl" />
+    <None Include="Shaders\Cube\TessellationEvaluationShader.glsl" />
+    <None Include="Shaders\Cube\VertexShader.glsl" />
+    <None Include="Shaders\Grid\FragmentShader.glsl" />
+    <None Include="Shaders\Grid\VertexShader.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="BaseApplication.h" />
+    <ClInclude Include="Engine\Application.h" />
+    <ClInclude Include="Engine\BaseApplication.h" />
     <ClInclude Include="LightAndShadow\PointLight.h" />
+    <ClInclude Include="Rendering\Renderer.h" />
+    <ClInclude Include="Rendering\Grid.h" />
+    <ClInclude Include="Rendering\Scene.h" />
+    <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Viewing\OrthographicCamera.h" />
     <ClInclude Include="Viewing\PerspectiveCamera.h" />
     <ClInclude Include="Viewing\Camera.h" />
-    <ClInclude Include="Cube.h" />
+    <ClInclude Include="Rendering\Cube.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3_loader.h" />
@@ -210,7 +221,7 @@
     <ClInclude Include="Input\InputDevice.h" />
     <ClInclude Include="Input\Mouse.h" />
     <ClInclude Include="Input\KeyBoard.h" />
-    <ClInclude Include="ObjectLoader.h" />
+    <ClInclude Include="Engine\ObjectLoader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

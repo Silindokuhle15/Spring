@@ -4,22 +4,28 @@
 #include "Mouse.h"
 #include "KeyBoard.h"
 #include "LightAndShadow/PointLight.h"
+//#include "Rendering/Renderer.h"
+
+class Renderer;
 
 class BaseApplication
 {
 private:
+	static void CreateMainWindow();
 	
 public:
-	static void Run(Application*  App);
+	static void Run();
 	static void AttachCamera(Camera* cam);
 	static void AddPointLight(PointLight * point_light);
+	static void AttachRenderer(Renderer * Ren);
 
+	static Application* App;
 	static Camera* cam_ptr;
 	static GLFWwindow* m_pWindow;
 	static PointLight* m_PointLight;
+	static Renderer * m_pActiveRenderer;
 
 	static void error_callback(int error, const char* description);
 
 	static void window_size_callback(GLFWwindow* window, int new_width, int new_height);
 };
-

@@ -1,7 +1,8 @@
 #pragma once
-#include "Application.h"
-#include "BaseApplication.h"
-#include "ObjectLoader.h"
+#include "Engine/Application.h"
+#include "Engine/BaseApplication.h"
+#include "Engine/ObjectLoader.h"
+#include "Shader.h"
 
 class Cube :
     public Application
@@ -28,18 +29,6 @@ private:
     int m_MVPlocation;
     int m_MVlocation;
 
-    // Shaders 
-    unsigned int m_VertexShader;
-    unsigned int m_FragmentShader;
-    unsigned int m_Shaders[5];
-
-    // Shader Programs
-    unsigned int m_Program;
-    unsigned int m_ShaderPrograms[5];
-
-    // Separable Pipelines
-    unsigned int m_ProgramPipeLine;
-
     int LoadTextureFromFile(const char* file_path);
     ObjectLoader ob;
 
@@ -50,18 +39,18 @@ private:
 
     unsigned int m_PointLightLocation;
 
+    ShaderInfo m_Info[2] = { {"Shaders/Cube/Vertexshader.glsl", GL_VERTEX_SHADER}, {"Shaders/Cube/Fragmentshader.glsl", GL_FRAGMENT_SHADER} };
+    Shader m_Shader;
+
 public:
     unsigned int GetIndexBuffer() const { return m_IndexBuffer; }
     unsigned int GetVertexBuffer() const { return m_VertexBuffer; }
-    unsigned int GetProgram() const { return m_Program; }
 
     void OnInit();
     void OnUpdate();
     void OnRender();
     void OnDestroy();
 
-    void create_shaders();
     void LoadTexture(const char* file_path);
     void EnableTesselation();
 };
-

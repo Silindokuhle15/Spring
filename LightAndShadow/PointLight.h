@@ -25,7 +25,7 @@ public:
 	void SetPosition(const glm::vec3 pos) noexcept { m_Position = pos; }
 	void SetColor(const glm::vec4 col) noexcept { m_Color = col; }
 
-	glm::vec3 GetPostion() const { return m_Position; }
+	glm::vec3 GetPosition() const { return m_Position; }
 	glm::vec3 GetColor() const { return m_Color; }
 
 	unsigned int GetUniformColorLocation() const { return m_UniformColorLocation; }

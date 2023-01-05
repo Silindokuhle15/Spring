@@ -1,6 +1,7 @@
 #include "Cube.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "Rendering/Scene.h"
 
 int Cube::LoadTextureFromFile(const char* file_path)
 {
@@ -42,7 +43,6 @@ void Cube::OnInit()
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 
-    //ob.LoadObject("Objects/Crate/Crate1.obj");
     ob.LoadObject("Objects/Cube.obj");
     ob.m_VertexIndices.shrink_to_fit();
 
@@ -60,16 +60,23 @@ void Cube::OnInit()
     size = sizeof(glm::vec3) * ob.m_Positions.size() + sizeof(glm::vec2) * ob.m_TexCoords.size();
     glBufferSubData(GL_ARRAY_BUFFER, size, sizeof(glm::vec3) * ob.m_Normals.size(), ob.m_Normals.data());
 
-    EnableTesselation();
-    create_shaders();
-
     glGenBuffers(1, &m_IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * ob.m_VertexIndices.size(), ob.m_VertexIndices.data(), GL_STATIC_DRAW);
 
-    m_VPOSlocation = glGetAttribLocation(m_ShaderPrograms[0], "Position");
-    m_VTexlocation = glGetAttribLocation(m_ShaderPrograms[0], "TexCoord");
-    m_VNORMlocation = glGetAttribLocation(m_ShaderPrograms[0], "Normal");
+    //create_shaders();
+    m_Shader.m_Info[0] = this->m_Info[0];
+    m_Shader.m_Info[1] = this->m_Info[1];
+    m_Shader.OnInit();
+
+    //m_VPOSlocation = glGetAttribLocation(m_ShaderPrograms[0], "Position");
+    m_VPOSlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "Position");
+
+    //m_VTexlocation = glGetAttribLocation(m_ShaderPrograms[0], "TexCoord");
+    m_VTexlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "TexCoord");
+    //m_VNORMlocation = glGetAttribLocation(m_ShaderPrograms[0], "Normal");
+    m_VNORMlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "Normal");
+
     //LoadTexture("Textures/crate_1.jpg"); 
 
     glVertexAttribPointer(m_VPOSlocation, 3, GL_FLOAT, GL_FALSE,
@@ -83,120 +90,39 @@ void Cube::OnInit()
     size = sizeof(glm::vec3); //+ sizeof(glm::vec2);
     glVertexAttribPointer(m_VNORMlocation, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(size));
     glEnableVertexAttribArray(m_VNORMlocation);
-
-
-
-    int m_Width  = BaseApplication::cam_ptr->GetWidth();
-    int m_Height = BaseApplication::cam_ptr->GetHeight();
-
-    glViewport(0, 0, m_Width, m_Height);
-    glEnable(GL_DEPTH_BUFFER_BIT);
-    glDepthRange(.010f, 1000.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Cube::OnUpdate()
 {
-}
+    glUseProgram(m_Shader.GetShaderProgram());
+    m_MVPlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MVP");
+    m_MVlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MV");
 
-void Cube::OnRender()
-{
-    
-    glUseProgram(m_Program);
-    m_MVPlocation = glGetUniformLocation(m_Program, "MVP");
-    m_MVlocation = glGetUniformLocation(m_Program, "MV");
-
-    m_PointLightLocation = glGetUniformLocation(m_Program, "LightPosition");
-    m_AmbientColorLocation = glGetUniformLocation(m_Program, "AmbientColor");
+    m_PointLightLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "LightPosition");
+    m_AmbientColorLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "AmbientColor");
 
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUniformMatrix4fv(m_MVPlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetMVP()));
     glUniformMatrix4fv(m_MVlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetMV()));
-    glUniform3fv(m_PointLightLocation, 1, glm::value_ptr(BaseApplication::m_PointLight->GetPostion()));
+    glUniform3fv(m_PointLightLocation, 1, glm::value_ptr(BaseApplication::m_PointLight->GetPosition()));
     glUniform4fv(m_AmbientColorLocation, 1, AmbientColor);
 
+}
+
+void Cube::OnRender()
+{
     ob.m_VertexIndices.shrink_to_fit();
 
     glDrawElements(GL_TRIANGLE_STRIP, ob.m_VertexIndices.size(), GL_UNSIGNED_INT, NULL);
-
     ImGui::Begin("Cube");
     ImGui::ColorEdit4("Ambient Color", AmbientColor);
     ImGui::End();
-
 }
-
-
 
 void Cube::OnDestroy(){ }
 
-void Cube::create_shaders()
-{
-    struct ShaderInfo
-    {
-        const char* FilePath;
-        GLenum ShaderType;
-    };
-    ShaderInfo baseShaders[]
-    {
-        {"Shaders/Vertexshader.glsl", GL_VERTEX_SHADER},
-        {"Shaders/Fragmentshader.glsl", GL_FRAGMENT_SHADER},
-        {"Shaders/TessellationControlShader.glsl", GL_TESS_CONTROL_SHADER},
-        {"Shaders/TessellationEvaluationShader.glsl", GL_TESS_EVALUATION_SHADER},
-        {"Shaders/GeometryShader.glsl", GL_GEOMETRY_SHADER}
-    };
-    //Tryna Refactor this entire Functuion
-    std::ifstream is;
-    std::string file_data;
-
-    for(int i =0; i < 5; i++)   // Must Update this not to use the hard-coded value for the number of shaders
-    {
-        const char* file_path = baseShaders[i].FilePath;
-
-        is = std::ifstream(file_path);
-        is.seekg(0, std::ios::end);
-        file_data.reserve(is.tellg());
-        is.seekg(0, std::ios::beg);
-        file_data.assign(std::istreambuf_iterator<char>(is),
-            std::istreambuf_iterator<char>());
-
-        const char * file_data_text = file_data.c_str();
-        //file_data.clear();
-
-        GLenum shader_type = baseShaders[i].ShaderType;
-        m_Shaders[i] = glCreateShader(shader_type);
-        glShaderSource(m_Shaders[i], 1, &file_data_text, NULL);
-        glCompileShader(m_Shaders[i]);
-
-        m_ShaderPrograms[i] = glCreateProgram();
-        glAttachShader(m_ShaderPrograms[i], m_Shaders[i]);
-        glProgramParameteri(m_ShaderPrograms[i], GL_PROGRAM_SEPARABLE, GL_TRUE);
-
-        glLinkProgram(m_ShaderPrograms[i]);
-
-        //glDeleteShader(m_Shaders[i]);
-        //glDeleteProgram(m_ShaderPrograms[i]);
-    }
-
-    //glGenProgramPipelines(1, &m_ProgramPipeLine);
-    //glUseProgramStages(m_ProgramPipeLine, GL_VERTEX_SHADER_BIT, m_VertexShaderProgram);
-    //glUseProgramStages(m_ProgramPipeLine, GL_FRAGMENT_SHADER_BIT, m_FragmentShaderProgram);
-    //glUseProgramStages(m_ProgramPipeLine, GL_TESS_CONTROL_SHADER_BIT, m_TessControlShaderProgram);
-    //glUseProgramStages(m_ProgramPipeLine, GL_TESS_EVALUATION_SHADER_BIT, m_TessEvaluationShaderProgram);
-
-    //glBindProgramPipeline(m_ProgramPipeLine);
-
-    // Now for the Singular Rendering Program
-    m_Program = glCreateProgram();
-    glAttachShader(m_Program, m_Shaders[0]);
-    glAttachShader(m_Program, m_Shaders[1]);
-    //glAttachShader(m_Program, m_Shaders[2]);
-    //glAttachShader(m_Program, m_Shaders[3]);
-    //glAttachShader(m_Program, m_Shaders[4]);
-
-    glLinkProgram(m_Program);
-}
 
 void Cube::LoadTexture(const char* file_path)
 {

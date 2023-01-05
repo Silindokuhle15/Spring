@@ -1,13 +1,19 @@
 
 #include "BaseApplication.h"
 #include "Application.h"
+#include "Rendering/Renderer.h"
+#include "Rendering/Grid.h"
+#include "Rendering/Cube.h"
 
+Application* BaseApplication::App = nullptr;
 Camera* BaseApplication::cam_ptr = nullptr;
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
 PointLight* BaseApplication::m_PointLight = nullptr;
+Renderer* BaseApplication::m_pActiveRenderer = nullptr;
 
-void BaseApplication::Run(Application* App)
+void BaseApplication::CreateMainWindow()
 {
+
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
@@ -49,10 +55,9 @@ void BaseApplication::Run(Application* App)
 
     glfwSetKeyCallback(BaseApplication::m_pWindow, KeyBoard::key_callback);
     glfwSetWindowSizeCallback(BaseApplication::m_pWindow, BaseApplication::window_size_callback);
-    
+
     glfwSetMouseButtonCallback(BaseApplication::m_pWindow, Mouse::mouse_button_callback);
     glfwSetScrollCallback(BaseApplication::m_pWindow, Mouse::mouse_scroll_callback);
-
 
     //start the Imgui code here
     //Initialization Code
@@ -64,30 +69,58 @@ void BaseApplication::Run(Application* App)
 
     ImGui_ImplGlfw_InitForOpenGL(BaseApplication::m_pWindow, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-    int m_Width, m_Height;
 
     // Dark Theme lemme see 
     ImGui::StyleColorsDark();
+}
+
+void BaseApplication::Run()
+{
+    CreateMainWindow();
 
     BaseApplication::cam_ptr->OnCreate();
-    App->OnInit();
+    BaseApplication::m_pActiveRenderer->SetUpForRendering();
+    
+    Scene grd_scn;
+
+    Grid grd(8);
+    grd.OnInit();
+
+    Cube cb;
+
+    BaseApplication::App = &cb;
+    //BaseApplication::App->OnInit();
+
+    grd_scn.AddToScence(&grd);
 
     bool should_open = true;
+
+    static float cam_pos[3];
+    static float light_pos[3];
+
+    int m_Width, m_Height;
 
     while (!glfwWindowShouldClose(BaseApplication::m_pWindow))
     {
         glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
         glfwPollEvents();
-
+        
         // ImGui BeginFrame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
      
         BaseApplication::cam_ptr->Present();
-       
+
+        //BaseApplication::App->OnUpdate();
+        //BaseApplication::App->OnRender();
+        BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
+        //BaseApplication::m_pActiveRenderer->OnUpdate();
         
+
+        /*
+  
         ImGui::Begin("File | Edit");
         ImGui::MenuItem("(demo menu)", NULL, false, false);
         if (ImGui::MenuItem("New")) {}
@@ -103,31 +136,41 @@ void BaseApplication::Run(Application* App)
         if (ImGui::MenuItem("Save", "Ctrl+S")) {}
         if (ImGui::MenuItem("Save As..")) {}
         
-        ImGui::Separator();
-        ImGui::Text("Another Text");
         ImGui::End();
 
 
-        ImGui::Begin("Side panel");
+        ImGui::Begin("Stats And Performance");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
 
         ImGui::Begin("Animation panel");
         ImGui::End();
 
-        ImGui::Begin("Viewing");
+        ImGui::Begin("Utilities");
+        ImGui::Text("Viewing and Transformation");
+
+        cam_pos[0] = BaseApplication::cam_ptr->GetPosition().x;
+        cam_pos[1] = BaseApplication::cam_ptr->GetPosition().y;
+        cam_pos[2] = BaseApplication::cam_ptr->GetPosition().z;
+
+        ImGui::SliderFloat3("Camera Position", cam_pos, 0.0, 100.0);
         ImGui::Separator();
 
         ImGui::Text("Lights and Shadow");
+        light_pos[0] = BaseApplication::m_PointLight->GetPosition().x;
+        light_pos[1] = BaseApplication::m_PointLight->GetPosition().y;
+        light_pos[2] = BaseApplication::m_PointLight->GetPosition().z;
+        ImGui::SliderFloat3("Light Position",light_pos, 0.0, 100.);
         ImGui::End();
+
+        */
         
         // ImGui EndFrame
         // Render ImGui stuff
-        App->OnRender();
         ImGui::Render();
 
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glfwSwapBuffers(BaseApplication::m_pWindow);
     }
     // ImGui Clean Up Code
@@ -155,6 +198,12 @@ void BaseApplication::AttachCamera(Camera* cam)
 void BaseApplication::AddPointLight(PointLight * point_light)
 {
     BaseApplication::m_PointLight = point_light;
+}
+
+
+void BaseApplication::AttachRenderer(Renderer* Ren)
+{
+    BaseApplication::m_pActiveRenderer = Ren;
 }
 
 void BaseApplication::error_callback(int error, const char* description)

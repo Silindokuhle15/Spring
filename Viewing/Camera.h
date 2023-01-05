@@ -56,6 +56,6 @@ public:
 	void Focus(glm::vec3 move_dir) { m_eye += move_dir; }
 
 	virtual void Reset() = 0;
-	virtual glm::vec3 GetPosition() = 0;
+	virtual glm::vec3& GetPosition() = 0;
 };
 

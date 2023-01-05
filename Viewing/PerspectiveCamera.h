@@ -22,6 +22,8 @@ private:
 	int m_Height;
 	float m_AspectRatio;
 
+	float speed = 10;
+
 public:
     PerspectiveCamera() : Camera(), 
 		m_eye{ glm::vec3(0.0, .0, 0.0f) },
@@ -52,6 +54,6 @@ public:
 
 	void Reset() override;
 
-	glm::vec3 GetPosition() override;
+	glm::vec3& GetPosition() override;
 };
 

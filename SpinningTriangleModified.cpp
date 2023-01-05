@@ -1,21 +1,21 @@
-#include "Cube.h"
-#include "BaseApplication.h"
+#include "Rendering/Cube.h"
+#include "Engine/BaseApplication.h"
 #include "Viewing/Camera.h"
-#include "Viewing/OrthographicCamera.h"
 #include "Viewing/PerspectiveCamera.h"
-#include "ObjectLoader.h"
 #include "LightAndShadow/PointLight.h"
+#include "Rendering/Renderer.h"
+
+
 
 int main(void)
 {
     PerspectiveCamera pCam;
-    OrthographicCamera oCam;
-
     PointLight pL;
+    Renderer OpenGLrenderer;
 
     BaseApplication::AttachCamera(&pCam);
     BaseApplication::AddPointLight(&pL);
+    BaseApplication::AttachRenderer(&OpenGLrenderer);
 
-    Cube cb;
-    BaseApplication::Run(&cb);
+    BaseApplication::Run();
 }

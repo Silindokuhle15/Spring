@@ -77,6 +77,13 @@ void Cube::OnInit()
     //m_VNORMlocation = glGetAttribLocation(m_ShaderPrograms[0], "Normal");
     m_VNORMlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "Normal");
 
+    m_MVPlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MVP");
+    m_MVlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MV");
+
+
+    m_PointLightLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "LightPosition");
+    m_AmbientColorLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "AmbientColor");
+
     //LoadTexture("Textures/crate_1.jpg"); 
 
     glVertexAttribPointer(m_VPOSlocation, 3, GL_FLOAT, GL_FALSE,
@@ -90,16 +97,44 @@ void Cube::OnInit()
     size = sizeof(glm::vec3); //+ sizeof(glm::vec2);
     glVertexAttribPointer(m_VNORMlocation, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(size));
     glEnableVertexAttribArray(m_VNORMlocation);
+
+
+    m_IndexCount = ob.m_VertexIndices.size();
+    /*
+    glCreateBuffers(1, &m_DrawBuffer);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_DrawBuffer);
+
+    typedef struct DrawElementsIndirectCommand_t
+    {
+        GLuint count;
+        GLuint primCount;
+        GLuint firstIndex;
+        GLuint baseVertex;
+        GLuint baseInstance;
+    } DrawElementsIndirectCommand;
+
+    DrawElementsIndirectCommand cube_cmd = {};
+    memset(&cube_cmd, 0, sizeof(DrawElementsIndirectCommand));
+
+    cube_cmd.count = 1;
+    cube_cmd.primCount = 1;
+    cube_cmd.firstIndex = 0;
+    cube_cmd.baseVertex = 0;
+    cube_cmd.baseInstance = 0;
+
+
+    glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(DrawElementsIndirectCommand), &cube_cmd, GL_STATIC_DRAW);
+    */
 }
 
 void Cube::OnUpdate()
 {
-    glUseProgram(m_Shader.GetShaderProgram());
-    m_MVPlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MVP");
-    m_MVlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MV");
+    //glBindVertexArray(m_VAO);
+}
 
-    m_PointLightLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "LightPosition");
-    m_AmbientColorLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "AmbientColor");
+void Cube::OnRender()
+{
+    glUseProgram(m_Shader.GetShaderProgram());
 
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
@@ -109,10 +144,6 @@ void Cube::OnUpdate()
     glUniform3fv(m_PointLightLocation, 1, glm::value_ptr(BaseApplication::m_PointLight->GetPosition()));
     glUniform4fv(m_AmbientColorLocation, 1, AmbientColor);
 
-}
-
-void Cube::OnRender()
-{
     ob.m_VertexIndices.shrink_to_fit();
 
     glDrawElements(GL_TRIANGLE_STRIP, ob.m_VertexIndices.size(), GL_UNSIGNED_INT, NULL);

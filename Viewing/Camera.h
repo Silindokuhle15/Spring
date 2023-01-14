@@ -57,5 +57,7 @@ public:
 
 	virtual void Reset() = 0;
 	virtual glm::vec3& GetPosition() = 0;
+
+	//virtual void OnUpdate(float delta_time) = 0;
 };
 

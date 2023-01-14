@@ -1,10 +1,10 @@
 #pragma once
-#include "Scene.h"
 #include <fstream>
 #include "Engine/BaseApplication.h"
 #include "Shader.h"
+#include "stb_image.h"
 
-class Grid : public Application
+class Square : public Application
 {
 private:
     // Buffers
@@ -16,25 +16,22 @@ private:
     unsigned int m_Tex1;
     unsigned int m_Sampler;
 
+    int m_SamplerLocation;
+
     // Vertex Array Attributes
     int m_VPOSlocation;
+    int m_VTEXlocation;
 
-    ShaderInfo m_Info[2] = { {"Shaders/Grid/Vertexshader.glsl", GL_VERTEX_SHADER}, { "Shaders/Grid/Fragmentshader.glsl", GL_FRAGMENT_SHADER } };
-
+    ShaderInfo m_Info[2] = { {"Shaders/Square/Vertexshader.glsl", GL_VERTEX_SHADER}, { "Shaders/Square/Fragmentshader.glsl", GL_FRAGMENT_SHADER } };
 
 private:
-	unsigned int m_Rows;
-	unsigned int m_Columns;
 
-	
-	std::vector<glm::vec3 > m_Positions;
-	std::vector<glm::vec2 > m_TexCoords;
-	std::vector<glm::vec3 > m_Normals;
-	
-   
+    std::vector<glm::vec2 > m_Positions;
+    std::vector<glm::vec2 > m_TexCoords;
+
 public:
 
-    std::vector<glm::vec3 > m_Vertices;
+    std::vector<glm::vec2 > m_Vertices;
     std::vector<unsigned int> m_VertexIndices;
 
     // Vertex Arrays
@@ -46,10 +43,9 @@ public:
 
     Shader m_Shader;
     unsigned int m_IndexCount;
-	Grid(unsigned int m, unsigned int n) : m_Rows{ m }, m_Columns{ n }, m_Shader{}
-	{
-	}
-    Grid(unsigned int size) : m_Rows{ size }, m_Columns{ size }, m_Shader{} {}
+    Square() : m_Shader{}
+    {
+    }
 
     void OnInit();
     void OnUpdate();

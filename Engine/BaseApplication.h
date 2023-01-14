@@ -5,6 +5,7 @@
 #include "KeyBoard.h"
 #include "LightAndShadow/PointLight.h"
 //#include "Rendering/Renderer.h"
+#include "UILayer.h"
 
 class Renderer;
 
@@ -24,6 +25,7 @@ public:
 	static GLFWwindow* m_pWindow;
 	static PointLight* m_PointLight;
 	static Renderer * m_pActiveRenderer;
+	static UILayer* m_pUILayer;
 
 	static void error_callback(int error, const char* description);
 

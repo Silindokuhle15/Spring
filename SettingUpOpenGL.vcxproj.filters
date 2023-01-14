@@ -87,6 +87,18 @@
     <ClCompile Include="Rendering\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\TimeStep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\Square.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Layer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\UILayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Cube\VertexShader.glsl" />
@@ -98,6 +110,8 @@
     <None Include="Shaders\Cube\HemisphereLightingVertexShader.glsl" />
     <None Include="Shaders\Grid\VertexShader.glsl" />
     <None Include="Shaders\Grid\FragmentShader.glsl" />
+    <None Include="Shaders\Square\VertexShader.glsl" />
+    <None Include="Shaders\Square\FragmentShader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -179,6 +193,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\TimeStep.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Square.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\UILayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

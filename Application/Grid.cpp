@@ -39,7 +39,7 @@ void Grid::OnInit()
     //create_shaders();
     m_Shader.m_Info[0] = this->m_Info[0];
     m_Shader.m_Info[1] = this->m_Info[1];
-    m_Shader.OnInit();
+    m_Shader.OnInit(0);
 
     m_VAO.CreateVertexArrayLayout(m_Shader.GetShaderProgram(), VertexAttrib::Position);
 

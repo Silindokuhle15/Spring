@@ -8,7 +8,9 @@
 #include <iostream>
 #include <fstream>
 #include "glm/glm.hpp"
+#include "Materials/Material.h"
 #include "Materials/Shader.h"
+#include "Materials/Texture.h"
 #include <vector>
 #include "Rendering/VertexArray.h"
 
@@ -23,6 +25,7 @@ public:
     // Vertex Arrays
     VertexArray m_VAO;
     Shader m_Shader;
+    Texture m_Tex;
     glm::mat4 m_Transform;
     // Uniforms
     int m_ModelLocation;

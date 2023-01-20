@@ -1,41 +1,4 @@
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "Cube.h"
-
-int Cube::LoadTextureFromFile(const char* file_path)
-{
-    int width, height, channels;
-
-    if (!fopen(file_path, "r"))
-    {
-        std::cerr << "Texture File Path not valid " << std::endl;
-        return -1;
-    }
-
-    unsigned char * data = stbi_load(file_path, &width, &height, &channels, 4);
-    // Now work on the sampler
- 
-    glGenBuffers(1, &m_TexBuffer);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_TexBuffer);
-    glBufferData(GL_PIXEL_UNPACK_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_Tex1);
-    //glGenTextures(1, &m_Tex1);
-    glBindTexture(GL_TEXTURE_2D, m_Tex1);
-    GLenum format = GL_RGB;
-    
-    glTextureStorage2D(m_Tex1, 1, format, width, height);
-    //glTexStorage2D(GL_TEXTURE_2D, 0, format, width, height);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, NULL);
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    //glTexParameteri(GL_TEXTURE_2D, GL_UNPACK_ALIGNMENT, 1);
-
-    glGenSamplers(1, &m_Sampler);
-    glBindSampler(1, GL_SAMPLER_2D);
-    //glSamplerParameteri(m_Sampler, GL_UNPACK_ALIGNMENT, 1);
-
-    return 0;
-}
 
 void Cube::OnInit()
 {
@@ -66,7 +29,7 @@ void Cube::OnInit()
     //create_shaders();
     m_Shader.m_Info[0] = this->m_Info[0];
     m_Shader.m_Info[1] = this->m_Info[1];
-    m_Shader.OnInit();
+    m_Shader.OnInit(0);
 
     std::vector<VertexAttrib> attribs = { VertexAttrib::Position, VertexAttrib::Normal };
     m_VAO.CreateVertexArrayLayout(m_Shader.GetShaderProgram(), attribs);
@@ -100,12 +63,6 @@ void Cube::OnRender()
 }
 
 void Cube::OnDestroy(){ }
-
-
-void Cube::LoadTexture(const char* file_path)
-{
-    int ret = LoadTextureFromFile(file_path);
-}
 
 void Cube::EnableTesselation()
 {

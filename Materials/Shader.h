@@ -17,7 +17,6 @@ public:
 
 private:
 
-
 	// Shader Programs
 	unsigned int m_Shader[2];
 	unsigned int m_ShaderProgram;
@@ -30,9 +29,8 @@ public:
 	Shader(const ShaderInfo info[2]) : m_Info{ info[0], info[1]} {}
 	~Shader() {   glDeleteShader(m_Shader[0]);   glDeleteShader(m_Shader[1]); glDeleteProgram(m_ShaderProgram); }
 	
-	void OnInit();
+	void OnInit(unsigned int mat_id);
 	void Bind();
-	void Link();
 
 	unsigned int GetShaderProgram() const { return m_ShaderProgram; }
 

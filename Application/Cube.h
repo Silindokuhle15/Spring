@@ -19,12 +19,6 @@ private:
     unsigned int m_Tex1;
     unsigned int m_Sampler;
 
-    // Vertex Array Attributes
-    int m_VTexlocation;
-    int m_VPOSlocation;
-    int m_VNORMlocation;
-
-    int LoadTextureFromFile(const char* file_path);
     ObjectLoader ob;
 
     // Light and Shadiow Uniforms
@@ -51,7 +45,6 @@ public:
     void OnRender();
     void OnDestroy();
 
-    void LoadTexture(const char* file_path);
     void EnableTesselation();
 
     unsigned int GetShaderProgram() const override { return m_Shader.GetShaderProgram(); }

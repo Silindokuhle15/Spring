@@ -13,7 +13,6 @@ UILayer* BaseApplication::m_pUILayer = nullptr;
 
 void BaseApplication::CreateMainWindow()
 {
-
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
@@ -76,25 +75,28 @@ void BaseApplication::Run()
     
     Scene grd_scn;
 
-    Grid grd(8);
-    Cube cb;
+    //Grid grd(8);
+    //Cube cb;
   
+    /*
     Teaport Uta_teaport;
     Uta_teaport.OnInit();
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
     glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(+.2f, 0.0, 0.0));
     Uta_teaport.SetTransform(scale * trans);
     grd_scn.AddToScene(&Uta_teaport);
-
+    */
+    /*
     Tank tank;
     tank.OnInit();
     tank.SetTransform(glm::mat4(2.0f));
-    //grd_scn.AddToScene(&tank);
+    grd_scn.AddToScene(&tank);
+    */
 
     Square sq;
     sq.OnInit();
     sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-.2f, 0.0, 0.0)));
-    //grd_scn.AddToScene(&sq);
+    grd_scn.AddToScene(&sq);
     
     int m_Width, m_Height;
 
@@ -112,11 +114,11 @@ void BaseApplication::Run()
      
         BaseApplication::cam_ptr->Present();
 
-        ts = (float)glfwGetTime()/1000.0;
-
-        BaseApplication::m_pActiveRenderer->OnUpdate(ts);
         BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
-        
+
+        ts = (float)glfwGetTime() / 1000.0;
+        BaseApplication::m_pActiveRenderer->OnUpdate(ts);
+
         BaseApplication::m_pUILayer->Enable();
 
         BaseApplication::m_pActiveRenderer->m_PrimitiveModeWireFrame = BaseApplication::m_pUILayer->m_RenderMode;

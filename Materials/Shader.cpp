@@ -1,8 +1,8 @@
 #include "Shader.h"
 
-void Shader::OnInit()
+void Shader::OnInit(unsigned int mat_id)
 {
-    m_ShaderProgram = glCreateProgram();
+    //m_ShaderProgram = glCreateProgram();
 
     //Tryna Refactor this entire Functuion
     std::ifstream is;
@@ -27,29 +27,17 @@ void Shader::OnInit()
         glShaderSource(m_Shader[i], 1, &file_data_text, NULL);
         glCompileShader(m_Shader[i]);
 
-        glAttachShader(m_ShaderProgram, m_Shader[i]);
+        glAttachShader(mat_id, m_Shader[i]);
         //glDeleteShader(m_Shaders[i]);
         //glDeleteProgram(m_ShaderPrograms[i]);
     }
 
-    glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
-    glLinkProgram(m_ShaderProgram);
+    //glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
+    //glLinkProgram(m_ShaderProgram);
 }
 
 
 void Shader::Bind()
 {
-    glUseProgram(m_ShaderProgram);
-}
-
-void Shader::Link()
-{
-    if (!glIsProgram(m_ShaderProgram)) {
-        m_ShaderProgram = glCreateProgram();
-        glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
-    }
-    glAttachShader(m_ShaderProgram, m_Shader[0]);
-    glAttachShader(m_ShaderProgram, m_Shader[1]);
-
-    glLinkProgram(m_ShaderProgram);
+    //glUseProgram(m_ShaderProgram);
 }

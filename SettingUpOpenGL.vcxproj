@@ -175,6 +175,7 @@
     <ClCompile Include="Engine\UILayer.cpp" />
     <ClCompile Include="Rendering\VertexArray.cpp" />
     <ClCompile Include="Application\Tank.cpp" />
+    <ClCompile Include="Materials\Texture.cpp" />
     <ClCompile Include="Viewing\OrthographicCamera.cpp" />
     <ClCompile Include="Viewing\PerspectiveCamera.cpp" />
     <ClCompile Include="Viewing\Camera.cpp" />
@@ -223,6 +224,7 @@
     <ClInclude Include="Engine\UILayer.h" />
     <ClInclude Include="Rendering\VertexArray.h" />
     <ClInclude Include="Application\Tank.h" />
+    <ClInclude Include="Materials\Texture.h" />
     <ClInclude Include="Viewing\OrthographicCamera.h" />
     <ClInclude Include="Viewing\PerspectiveCamera.h" />
     <ClInclude Include="Viewing\Camera.h" />

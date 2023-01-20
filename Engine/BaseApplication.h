@@ -1,11 +1,12 @@
 #pragma once
-#include "Application.h"
+#include "Application/Application.h"
 #include "Viewing/Camera.h"
 #include "Mouse.h"
 #include "KeyBoard.h"
 #include "LightAndShadow/PointLight.h"
-//#include "Rendering/Renderer.h"
 #include "UILayer.h"
+#include "Rendering/Renderer.h"
+#include "TimeStep.h"
 
 class Renderer;
 
@@ -20,7 +21,6 @@ public:
 	static void AddPointLight(PointLight * point_light);
 	static void AttachRenderer(Renderer * Ren);
 
-	static Application* App;
 	static Camera* cam_ptr;
 	static GLFWwindow* m_pWindow;
 	static PointLight* m_PointLight;

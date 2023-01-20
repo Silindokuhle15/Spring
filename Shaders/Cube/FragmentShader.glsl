@@ -1,11 +1,9 @@
 #version 450 core
 
-uniform isampler2D tex;
 uniform vec4 AmbientColor;
 
 in VS_OUT
 {
-    vec2 tex_coord;
     vec3 color;
 
 } fs_in;

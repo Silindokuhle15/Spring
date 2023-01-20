@@ -1,8 +1,9 @@
 #pragma once
-#include "Scene.h"
+#include "Rendering/Scene.h"
 #include <fstream>
 #include "Engine/BaseApplication.h"
-#include "Shader.h"
+#include "Materials/Shader.h"
+#include "Rendering/VertexArray.h"
 
 class Grid : public Application
 {
@@ -17,7 +18,7 @@ private:
     unsigned int m_Sampler;
 
     // Vertex Array Attributes
-    int m_VPOSlocation;
+    int m_ModelLocation;
 
     ShaderInfo m_Info[2] = { {"Shaders/Grid/Vertexshader.glsl", GL_VERTEX_SHADER}, { "Shaders/Grid/Fragmentshader.glsl", GL_FRAGMENT_SHADER } };
 
@@ -26,7 +27,6 @@ private:
 	unsigned int m_Rows;
 	unsigned int m_Columns;
 
-	
 	std::vector<glm::vec3 > m_Positions;
 	std::vector<glm::vec2 > m_TexCoords;
 	std::vector<glm::vec3 > m_Normals;
@@ -38,11 +38,12 @@ public:
     std::vector<unsigned int> m_VertexIndices;
 
     // Vertex Arrays
-    unsigned int m_VAO;
+    VertexArray m_VAO;
+     
 
     // Uniforms
-    int m_MVPlocation;
-    int m_MVlocation;
+    int m_VPlocation;
+    int m_Vlocation;
 
     Shader m_Shader;
     unsigned int m_IndexCount;

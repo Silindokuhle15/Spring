@@ -8,41 +8,35 @@
 #include <iostream>
 #include <fstream>
 #include "glm/glm.hpp"
-#include "Rendering/Shader.h"
+#include "Materials/Shader.h"
 #include <vector>
+#include "Rendering/VertexArray.h"
 
 class Application
 {
-private:
-
 public:
-
-    std::vector<glm::vec3 > m_Vertices;
+    std::vector<glm::vec3 > m_Positions;
+    std::vector<glm::vec2 > m_TexCoords;
+    std::vector<glm::vec3 > m_Normals;
     std::vector<unsigned int> m_VertexIndices;
 
     // Vertex Arrays
-    unsigned int m_VAO;
-
-    // Uniforms
-    int m_MVPlocation;
-    int m_MVlocation;
-
+    VertexArray m_VAO;
     Shader m_Shader;
-    unsigned int m_IndexCount;
+    glm::mat4 m_Transform;
+    // Uniforms
+    int m_ModelLocation;
 
     virtual void OnInit();
-    virtual void OnUpdate();
-    virtual void OnRender();
-    virtual void OnDestroy();
 
     float AmbientColor[4] = { 0.5, 0.5, 0.5, 1.0 };
+    volatile unsigned int m_IndexCount;
 
-    virtual int GetMVPLocation() const { return m_MVPlocation; }
-    virtual int GetMVLocation() const { return m_MVlocation; }
-
+    virtual int GetModelLocation() const { return m_ModelLocation; }
     virtual unsigned int GetShaderProgram() const { return m_Shader.GetShaderProgram(); }
-
+    virtual void SetTransform(const glm::mat4& transform) noexcept { m_Transform = transform; }
 };
+typedef Application Base;
 
 
 

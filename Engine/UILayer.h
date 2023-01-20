@@ -4,9 +4,10 @@
 class UILayer :
     public Layer
 {
-private:
+public:
 
     bool m_IsEnable = false;
+    bool m_RenderMode;
 public:
     
     UILayer() : Layer() {}
@@ -18,5 +19,6 @@ public:
     virtual void OnInit() override;
     virtual void BeginFrame() override;
     virtual void EndFrame() override;
+
 };
 

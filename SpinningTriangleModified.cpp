@@ -1,7 +1,7 @@
-#include "Rendering/Cube.h"
 #include "Engine/BaseApplication.h"
 #include "Viewing/Camera.h"
 #include "Viewing/PerspectiveCamera.h"
+#include "Viewing/OrthographicCamera.h"
 #include "LightAndShadow/PointLight.h"
 #include "Rendering/Renderer.h"
 

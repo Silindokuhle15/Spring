@@ -32,18 +32,20 @@ void Mouse::mouse_button_callback(GLFWwindow* window, int button, int action, in
 void Mouse::mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     glm::vec3 move_dir = glm::vec3(xoffset, -yoffset, 0);
-    move_dir = glm::normalize(move_dir);
 
-    if(glfwGetMouseButton(BaseApplication::m_pWindow, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
-    { 
-        BaseApplication::cam_ptr->Focus(move_dir);
-    }    
-    if(glfwGetMouseButton(BaseApplication::m_pWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-    { 
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    {
+        BaseApplication::cam_ptr->Rotate(move_dir);
+    }
+    else
+    {
+
+        glm::vec3 cam_pos = BaseApplication::cam_ptr->GetPosition();
+        move_dir -= cam_pos;
+        move_dir = glm::normalize(move_dir);
+
         BaseApplication::cam_ptr->Focus(move_dir);
     }
-
-        
 }
 
 void Mouse::EnableRawMotion(GLFWwindow * window)

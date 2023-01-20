@@ -1,14 +1,10 @@
-#include "TimeStep.h"
 #include "BaseApplication.h"
-#include "Application.h"
-#include "UILayer.h"
-#include "Rendering/Renderer.h"
-#include "Rendering/Grid.h"
-#include "Rendering/Cube.h"
-#include "Rendering/Square.h"
+#include "Application/Grid.h"
+#include "Application/Cube.h"
+#include "Application/Square.h"
+#include "Application/Teaport.h"
+#include "Application/Tank.h"
 
-
-Application* BaseApplication::App = nullptr;
 Camera* BaseApplication::cam_ptr = nullptr;
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
 PointLight* BaseApplication::m_PointLight = nullptr;
@@ -62,7 +58,7 @@ void BaseApplication::CreateMainWindow()
 
     glfwSetMouseButtonCallback(BaseApplication::m_pWindow, Mouse::mouse_button_callback);
     glfwSetScrollCallback(BaseApplication::m_pWindow, Mouse::mouse_scroll_callback);
-
+    //glfwSetWindowCloseCallback(BaseApplication::m_pWindow, MainWindow::Window_Close_Callback);
 }
 
 void BaseApplication::Run()
@@ -82,26 +78,29 @@ void BaseApplication::Run()
 
     Grid grd(8);
     Cube cb;
+  
+    Teaport Uta_teaport;
+    Uta_teaport.OnInit();
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(+.2f, 0.0, 0.0));
+    Uta_teaport.SetTransform(scale * trans);
+    grd_scn.AddToScene(&Uta_teaport);
+
+    Tank tank;
+    tank.OnInit();
+    tank.SetTransform(glm::mat4(2.0f));
+    //grd_scn.AddToScene(&tank);
+
     Square sq;
-
-
-    grd.OnInit();
-    //cb.OnInit();
-    //sq.OnInit();
-
-    
+    sq.OnInit();
+    sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-.2f, 0.0, 0.0)));
     //grd_scn.AddToScene(&sq);
-    grd_scn.AddToScene(&grd);
-    //grd_scn.AddToScene(&cb);
-
-
+    
     int m_Width, m_Height;
-    static float cam_pos[3];
-    static float light_pos[3];
-    bool should_open = true;
 
     while (!glfwWindowShouldClose(BaseApplication::m_pWindow))
     {
+        float time = 0;
 
         glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
@@ -111,17 +110,19 @@ void BaseApplication::Run()
 
         TimeStep ts;
      
-        //BaseApplication::cam_ptr->Present();
+        BaseApplication::cam_ptr->Present();
 
-        //BaseApplication::m_pActiveRenderer->OnUpdate();
-        //BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
+        ts = (float)glfwGetTime()/1000.0;
+
+        BaseApplication::m_pActiveRenderer->OnUpdate(ts);
+        BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
         
-
-
         BaseApplication::m_pUILayer->Enable();
 
+        BaseApplication::m_pActiveRenderer->m_PrimitiveModeWireFrame = BaseApplication::m_pUILayer->m_RenderMode;
+
         BaseApplication::m_pUILayer->EndFrame();
-        
+
         glfwSwapBuffers(BaseApplication::m_pWindow);
     }
 
@@ -135,7 +136,7 @@ void BaseApplication::Run()
 void BaseApplication::AttachCamera(Camera* cam)
 {
     int m_Width  = 1920;
-    int m_Height = 1057;
+    int m_Height = 1080;
 
     cam->SetWidth(m_Width);
     cam->SetHeight(m_Height);
@@ -148,7 +149,6 @@ void BaseApplication::AddPointLight(PointLight * point_light)
 {
     BaseApplication::m_PointLight = point_light;
 }
-
 
 void BaseApplication::AttachRenderer(Renderer* Ren)
 {

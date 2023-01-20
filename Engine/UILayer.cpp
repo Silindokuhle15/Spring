@@ -47,6 +47,9 @@ void UILayer::Enable()
 
     ImGui::Begin("Stats And Performance");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Separator();
+    ImGui::Text("Active Render Mode");
+    ImGui::Checkbox("Wire Frame", &m_RenderMode);
     ImGui::End();
 
     ImGui::Begin("Animation panel");
@@ -67,6 +70,8 @@ void UILayer::Enable()
     //light_pos[1] = BaseApplication::m_PointLight->GetPosition().y;
     //light_pos[2] = BaseApplication::m_PointLight->GetPosition().z;
     //ImGui::SliderFloat3("Light Position", light_pos, 0.0, 100.);
+
+    ImGui::Text("Shaders");
     ImGui::End();
 }
 

@@ -3,17 +3,13 @@
 class PerspectiveCamera :
     public Camera
 {
-private:
+public:
 	glm::vec3 m_eye;
 	glm::vec3 m_center;
 	glm::vec3 m_up;
 
-	glm::mat4 MV;
-	glm::mat4 MVP;
-
-	glm::mat4 m_ModelRotate;
-	glm::mat4 m_ModelScale;
-	glm::mat4 m_ModelTranslate;
+	glm::mat4 V;
+	glm::mat4 VP;
 
 	glm::mat4 m_Proj;
 	glm::mat4 m_View;
@@ -22,16 +18,14 @@ private:
 	int m_Height;
 	float m_AspectRatio;
 
-	float speed = 10;
-
-public:
+	float speed = 1.0;
     PerspectiveCamera() : Camera(), 
 		m_eye{ glm::vec3(0.0, .0, 0.0f) },
 		m_center{ glm::vec3(0.0f) },
 		m_up{ glm::vec3(0.0f, 1.0f, 0.0f) }
 	{}
 
-	glm::mat4 GetMVP() const { return MVP; }
+	glm::mat4 GetVP() const { return VP; }
 	void OnResize(int new_width, int new_height);
     void OnCreate();
 	void Present();
@@ -55,5 +49,6 @@ public:
 	void Reset() override;
 
 	glm::vec3& GetPosition() override;
+	void OnUpdate(float ts) override;
 };
 

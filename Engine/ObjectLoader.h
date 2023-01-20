@@ -26,8 +26,6 @@ public:
 	std::vector<unsigned int> m_TextureIndices;
 	std::vector<unsigned int> m_NormalIndices;
 
-	std::vector<PerVertex> m_Vertices;
-
 	int LoadObjectFromFile(const char* file_path);
 public:
 	void LoadObject(const char* file_path);

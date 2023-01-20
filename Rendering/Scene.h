@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
-#include "Engine/Application.h"
+#include "Application/Application.h"
 
 class Scene
 {
@@ -14,5 +14,9 @@ public:
 
 	Scene* GetSceneData() { return reinterpret_cast<Scene*>(& m_SceneData[0]); }
 	void AddToScene(Application* draw_data);
+
+	unsigned int m_CurrentIndexCount;
+
+	void Process();
 };
 

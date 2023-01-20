@@ -159,21 +159,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Application.cpp" />
+    <ClCompile Include="Application\Application.cpp" />
+    <ClCompile Include="Application\Teaport.h" />
+    <ClCompile Include="Application\Teaport.cpp" />
     <ClCompile Include="Engine\BaseApplication.cpp" />
     <ClCompile Include="Engine\Layer.cpp" />
     <ClCompile Include="LightAndShadow\PointLight.cpp" />
+    <ClCompile Include="Materials\Material.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
-    <ClCompile Include="Rendering\Grid.cpp" />
+    <ClCompile Include="Application\Grid.cpp" />
     <ClCompile Include="Rendering\Scene.cpp" />
-    <ClCompile Include="Rendering\Shader.cpp" />
+    <ClCompile Include="Materials\Shader.cpp" />
     <ClCompile Include="Engine\TimeStep.cpp" />
-    <ClCompile Include="Rendering\Square.cpp" />
+    <ClCompile Include="Application\Square.cpp" />
     <ClCompile Include="Engine\UILayer.cpp" />
+    <ClCompile Include="Rendering\VertexArray.cpp" />
+    <ClCompile Include="Application\Tank.cpp" />
     <ClCompile Include="Viewing\OrthographicCamera.cpp" />
     <ClCompile Include="Viewing\PerspectiveCamera.cpp" />
     <ClCompile Include="Viewing\Camera.cpp" />
-    <ClCompile Include="Rendering\Cube.cpp" />
+    <ClCompile Include="Application\Cube.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui.cpp" />
@@ -198,25 +203,30 @@
     <None Include="Shaders\Cube\VertexShader.glsl" />
     <None Include="Shaders\Grid\FragmentShader.glsl" />
     <None Include="Shaders\Grid\VertexShader.glsl" />
+    <None Include="Shaders\RndFragmentShader.glsl" />
+    <None Include="Shaders\RndVertexShader.glsl" />
     <None Include="Shaders\Square\FragmentShader.glsl" />
     <None Include="Shaders\Square\VertexShader.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Application.h" />
+    <ClInclude Include="Application\Application.h" />
     <ClInclude Include="Engine\BaseApplication.h" />
     <ClInclude Include="Engine\Layer.h" />
     <ClInclude Include="LightAndShadow\PointLight.h" />
+    <ClInclude Include="Materials\Material.h" />
     <ClInclude Include="Rendering\Renderer.h" />
-    <ClInclude Include="Rendering\Grid.h" />
+    <ClInclude Include="Application\Grid.h" />
     <ClInclude Include="Rendering\Scene.h" />
-    <ClInclude Include="Rendering\Shader.h" />
+    <ClInclude Include="Materials\Shader.h" />
     <ClInclude Include="Engine\TimeStep.h" />
-    <ClInclude Include="Rendering\Square.h" />
+    <ClInclude Include="Application\Square.h" />
     <ClInclude Include="Engine\UILayer.h" />
+    <ClInclude Include="Rendering\VertexArray.h" />
+    <ClInclude Include="Application\Tank.h" />
     <ClInclude Include="Viewing\OrthographicCamera.h" />
     <ClInclude Include="Viewing\PerspectiveCamera.h" />
     <ClInclude Include="Viewing\Camera.h" />
-    <ClInclude Include="Rendering\Cube.h" />
+    <ClInclude Include="Application\Cube.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3_loader.h" />

@@ -39,8 +39,14 @@ void Shader::OnInit()
 
 void Shader::Bind()
 {
-    if (!glIsProgram(m_ShaderProgram)) { m_ShaderProgram = glCreateProgram();
-    glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
+    glUseProgram(m_ShaderProgram);
+}
+
+void Shader::Link()
+{
+    if (!glIsProgram(m_ShaderProgram)) {
+        m_ShaderProgram = glCreateProgram();
+        glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
     }
     glAttachShader(m_ShaderProgram, m_Shader[0]);
     glAttachShader(m_ShaderProgram, m_Shader[1]);

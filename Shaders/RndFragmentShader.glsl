@@ -12,4 +12,5 @@ in VS_OUT
 void main()
 {
 	color  = vec4(ps_in.TexCoord, 0.0f, 1.0f);
+	//color  = vec4(.7f, .7f,.7f, 1.0f);
 }

@@ -1,8 +1,9 @@
 #pragma once
-#include "Engine/Application.h"
+#include "Application/Application.h"
 #include "Engine/BaseApplication.h"
 #include "Engine/ObjectLoader.h"
-#include "Shader.h"
+#include "Materials/Shader.h"
+#include "Rendering/Scene.h"
 
 class Cube :
     public Application
@@ -23,10 +24,6 @@ private:
     int m_VPOSlocation;
     int m_VNORMlocation;
 
-    // Uniforms
-    int m_MVPlocation;
-    int m_MVlocation;
-
     int LoadTextureFromFile(const char* file_path);
     ObjectLoader ob;
 
@@ -42,7 +39,7 @@ private:
 public:
 
     // Vertex Arrays
-    unsigned int m_VAO;
+    VertexArray m_VAO;
 
     Shader m_Shader;
     unsigned int m_IndexCount;

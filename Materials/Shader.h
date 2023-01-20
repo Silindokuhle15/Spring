@@ -32,6 +32,7 @@ public:
 	
 	void OnInit();
 	void Bind();
+	void Link();
 
 	unsigned int GetShaderProgram() const { return m_ShaderProgram; }
 

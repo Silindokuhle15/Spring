@@ -1,5 +1,6 @@
 #include "Renderer.h"
 
+#define MAX_NUM_VERTICES 10000
 void Renderer::SetUpForRendering()
 {
     unsigned int m_Width = 1920;
@@ -8,74 +9,78 @@ void Renderer::SetUpForRendering()
     glViewport(0, 0, m_Width, m_Height);
     glEnable(GL_DEPTH_BUFFER_BIT);
     glDepthRange(.010f, 1000.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    /*
-    glCreateVertexArrays(1, &m_VAO);
-    glBindVertexArray(m_VAO);
+    m_VAO.OnInit();
+    m_VAO.Bind();
 
     glCreateBuffers(1, &m_VertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
+    
+    unsigned int vertex_buffer_size = (sizeof(glm::vec3) + sizeof(glm::vec2)) * MAX_NUM_VERTICES;
+    glNamedBufferData(m_VertexBuffer, vertex_buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
-    struct PerVertex
-    {
-        glm::vec3 pos;
-        glm::vec2 tex;
-        glm::vec3 norm;
-    };
-    unsigned int size = m_Width * m_Height * sizeof(struct PerVertex);
-    glNamedBufferStorage(m_VertexBuffer, size, nullptr, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT);
-
+    unsigned int index_buffer_size = sizeof(unsigned int) * MAX_NUM_VERTICES;
     glCreateBuffers(1, &m_IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-    glNamedBufferStorage(m_IndexBuffer, 1000, nullptr, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT);
+    glNamedBufferData(m_IndexBuffer, index_buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
-    //create_shaders();
     m_Shader.m_Info[0] = this->m_Info[0];
     m_Shader.m_Info[1] = this->m_Info[1];
     m_Shader.OnInit();
 
-    //glUseProgram(m_Shader.GetShaderProgram());
+    std::vector<VertexAttrib> attribs;
+    attribs.push_back(VertexAttrib::Position);
+    attribs.push_back(VertexAttrib::TexCoord);
+    m_VAO.CreateVertexArrayLayout(m_Shader.GetShaderProgram(), attribs);
 
-    m_VPOSlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "Position");
-    //m_VTEXlocation = glGetAttribLocation(m_Shader.GetShaderProgram(), "TexCoord");
-
-    m_MVPlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MVP");
-    m_MVlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "MV");
-    //m_SamplerLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "u_Texture");
-
-    glVertexAttribPointer(m_VPOSlocation, 2, GL_FLOAT, GL_FALSE,
-        sizeof(glm::vec2), (void*)0);
-    glEnableVertexAttribArray(m_VPOSlocation);
-
-    //glVertexAttribPointer(m_VTEXlocation, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)(sizeof(glm::vec2)));
-    //glEnableVertexAttribArray(m_VTEXlocation);
-    */
-
+    m_VPlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "VP");
+    m_Vlocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "V");
+    m_DeltaLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "delta");
 }
 
 void Renderer::OnRender(Scene* scene)
 {
-    /*
-    unsigned int vertex_buffer_size = sizeof(scene->m_VertexData.data());
-    unsigned int index_buffer_size = sizeof(scene->m_IndexData.data());
-    glNamedBufferSubData(m_VertexBuffer, 0, vertex_buffer_size, scene->m_VertexData.data());
-    glNamedBufferSubData(m_IndexBuffer, 0, index_buffer_size, scene->m_IndexData.data());
-
-    glDrawElements(GL_TRIANGLE_STRIP, scene->m_IndexData.size(), GL_UNSIGNED_INT, nullptr);
-    */
-
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_CurrentIndexCount = 0;
+    m_LastIndexCount = 0;
     for (int i = 0; i < scene->m_SceneData.size(); i++)
     {
-        scene->m_SceneData[i]->OnUpdate();
-        scene->m_SceneData[i]->OnRender();
+        m_Shader.Bind();
+        m_VAO.Bind();
+
+        m_CurrentIndexCount  = scene->m_SceneData[i]->m_IndexCount;
+        m_LastIndexCount += m_CurrentIndexCount;
+        glm::mat4 transformB = scene->m_SceneData[i]->m_Transform;
+
+        unsigned int pos_offset = (sizeof(glm::vec3) + sizeof(glm::vec2)) * m_LastIndexCount * i;
+        unsigned int tex_offset = sizeof(glm::vec3) * m_CurrentIndexCount + pos_offset;
+        unsigned int ind_offset = sizeof(unsigned int) * m_LastIndexCount * i;
+
+        unsigned int uniformLocation = glGetUniformLocation(m_Shader.GetShaderProgram(), "Model");
+        glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(transformB));
+        glNamedBufferSubData(m_VertexBuffer, pos_offset, sizeof(glm::vec3) * m_CurrentIndexCount, scene->m_SceneData[i]->m_Positions.data());
+        glNamedBufferSubData(m_VertexBuffer, tex_offset, sizeof(glm::vec2) * m_CurrentIndexCount, scene->m_SceneData[i]->m_TexCoords.data());
+
+        glNamedBufferSubData(m_IndexBuffer, ind_offset, sizeof(unsigned int) * m_CurrentIndexCount, scene->m_SceneData[i]->m_VertexIndices.data());
+        //glDrawElements(GL_TRIANGLE_STRIP, m_CurrentIndexCount , GL_UNSIGNED_INT, nullptr);
+        GLenum render_mode = m_PrimitiveModeWireFrame ? GL_LINE_STRIP : GL_TRIANGLE_STRIP;
+        glDrawElements(render_mode, m_CurrentIndexCount , GL_UNSIGNED_INT, nullptr);
     }
 }
 
 void Renderer::OnUpdate()
 {
-    /*
-    glUniformMatrix4fv(m_MVPlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetMVP()));
-    glUniformMatrix4fv(m_MVlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetMV()));
-    */
+    glUseProgram(m_Shader.GetShaderProgram());
+    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetVP()));
+    glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetV()));
+}
+
+void Renderer::OnUpdate(float ts)
+{
+    glUseProgram(m_Shader.GetShaderProgram());
+    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetVP()));
+    glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetV()));
+    glUniform1f(m_DeltaLocation, ts);
+
 }

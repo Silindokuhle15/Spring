@@ -9,12 +9,9 @@ private:
 	glm::vec3 m_center;
 	glm::vec3 m_up;
 
-	glm::mat4 MV;
-	glm::mat4 MVP;
+	glm::mat4 V;
+	glm::mat4 VP;
 
-	glm::mat4 m_ModelRotate;
-	glm::mat4 m_ModelScale;
-	glm::mat4 m_ModelTranslate;
 
 	glm::mat4 m_Proj;
 	glm::mat4 m_View;
@@ -22,7 +19,7 @@ private:
 	int m_Width;
 	int m_Height;
 	float m_AspectRatio;
-
+	float speed = 1.0;
 public:
 
 	OrthographicCamera() : Camera(), 
@@ -54,5 +51,7 @@ public:
 	void Reset() override;
 
 	glm::vec3& GetPosition() override;
+
+	void OnUpdate(float ts) override;
 };
 

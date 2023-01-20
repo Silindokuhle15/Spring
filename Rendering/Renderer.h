@@ -4,22 +4,28 @@
 #include <fstream>
 #include "Scene.h"
 #include "Engine/BaseApplication.h"
-#include "Cube.h"
-#include "Grid.h"
+#include "Application/Cube.h"
+#include "Application/Grid.h"
+
+typedef enum
+{
+    TRIANGLE_STRIP, WIRE_FRAME
+} PrimitiveMode;
+
 class Renderer
 {
-private:
+public:
     // Buffers
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
     unsigned int m_TexBuffer;
 
     // Vertex Arrays
-    unsigned int m_VAO;
+    VertexArray m_VAO;
 
     // Uniforms
-    int m_MVPlocation;
-    int m_MVlocation;
+    int m_VPlocation;
+    int m_Vlocation;
 
     // Vertex Array Attributes
     int m_VTexlocation;
@@ -42,22 +48,25 @@ private:
     unsigned int m_SpecularColortLocation;
 
     unsigned int m_PointLightLocation;
+    unsigned int m_DeltaLocation;
 
-    ShaderInfo m_Info[2] = { {"Shaders/Square/Vertexshader.glsl", GL_VERTEX_SHADER}, { "Shaders/Square/Fragmentshader.glsl", GL_FRAGMENT_SHADER } };
+    bool m_PrimitiveModeWireFrame = false;
+    ShaderInfo m_Info[2] = { {"Shaders/RndVertexShader.glsl", GL_VERTEX_SHADER}, { "Shaders/RndFragmentShader.glsl", GL_FRAGMENT_SHADER } };
 
 public:
 
     Shader m_Shader;
-    Renderer() :
-        m_VAO{ 0 }, m_VTexlocation{ 0 },
+    Renderer() : m_VTexlocation{ 0 },
         m_VPOSlocation{ 0 }, m_VNORMlocation{ 0 },
         m_Shaders{ 0 }, m_Program{ 0 }, m_ShaderPrograms{ 0 } {}
     ~Renderer() {}
 
     void SetUpForRendering();
     void OnRender(Scene* scene);
-
+    unsigned int m_CurrentIndexCount;
+    unsigned int m_LastIndexCount;
     void OnUpdate();
+    void OnUpdate(float delta);
 };
 
 

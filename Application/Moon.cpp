@@ -1,12 +1,13 @@
-#include "Teaport.h"
+#include "Moon.h"
 
-void Teaport::OnInit()
+void Moon::OnInit()
 {
     ObjectLoader ob;
-    ob.LoadObjectFromFile("Objects/Uta_teaport.obj");
+    ob.LoadObjectFromFile("Objects/moon/21414_Crescent_Moon_v1.obj");
 
     m_Positions = ob.m_Positions;
     m_TexCoords = ob.m_TexCoords;
+    ob.m_VertexIndices.erase(ob.m_VertexIndices.begin());
     m_VertexIndices = ob.m_VertexIndices;
 
     m_Positions.shrink_to_fit();

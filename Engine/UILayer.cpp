@@ -27,57 +27,85 @@ UILayer::~UILayer()
 }
 void UILayer::Enable()
 {
-    ImGui::Begin("File | Edit");
-    ImGui::MenuItem("(demo menu)", NULL, false, false);
-    if (ImGui::MenuItem("New")) {}
-    if (ImGui::MenuItem("Open", "Ctrl+O")) {}
-    if (ImGui::BeginMenu("Open Recent"))
+    ImGui::BeginMenuBar();
+
+    if (ImGui::BeginMenu("File"))
     {
-        ImGui::MenuItem("fish_hat.c");
-        ImGui::MenuItem("fish_hat.inl");
-        ImGui::MenuItem("fish_hat.h");
-
+        ImGui::MenuItem("New");
+        ImGui::MenuItem("Open");
+        ImGui::MenuItem("Save As");
         ImGui::EndMenu();
+
     }
-    if (ImGui::MenuItem("Save", "Ctrl+S")) {}
-    if (ImGui::MenuItem("Save As..")) {}
-
-    ImGui::End();
-
 
     ImGui::Begin("Stats And Performance");
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::Separator();
     ImGui::Text("Active Render Mode");
     ImGui::Checkbox("Wire Frame", &m_RenderMode);
+    ImGui::Separator();
+    ImGui::Text("Draw Calls : %d", 1);
+    ImGui::Text("Number of Indices : %d", m_NumIndices);
+    ImGui::Text("Number of Primitives : %d", m_NumPrimitives);
     ImGui::End();
 
     ImGui::Begin("Animation panel");
     ImGui::End();
 
     ImGui::Begin("Utilities");
+    ImGui::Separator();
     ImGui::Text("Viewing and Transformation");
+    ImGui::Separator();
 
-    //cam_pos[0] = BaseApplication::cam_ptr->GetPosition().x;
-    //cam_pos[1] = BaseApplication::cam_ptr->GetPosition().y;
-    //cam_pos[2] = BaseApplication::cam_ptr->GetPosition().z;
-
-    //ImGui::SliderFloat3("Camera Position", cam_pos, 0.0, 100.0);
-    //ImGui::Separator();
+    ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
+    ImGui::Separator();
 
     ImGui::Text("Lights and Shadow");
+
+    int enable_lighting_locatin = glGetUniformLocation(m_ActiveMaterial, "EnableTexture");
+    glProgramUniform1i(m_ActiveMaterial, enable_lighting_locatin, m_EnableLighting);
+
+    ImGui::Checkbox("Enable Lighting", &m_EnableLighting);
+    ImGui::Separator();
+
     //light_pos[0] = BaseApplication::m_PointLight->GetPosition().x;
     //light_pos[1] = BaseApplication::m_PointLight->GetPosition().y;
     //light_pos[2] = BaseApplication::m_PointLight->GetPosition().z;
     //ImGui::SliderFloat3("Light Position", light_pos, 0.0, 100.);
 
-    ImGui::Text("Shaders");
+    ImGui::Text("Materials");
+    ImGui::Separator();
+
+    glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
+    glGetProgramiv(m_ActiveMaterial, GL_ACTIVE_UNIFORMS, &m_ActiveUniforms);
+
+    ImGui::Text("Active Material : %d", m_ActiveMaterial);
+
+    int enable_texture_location = glGetUniformLocation(m_ActiveMaterial, "EnableTexture");
+
+    glProgramUniform1i(m_ActiveMaterial, enable_texture_location, m_EnableTexture);
+
+    ImGui::Checkbox("Apply Texture", &m_EnableTexture);
+    int attached_shaders = 0;
+    ImGui::Text("Attached Shaders : % d", attached_shaders);
+    int tex_slot = 0;
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &tex_slot);
+    ImGui::Text("Active Texture Slot : %d", 0);
+    ImGui::Text("Number of Active Uniforms : %d", m_ActiveUniforms);
+
+    int width = 0, height = 0, size = 0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+    //glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_BUFFER_SIZE, &size);
+    ImGui::Text("Active Texture Dims : [%d , %d]", width, height);
+    //ImGui::Text("Active Texture Size : [ %d ]", size);
     ImGui::End();
 }
 
 void UILayer::OnInit()
 {
     // TO do Add some code here bro
+
 
 }
 

@@ -95,7 +95,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32s.lib; opengl32.lib; user32.lib; gdi32.lib; Shell32.lib; glfw3.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;user32.lib;gdi32.lib;Shell32.lib;glfw3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\GLFW\lib-vc2019;$(SolutionDir)Dependencies\GLEW\lib\Release\Win32</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -116,7 +116,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32s.lib; opengl32.lib; user32.lib; gdi32.lib; Shell32.lib; glfw3.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;user32.lib;gdi32.lib;Shell32.lib;glfw3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\GLFW\lib-vc2019;$(SolutionDir)Dependencies\GLEW\lib\Release\Win32</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -133,7 +133,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32s.lib; opengl32.lib; user32.lib; gdi32.lib; Shell32.lib; glfw3.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;user32.lib;gdi32.lib;Shell32.lib;glfw3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\GLFW\lib-vc2019;$(SolutionDir)Dependencies\GLEW\lib\Release\Win32</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -154,7 +154,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glew32s.lib; opengl32.lib; user32.lib; gdi32.lib; Shell32.lib; glfw3.lib</AdditionalDependencies>
+      <AdditionalDependencies>glew32s.lib;opengl32.lib;user32.lib;gdi32.lib;Shell32.lib;glfw3.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)Dependencies\GLFW\lib-vc2019;$(SolutionDir)Dependencies\GLEW\lib\Release\Win32</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -166,6 +166,7 @@
     <ClCompile Include="Engine\Layer.cpp" />
     <ClCompile Include="LightAndShadow\PointLight.cpp" />
     <ClCompile Include="Materials\Material.cpp" />
+    <ClCompile Include="Application\Moon.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Application\Grid.cpp" />
     <ClCompile Include="Rendering\Scene.cpp" />
@@ -215,6 +216,7 @@
     <ClInclude Include="Engine\Layer.h" />
     <ClInclude Include="LightAndShadow\PointLight.h" />
     <ClInclude Include="Materials\Material.h" />
+    <ClInclude Include="Application\Moon.h" />
     <ClInclude Include="Rendering\Renderer.h" />
     <ClInclude Include="Application\Grid.h" />
     <ClInclude Include="Rendering\Scene.h" />

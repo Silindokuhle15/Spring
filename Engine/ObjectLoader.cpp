@@ -23,7 +23,6 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     float u, v;
 
     const char* descriptors[] = { "v", "vn", "vt", "f" };
-    unsigned int vindex, tindex;
 
     for (std::string str; std::getline(is, str);)
     {
@@ -75,21 +74,16 @@ void ObjectLoader::ExtractDump(std::string dump)
     unsigned int vindex;
     iss >> vindex;
     m_VertexIndices.push_back(--vindex);
-    unsigned int tindex = vindex % 2 > 0 ? 0 : 1;
-    /*
+    
     char delim;
     iss.read(&delim, 1);
 
-    unsigned int nindex;
+    unsigned int tindex;
     
-
-    iss.read(&delim, 1);
+    //iss.read(&delim, 1);
     
-    /*
     iss >> tindex;
     m_TextureIndices.push_back(--tindex);
-    
-    */
    
     /*
     iss >> nindex;

@@ -31,6 +31,7 @@ void KeyBoard::key_callback(GLFWwindow* window, int key, int scancode, int actio
             BaseApplication::cam_ptr->MoveDown();
             break;
         case GLFW_KEY_ESCAPE:
+
             glfwSetWindowShouldClose(window, GLFW_TRUE);
             break;
 

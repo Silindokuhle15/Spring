@@ -4,7 +4,8 @@
 
 void Texture::OnInit()
 {
-    int res = LoadTextureFromFile("Textures/brinkwall.png");
+    //int res = LoadTextureFromFile("Textures/brinkwall.png");
+    int res = LoadTextureFromFile("Textures/crate_1.jpg");
 
     glGenSamplers(1, &m_Sampler);
     //glBindSampler(4, GL_SAMPLER_2D);

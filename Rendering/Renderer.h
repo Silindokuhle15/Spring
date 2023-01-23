@@ -24,10 +24,11 @@ public:
     int m_VPlocation;
     int m_Vlocation;
     int m_DeltaLocation;
-    int m_SamplerLocation;
+
+    unsigned int m_CurrentIndexCount = 0;
+    unsigned int m_LastIndexCount = 0;
 
     bool m_PrimitiveModeWireFrame = false;
-    ShaderInfo m_Info[2] = { {"Shaders/RndVertexShader.glsl", GL_VERTEX_SHADER}, { "Shaders/RndFragmentShader.glsl", GL_FRAGMENT_SHADER } };
 
 public:
 
@@ -37,10 +38,9 @@ public:
 
     void SetUpForRendering();
     void OnRender(Scene* scene);
-    unsigned int m_CurrentIndexCount;
-    unsigned int m_LastIndexCount;
     //void OnUpdate();
     void OnUpdate(float delta);
+    void EnableTesselation();
 };
 
 

@@ -35,7 +35,7 @@ void PerspectiveCamera::Reset()
     m_up =glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-glm::vec3& PerspectiveCamera::GetPosition()
+glm::vec3 PerspectiveCamera::GetPosition()
 {
     return m_eye;
 }

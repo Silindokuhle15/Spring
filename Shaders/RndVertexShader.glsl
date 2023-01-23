@@ -1,5 +1,5 @@
 #version 450 core
-uniform mat4 V;
+
 uniform mat4 VP;
 
 uniform mat4 Model;

@@ -30,4 +30,5 @@ public:
 	static void error_callback(int error, const char* description);
 
 	static void window_size_callback(GLFWwindow* window, int new_width, int new_height);
+	static void window_close_call(GLFWwindow* window);
 };

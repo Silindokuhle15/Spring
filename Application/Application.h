@@ -21,6 +21,7 @@ public:
     std::vector<glm::vec2 > m_TexCoords;
     std::vector<glm::vec3 > m_Normals;
     std::vector<unsigned int> m_VertexIndices;
+    std::vector<unsigned int> m_TextureIndices;
 
     // Vertex Arrays
     VertexArray m_VAO;

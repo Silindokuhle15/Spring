@@ -4,6 +4,7 @@
 #include "Application/Square.h"
 #include "Application/Teaport.h"
 #include "Application/Tank.h"
+#include "Application/Moon.h"
 
 Camera* BaseApplication::cam_ptr = nullptr;
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
@@ -33,7 +34,7 @@ void BaseApplication::CreateMainWindow()
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-    m_pWindow = glfwCreateWindow(1920, 1057, "Simple example", NULL, NULL);
+    m_pWindow = glfwCreateWindow(1920, 1080, "Simple example", NULL, NULL);
     if (!m_pWindow)
     {
         glfwTerminate();
@@ -57,7 +58,7 @@ void BaseApplication::CreateMainWindow()
 
     glfwSetMouseButtonCallback(BaseApplication::m_pWindow, Mouse::mouse_button_callback);
     glfwSetScrollCallback(BaseApplication::m_pWindow, Mouse::mouse_scroll_callback);
-    //glfwSetWindowCloseCallback(BaseApplication::m_pWindow, MainWindow::Window_Close_Callback);
+    glfwSetWindowCloseCallback(BaseApplication::m_pWindow, BaseApplication::window_close_call);
 }
 
 void BaseApplication::Run()
@@ -69,34 +70,50 @@ void BaseApplication::Run()
     UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
 
     BaseApplication::m_pUILayer = &ImGui_Layer;
-
+    BaseApplication::m_pUILayer->OnInit();
     BaseApplication::cam_ptr->OnCreate();
     BaseApplication::m_pActiveRenderer->SetUpForRendering();
     
     Scene grd_scn;
 
     //Grid grd(8);
-    //Cube cb;
-  
+    
+    /*
+    Moon moon;
+    moon.OnInit();
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, 0.0));
+    moon.SetTransform(scale * trans);
+    grd_scn.AddToScene(&moon);
+    */
+   
+
     /*
     Teaport Uta_teaport;
     Uta_teaport.OnInit();
-    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
-    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(+.2f, 0.0, 0.0));
-    Uta_teaport.SetTransform(scale * trans);
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.0, 0.0));
+    Uta_teaport.SetTransform(scale);
     grd_scn.AddToScene(&Uta_teaport);
     */
     /*
     Tank tank;
     tank.OnInit();
-    tank.SetTransform(glm::mat4(2.0f));
+    tank.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-.02f, 0.0, 0.0)));
     grd_scn.AddToScene(&tank);
-    */
-
+      */  
+    
+    Cube cb;
+    cb.OnInit();
+    cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+.20f, 0.0, 0.0)));
+    grd_scn.AddToScene(&cb);
+        
+    
     Square sq;
     sq.OnInit();
-    sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-.2f, 0.0, 0.0)));
+    sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-0.20f, 0.0, 0.0)));
     grd_scn.AddToScene(&sq);
+    
     
     int m_Width, m_Height;
 
@@ -111,14 +128,22 @@ void BaseApplication::Run()
         BaseApplication::m_pUILayer->BeginFrame();
 
         TimeStep ts;
-     
+    
+        //BaseApplication::m_pUILayer->m_ActiveMaterial = BaseApplication::m_pActiveRenderer->m_Material.m_MaterialID;
+        BaseApplication::m_pUILayer->m_CameraPosition[0] = BaseApplication::cam_ptr->GetPosition()[0];
+        BaseApplication::m_pUILayer->m_CameraPosition[1] = BaseApplication::cam_ptr->GetPosition()[1];
+        BaseApplication::m_pUILayer->m_CameraPosition[2] = BaseApplication::cam_ptr->GetPosition()[2];
+
         BaseApplication::cam_ptr->Present();
 
         BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
 
         ts = (float)glfwGetTime() / 1000.0;
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
-
+ 
+        BaseApplication::m_pUILayer->m_NumIndices = grd_scn.m_CurrentIndexCount;
+        BaseApplication::m_pUILayer->m_NumPrimitives = grd_scn.m_CurrentIndexCount;
+         
         BaseApplication::m_pUILayer->Enable();
 
         BaseApplication::m_pActiveRenderer->m_PrimitiveModeWireFrame = BaseApplication::m_pUILayer->m_RenderMode;
@@ -128,7 +153,7 @@ void BaseApplication::Run()
         glfwSwapBuffers(BaseApplication::m_pWindow);
     }
 
-    BaseApplication::m_pUILayer->~UILayer();
+    //BaseApplication::m_pUILayer->~UILayer(); // Never call the Destructor explicitly 
 
     glfwDestroyWindow(BaseApplication::m_pWindow);
 
@@ -163,3 +188,8 @@ void BaseApplication::error_callback(int error, const char* description)
 }
 
 void BaseApplication::window_size_callback(GLFWwindow* window, int new_width, int new_height) { }
+
+void BaseApplication::window_close_call(GLFWwindow* window)
+{
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+}

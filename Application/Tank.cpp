@@ -7,15 +7,15 @@ void Tank::OnInit()
 
     m_Positions = ob.m_Positions;
     m_TexCoords = ob.m_TexCoords;
+
+    ob.m_VertexIndices.erase(ob.m_VertexIndices.begin());
+    ob.m_TextureIndices.erase(ob.m_TextureIndices.begin());
     m_VertexIndices = ob.m_VertexIndices;
+    m_TextureIndices = ob.m_TextureIndices;
 
     m_Positions.shrink_to_fit();
     m_VertexIndices.shrink_to_fit();
-
-    std::vector<VertexAttrib> attribs;
-    attribs.push_back(VertexAttrib::Position);
-    attribs.push_back(VertexAttrib::TexCoord);
-    m_VAO.CreateVertexArrayLayout(m_Shader.GetShaderProgram(), attribs);
+    m_TextureIndices.shrink_to_fit();
 
     Base::m_IndexCount = m_VertexIndices.size();
 }

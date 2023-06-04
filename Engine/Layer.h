@@ -1,9 +1,9 @@
 #pragma once
-#include <GL/glew.h>
+#include "glew.h"
 #define GLFW_INCLUDE_NONE
-#include "Dependencies/imgui/imgui.h"
-#include "Dependencies/imgui/backends/imgui_impl_glfw.h"
-#include "Dependencies/imgui/backends/imgui_impl_opengl3.h"
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 class Layer
 {
@@ -17,5 +17,6 @@ public:
 	virtual void OnInit() = 0;
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
+	virtual void OnUpdate(float ts) = 0;
 };
 

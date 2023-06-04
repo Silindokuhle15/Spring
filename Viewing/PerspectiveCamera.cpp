@@ -5,7 +5,7 @@ void PerspectiveCamera::OnResize(int new_width, int new_height)
     glViewport(0, 0, new_width, new_height);
 }
 
-void PerspectiveCamera::OnCreate()
+void PerspectiveCamera::OnInit()
 {
     m_AspectRatio = float(m_Width) / m_Height;
 
@@ -27,20 +27,58 @@ void PerspectiveCamera::Present()
     VP = m_Proj * m_View;
 }
 
-void PerspectiveCamera::Reset()
+void PerspectiveCamera::MoveForward()
 {
-    VP = glm::mat4(1.0);
-    m_eye = glm::vec3(0.0, .0, 5.0f);
-    m_center = glm::vec3(0.0f);
-    m_up =glm::vec3(0.0f, 1.0f, 0.0f);
+    m_eye -= glm::vec3(0.0, 0.0, 1.0) * speed * m_Delta;
 }
 
-glm::vec3 PerspectiveCamera::GetPosition()
+void PerspectiveCamera::MoveBackward()
 {
-    return m_eye;
+    m_eye += glm::vec3(0.0, 0.0, 1.0) * speed * m_Delta;
+}
+
+void PerspectiveCamera::MoveRight()
+{
+    m_eye += glm::vec3(1.0, 0.0, 0.0) * speed * m_Delta;
+}
+
+void PerspectiveCamera::MoveLeft()
+{
+    m_eye -= glm::vec3(1.0, 0.0, 0.0) * speed * m_Delta;
+}
+
+void PerspectiveCamera::MoveUp()
+{
+    m_eye += glm::vec3(0.0, 1.0, 0.0) * speed * m_Delta;
+}
+
+void PerspectiveCamera::MoveDown()
+{
+    m_eye -= glm::vec3(0.0, 1.0, 0.0) * speed * m_Delta;
+}
+
+void PerspectiveCamera::Rotate(glm::vec3 rot_dir)
+{
+    // Acutally a Drag than a rotation
+    m_eye += rot_dir * speed * m_Delta;
+}
+
+void PerspectiveCamera::Focus(glm::vec3 rot_dir)
+{
+    m_eye += rot_dir * speed * m_Delta;
 }
 
 void PerspectiveCamera::OnUpdate(float ts)
 {
     m_Delta = ts;
+}
+
+glm::mat4 PerspectiveCamera::GetV()
+{
+    return V;
+}
+
+glm::mat4 PerspectiveCamera::GetVP()
+{
+    return VP;
 }

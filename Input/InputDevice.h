@@ -1,5 +1,5 @@
 #pragma once
-#include <GL/glew.h>
+#include "glew.h"
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
 

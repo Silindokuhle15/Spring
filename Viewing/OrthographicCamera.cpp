@@ -1,11 +1,6 @@
 #include "OrthographicCamera.h"
 
-void OrthographicCamera::OnResize(int new_width, int new_height)
-{
-    glViewport(0, 0, new_width, new_height);
-}
-
-void OrthographicCamera::OnCreate()
+void OrthographicCamera::OnInit()
 {
     m_AspectRatio = float(m_Width) / m_Height;
     glm::mat4 p;
@@ -28,15 +23,37 @@ void OrthographicCamera::Present()
     VP = p * m_View;
 }
 
-
-void OrthographicCamera::Reset()
+void OrthographicCamera::MoveForward()
 {
-    VP = glm::mat4(1.0);
 }
 
-glm::vec3 OrthographicCamera::GetPosition()
+void OrthographicCamera::MoveBackward()
 {
-    return m_eye;
+}
+
+void OrthographicCamera::MoveRight()
+{
+}
+
+void OrthographicCamera::MoveLeft()
+{
+}
+
+
+void OrthographicCamera::MoveUp()
+{
+}
+
+void OrthographicCamera::MoveDown()
+{
+}
+
+void OrthographicCamera::Rotate(glm::vec3 rot_dir)
+{
+}
+
+void OrthographicCamera::Focus(glm::vec3 rot_dir)
+{
 }
 
 void OrthographicCamera::OnUpdate(float ts)

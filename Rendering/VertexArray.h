@@ -1,6 +1,6 @@
 #pragma once
-#include "GL/glew.h"
-#include "Dependencies/GLM/glm/glm.hpp"
+#include "glew.h"
+#include "glm.hpp"
 #include <vector>
 
 typedef enum

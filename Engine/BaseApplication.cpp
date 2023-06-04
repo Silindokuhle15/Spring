@@ -1,16 +1,16 @@
 #include "BaseApplication.h"
-#include "Application/Grid.h"
-#include "Application/Cube.h"
-#include "Application/Square.h"
-#include "Application/Teaport.h"
-#include "Application/Tank.h"
-#include "Application/Moon.h"
+#include "Grid.h"
+#include "Cube.h"
+#include "Square.h"
+#include "Teaport.h"
+#include "Tank.h"
+#include "Moon.h"
 
-Camera* BaseApplication::cam_ptr = nullptr;
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
-PointLight* BaseApplication::m_PointLight = nullptr;
-Renderer* BaseApplication::m_pActiveRenderer = nullptr;
-UILayer* BaseApplication::m_pUILayer = nullptr;
+std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
+std::unique_ptr<UILayer> BaseApplication::m_pUILayer = nullptr;
+std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
+
 
 void BaseApplication::CreateMainWindow()
 {
@@ -59,62 +59,83 @@ void BaseApplication::CreateMainWindow()
     glfwSetMouseButtonCallback(BaseApplication::m_pWindow, Mouse::mouse_button_callback);
     glfwSetScrollCallback(BaseApplication::m_pWindow, Mouse::mouse_scroll_callback);
     glfwSetWindowCloseCallback(BaseApplication::m_pWindow, BaseApplication::window_close_call);
+
+
 }
 
 void BaseApplication::Run()
 {
     CreateMainWindow();
-
-    const char* glsl_version = "#version 450 core";
-
-    UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
-
-    BaseApplication::m_pUILayer = &ImGui_Layer;
-    BaseApplication::m_pUILayer->OnInit();
-    BaseApplication::cam_ptr->OnCreate();
-    BaseApplication::m_pActiveRenderer->SetUpForRendering();
     
-    Scene grd_scn;
-
-    //Grid grd(8);
-    
-    /*
     Moon moon;
     moon.OnInit();
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
     glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, 0.0));
     moon.SetTransform(scale * trans);
-    grd_scn.AddToScene(&moon);
-    */
+    
    
-
-    /*
     Teaport Uta_teaport;
     Uta_teaport.OnInit();
-    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
-    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.0, 0.0));
+    scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+    trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.0, 0.0));
     Uta_teaport.SetTransform(scale);
-    grd_scn.AddToScene(&Uta_teaport);
-    */
-    /*
+   
+    // Initial Trasform
+    // Rotate about y axis 180 degrees
     Tank tank;
     tank.OnInit();
-    tank.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-.02f, 0.0, 0.0)));
-    grd_scn.AddToScene(&tank);
-      */  
+    tank.SetTransform(glm::rotate(glm::mat4(1.0f), glm::radians(+180.0f), glm::vec3(0.0, 1.0, 0.0)));
     
     Cube cb;
     cb.OnInit();
-    cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+.20f, 0.0, 0.0)));
-    grd_scn.AddToScene(&cb);
-        
-    
+    cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+0.20f, 0.0, 0.0)));
+ 
     Square sq;
     sq.OnInit();
     sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-0.20f, 0.0, 0.0)));
-    grd_scn.AddToScene(&sq);
+
+    Scene square_scn;
+    square_scn.AddToScene(&sq);
+
+    Scene cube_scn;
+    cube_scn.AddToScene(&cb);
+
+    Scene tank_scn;
+    tank_scn.AddToScene(&tank);
+
+    Scene teaport_scn;
+    teaport_scn.AddToScene(&Uta_teaport);
+
+    Scene moon_scn;
+    moon_scn.AddToScene(&moon);
+
+    Scene scenes[]{square_scn, cube_scn, tank_scn, teaport_scn};
+
+    PerspectiveCamera pCam;
+    pCam.m_center = glm::vec3(0.0f);
+    pCam.m_eye = glm::vec3(0.0f, 0.0, 5.0);
+    pCam.m_up = glm::vec3(0.0, 1.0, 0.0);
     
+    std::shared_ptr<PerspectiveCamera> cam = std::make_shared<PerspectiveCamera>(pCam);
+
+    const char* glsl_version = "#version 450 core";
+    UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
+
+    BaseApplication::m_pUILayer = std::make_unique<UILayer>(ImGui_Layer);
+    BaseApplication::m_pUILayer->OnInit();
+
+    Renderer OpenGLrenderer;
+    BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
     
+    unsigned int active_scene = m_pUILayer->m_ActiveScene;
+    BaseApplication::m_Scene = std::make_shared<Scene>(scenes[0]);
+    BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
+
+    BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
+    BaseApplication::m_pActiveRenderer->SetUpForRendering();
+    
+
+    BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
     int m_Width, m_Height;
 
     while (!glfwWindowShouldClose(BaseApplication::m_pWindow))
@@ -124,62 +145,54 @@ void BaseApplication::Run()
         glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
         glfwPollEvents();
-        
+
+        int new_scene = BaseApplication::m_pUILayer->m_ActiveScene;
+        if (new_scene != active_scene)
+        {
+            BaseApplication::m_Scene = std::make_shared<Scene>(scenes[new_scene]);
+            BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
+            BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
+            BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
+            m_Scene->Process();
+        }
+
         BaseApplication::m_pUILayer->BeginFrame();
+        BaseApplication::m_pActiveRenderer->BeginFrame();
 
         TimeStep ts;
-    
-        //BaseApplication::m_pUILayer->m_ActiveMaterial = BaseApplication::m_pActiveRenderer->m_Material.m_MaterialID;
-        BaseApplication::m_pUILayer->m_CameraPosition[0] = BaseApplication::cam_ptr->GetPosition()[0];
-        BaseApplication::m_pUILayer->m_CameraPosition[1] = BaseApplication::cam_ptr->GetPosition()[1];
-        BaseApplication::m_pUILayer->m_CameraPosition[2] = BaseApplication::cam_ptr->GetPosition()[2];
 
-        BaseApplication::cam_ptr->Present();
-
-        BaseApplication::m_pActiveRenderer->OnRender(&grd_scn);
+        BaseApplication::m_pActiveRenderer->OnRender();
 
         ts = (float)glfwGetTime() / 1000.0;
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
+        BaseApplication::m_pUILayer->OnUpdate(ts);
  
-        BaseApplication::m_pUILayer->m_NumIndices = grd_scn.m_CurrentIndexCount;
-        BaseApplication::m_pUILayer->m_NumPrimitives = grd_scn.m_CurrentIndexCount;
-         
+
         BaseApplication::m_pUILayer->Enable();
 
+        BaseApplication::m_pUILayer->m_NumIndices = BaseApplication::m_pActiveRenderer->m_LastIndexCount;
+        BaseApplication::m_pUILayer->m_NumPrimitives = BaseApplication::m_pActiveRenderer->m_Samples;
         BaseApplication::m_pActiveRenderer->m_PrimitiveModeWireFrame = BaseApplication::m_pUILayer->m_RenderMode;
+
+        BaseApplication::m_pActiveRenderer->EndFrame();
 
         BaseApplication::m_pUILayer->EndFrame();
 
         glfwSwapBuffers(BaseApplication::m_pWindow);
     }
 
-    //BaseApplication::m_pUILayer->~UILayer(); // Never call the Destructor explicitly 
+    ShutDown();
+}
 
+void BaseApplication::ShutDown()
+{
     glfwDestroyWindow(BaseApplication::m_pWindow);
-
     glfwTerminate();
 }
 
-void BaseApplication::AttachCamera(Camera* cam)
+void BaseApplication::AttachRenderer(std::unique_ptr<Renderer> Ren)
 {
-    int m_Width  = 1920;
-    int m_Height = 1080;
-
-    cam->SetWidth(m_Width);
-    cam->SetHeight(m_Height);
-    cam->OnCreate();
-
-    BaseApplication::cam_ptr = cam;
-}
-
-void BaseApplication::AddPointLight(PointLight * point_light)
-{
-    BaseApplication::m_PointLight = point_light;
-}
-
-void BaseApplication::AttachRenderer(Renderer* Ren)
-{
-    BaseApplication::m_pActiveRenderer = Ren;
+    BaseApplication::m_pActiveRenderer = std::move(Ren);
 }
 
 void BaseApplication::error_callback(int error, const char* description)
@@ -192,4 +205,50 @@ void BaseApplication::window_size_callback(GLFWwindow* window, int new_width, in
 void BaseApplication::window_close_call(GLFWwindow* window)
 {
     glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+
+void BaseApplication::MoveCameraForward()
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->MoveForward();
+}
+
+void BaseApplication::MoveCameraBackward()
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->MoveBackward();
+}
+
+void BaseApplication::MoveCameraUp()
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->MoveUp();
+}
+
+void BaseApplication::MoveCameraDown()
+{
+    m_pActiveRenderer->m_ActiveScene-> m_ActiveCamera->MoveDown();
+}
+
+void BaseApplication::MoveCameraLeft()
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->MoveLeft();
+}
+
+void BaseApplication::MoveCameraRight()
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->MoveRight();
+}
+
+void BaseApplication::RotateCamera(glm::vec3 rot_dir)
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Rotate(rot_dir);
+}
+
+void BaseApplication::FocusCamera(glm::vec3 rot_dir)
+{
+    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Focus(rot_dir);
+}
+
+void BaseApplication::CreateNewScene()
+{
+    // Create A new Scene at set it as the active Scene??
 }

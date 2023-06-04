@@ -1,8 +1,9 @@
 #pragma once
 //#include "Engine/BaseApplication.h"
-#include "GL/glew.h"
+#include "glew.h"
 #include "Scene.h"
-#include "Engine/BaseApplication.h"
+#include "BaseApplication.h"
+#include "FrameBuffer.h"
 
 typedef enum
 {
@@ -30,6 +31,15 @@ public:
 
     bool m_PrimitiveModeWireFrame = false;
 
+    // Try Out the New Framebuffer stuff
+    FrameBuffer m_FrameBuffer;
+
+    unsigned int m_IndexBufferSize = 0;
+
+    std::shared_ptr<Scene> m_ActiveScene;
+
+    int m_Samples;
+
 public:
 
     Material m_Material;
@@ -37,10 +47,14 @@ public:
     ~Renderer() {}
 
     void SetUpForRendering();
-    void OnRender(Scene* scene);
+    void OnRender();
+    void BindScene(std::shared_ptr<Scene> scene);
     //void OnUpdate();
     void OnUpdate(float delta);
     void EnableTesselation();
+
+    void BeginFrame();
+    void EndFrame();
 };
 
 

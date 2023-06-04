@@ -1,12 +1,19 @@
 #pragma once
-#include "Application/Application.h"
-#include "Engine/ObjectLoader.h"
+#include "Application.h"
+#include "ObjectLoader.h"
 
 class Cube :
     public Application
 {
 public:
-    glm::mat4 m_Transform;
 
-    void OnInit();
+    void OnInit() override;
+    void OnUpdate(float ts) override;
+
+    virtual void MoveBackward() override;
+    virtual void MoveForward() override;
+    virtual void MoveLeft() override;
+    virtual void MoveRight() override;
+    virtual void MoveUp() override;
+    virtual void MoveDown() override;
 };

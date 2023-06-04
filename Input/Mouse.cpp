@@ -31,20 +31,18 @@ void Mouse::mouse_button_callback(GLFWwindow* window, int button, int action, in
 }
 void Mouse::mouse_scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    glm::vec3 move_dir = glm::vec3(xoffset, -yoffset, 0);
+    glm::vec3 camera_pos = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->GetPosition();
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    glm::vec3 move_dir = glm::vec3(xoffset, -yoffset, 0.0);
+
+    glm::vec3 focus_dir = glm::vec3(xoffset, -yoffset, -1.0);
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
     {
-        BaseApplication::cam_ptr->Rotate(move_dir);
+        BaseApplication::RotateCamera(move_dir);
     }
-    else
+    else if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
     {
-
-        glm::vec3 cam_pos = BaseApplication::cam_ptr->GetPosition();
-        move_dir -= cam_pos;
-        move_dir = glm::normalize(move_dir);
-
-        BaseApplication::cam_ptr->Focus(move_dir);
+        BaseApplication::FocusCamera(focus_dir);
     }
 }
 

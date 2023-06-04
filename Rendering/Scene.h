@@ -1,21 +1,61 @@
 #pragma once
 #include <vector>
-#include <glm/glm.hpp>
-#include "Application/Application.h"
-#include "Viewing/Camera.h"
-#include <memory>
+#include <glm.hpp>
+#include "Application.h"
+#include "Camera.h"
+#include "PerspectiveCamera.h"
+#include "OrthographicCamera.h"
+#include "Material.h"
+#include "TimeStep.h"
+#include "entt.hpp"
+
 
 class Scene
 {
 public:
 
-	std::vector<unsigned int> m_IndexData;
-	std::vector<Application*> m_SceneData;
+	Scene() = default;
+	~Scene()
+	{
+		m_Materials.clear();
+		m_Cameras.clear();
+		m_Objects.clear();
+
+		m_IndexData.clear();
+		m_ModelLocations.clear();
+		m_NormalMatrixLocations.clear();
+	}
+	std::shared_ptr<PerspectiveCamera> m_ActiveCamera = nullptr;
 
 	void AddToScene(Application* draw_data);
 
+	void AttachCamera(std::shared_ptr<PerspectiveCamera> cam);
+
+	void OnUpdate(float ts);
+	void Process();
+
+	// Re Write and Re structuring this whole class
+
+	std::vector<Material> m_Materials;
+	std::vector<PerspectiveCamera> m_Cameras;
+	std::vector<Application *> m_Objects;
+
+	std::vector<unsigned int> m_IndexData;
+	std::vector<unsigned int> m_ModelLocations;
+	std::vector<unsigned int> m_NormalMatrixLocations;
+
+	int m_ActiveMaterial;
 	unsigned int m_CurrentIndexCount;
 
-	void Process();
+	TimeStep ts;
+
+	void MoveObjectBackward();
+	void MoveObjectForward();
+
+	void MoveObjectLeft();
+	void MoveObjectRight();
+
+	void MoveObjectUp();
+	void MoveObjectDown();
 };
 

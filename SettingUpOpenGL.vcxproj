@@ -24,6 +24,7 @@
     <ProjectGuid>{ee58eb0f-c875-4023-be26-2405b7e5a709}</ProjectGuid>
     <RootNamespace>SettingUpOpenGL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Spring</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -89,7 +90,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\SettingUpOpenGL;C:\dev\SettingUpOpenGL\Input;$(SolutionDir)Dependencies\GLM;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include;C:\dev\SettingUpOpenGL\Dependencies\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -108,7 +109,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\SettingUpOpenGL;C:\dev\SettingUpOpenGL\Input;$(SolutionDir)Dependencies\GLM;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include;C:\dev\SettingUpOpenGL\Dependencies\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -127,7 +128,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\SettingUpOpenGL;C:\dev\SettingUpOpenGL\Input;$(SolutionDir)Dependencies\GLM;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include;C:\dev\SettingUpOpenGL\Dependencies\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -146,7 +147,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\SettingUpOpenGL;C:\dev\SettingUpOpenGL\Input;$(SolutionDir)Dependencies\GLM;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLEW\include;C:\dev\SettingUpOpenGL\Dependencies\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -160,13 +161,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
-    <ClCompile Include="Application\Teaport.h" />
     <ClCompile Include="Application\Teaport.cpp" />
+    <ClCompile Include="Dependencies\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Dependencies\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="Dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="Dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Dependencies\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Dependencies\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Engine\BaseApplication.cpp" />
     <ClCompile Include="Engine\Layer.cpp" />
     <ClCompile Include="LightAndShadow\PointLight.cpp" />
     <ClCompile Include="Materials\Material.cpp" />
     <ClCompile Include="Application\Moon.cpp" />
+    <ClCompile Include="Rendering\FrameBuffer.cpp" />
     <ClCompile Include="Rendering\Renderer.cpp" />
     <ClCompile Include="Application\Grid.cpp" />
     <ClCompile Include="Rendering\Scene.cpp" />
@@ -177,22 +184,15 @@
     <ClCompile Include="Rendering\VertexArray.cpp" />
     <ClCompile Include="Application\Tank.cpp" />
     <ClCompile Include="Materials\Texture.cpp" />
+    <ClCompile Include="Utility\Serializer.cpp" />
     <ClCompile Include="Viewing\OrthographicCamera.cpp" />
     <ClCompile Include="Viewing\PerspectiveCamera.cpp" />
     <ClCompile Include="Viewing\Camera.cpp" />
     <ClCompile Include="Application\Cube.cpp" />
-    <ClCompile Include="Dependencies\imgui\backends\imgui_impl_glfw.cpp" />
-    <ClCompile Include="Dependencies\imgui\backends\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="Dependencies\imgui\imgui.cpp" />
-    <ClCompile Include="Dependencies\imgui\imgui_demo.cpp" />
-    <ClCompile Include="Dependencies\imgui\imgui_draw.cpp" />
-    <ClCompile Include="Dependencies\imgui\imgui_tables.cpp" />
-    <ClCompile Include="Dependencies\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="Dependencies\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="Input\InputDevice.cpp" />
     <ClCompile Include="Input\Mouse.cpp" />
     <ClCompile Include="Input\KeyBoard.cpp" />
-    <ClCompile Include="Engine\ObjectLoader.cpp" />
+    <ClCompile Include="Utility\ObjectLoader.cpp" />
     <ClCompile Include="SpinningTriangleModified.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -212,11 +212,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
+    <ClInclude Include="Application\Teaport.h" />
+    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3.h" />
+    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="Dependencies\imgui\imconfig.h" />
+    <ClInclude Include="Dependencies\imgui\imgui.h" />
+    <ClInclude Include="Dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="Dependencies\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Dependencies\imgui\imstb_textedit.h" />
+    <ClInclude Include="Dependencies\imgui\imstb_truetype.h" />
     <ClInclude Include="Engine\BaseApplication.h" />
     <ClInclude Include="Engine\Layer.h" />
     <ClInclude Include="LightAndShadow\PointLight.h" />
     <ClInclude Include="Materials\Material.h" />
     <ClInclude Include="Application\Moon.h" />
+    <ClInclude Include="Rendering\FrameBuffer.h" />
     <ClInclude Include="Rendering\Renderer.h" />
     <ClInclude Include="Application\Grid.h" />
     <ClInclude Include="Rendering\Scene.h" />
@@ -227,25 +238,15 @@
     <ClInclude Include="Rendering\VertexArray.h" />
     <ClInclude Include="Application\Tank.h" />
     <ClInclude Include="Materials\Texture.h" />
+    <ClInclude Include="Utility\Serializer.h" />
     <ClInclude Include="Viewing\OrthographicCamera.h" />
     <ClInclude Include="Viewing\PerspectiveCamera.h" />
     <ClInclude Include="Viewing\Camera.h" />
     <ClInclude Include="Application\Cube.h" />
-    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_glfw.h" />
-    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3.h" />
-    <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3_loader.h" />
-    <ClInclude Include="Dependencies\imgui\imconfig.h" />
-    <ClInclude Include="Dependencies\imgui\imgui.h" />
-    <ClInclude Include="Dependencies\imgui\imgui_internal.h" />
-    <ClInclude Include="Dependencies\imgui\imstb_rectpack.h" />
-    <ClInclude Include="Dependencies\imgui\imstb_textedit.h" />
-    <ClInclude Include="Dependencies\imgui\imstb_truetype.h" />
-    <ClInclude Include="Dependencies\imgui\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="Dependencies\imgui\misc\single_file\imgui_single_file.h" />
     <ClInclude Include="Input\InputDevice.h" />
     <ClInclude Include="Input\Mouse.h" />
     <ClInclude Include="Input\KeyBoard.h" />
-    <ClInclude Include="Engine\ObjectLoader.h" />
+    <ClInclude Include="Utility\ObjectLoader.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

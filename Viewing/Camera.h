@@ -1,10 +1,11 @@
 #pragma once
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <GL/glew.h>
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
+#include "glew.h"
+#include "glm.hpp"
+#include "ext.hpp"
 
+template<class T>
 class Camera
 {
 public:
@@ -14,56 +15,39 @@ public:
 
 	glm::mat4 V;
 	glm::mat4 VP;
-
-	glm::mat4 m_Proj;
 	glm::mat4 m_View;
+	glm::mat4 m_Proj;
 
 	int m_Width;
 	int m_Height;
 	float m_AspectRatio;
+		
+	float speed = 200.0;
 	float m_Delta;
-	float speed = 1.0;
 
-	Camera() :
-		m_eye{ glm::vec3(0.0, .0, 5.0f) },
-		m_center{ glm::vec3(0.0f) },
-		m_up{ glm::vec3(0.0f, 1.0f, 0.0f) }
-	{	}
+	virtual glm::vec3 GetPosition() { return m_eye; }
+	virtual glm::mat4 GetV() { return V; }
+	virtual glm::mat4 GetVP() { return VP; }
 
-	void OnCreate();
-	glm::mat4 GetV() const { return V; }
-	glm::mat4 GetVP() const { return VP; }
-	void Present();
-	void OnResize(int new_width, int new_height);
+	virtual void SetWidth(int width) { m_Width = width; }
+	virtual void SetHeight(int height) { m_Height = height; }
+	virtual int GetWidth() const { return m_Width; }
+	virtual int GetHeight() const { return m_Height; }
 
-	void SetWidth(int width)  { m_Width = width; }
-	void SetHeight(int height)  { m_Height = height; }
-	int GetWidth() const { return m_Width; }
-	int GetHeight() const { return m_Height; }
 
-	void MoveForward() { m_eye += glm::normalize(glm::vec3(.0f, .0f, -1.0f)); }
-	void MoveBackward() { m_eye -= glm::normalize(glm::vec3(.0f, .0f, -1.0f)); }
+	virtual void OnInit() = 0;
+	virtual void Present() = 0;
 
-	void MoveRight() { m_eye += glm::normalize(glm::vec3(1.0f, .0f, .0f)); }
-	void MoveLeft() { m_eye -= glm::normalize(glm::vec3(1.0f, .0f, 0.0f)); }
 
-	void MoveUp() { m_eye += glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
-	void MoveDown() { m_eye -= glm::normalize(glm::vec3(.0f, 1.0f, 0.0f)); }
+	virtual void MoveForward() = 0; 
+	virtual void MoveBackward() = 0;
+	virtual void MoveRight() = 0; 
+	virtual void MoveLeft() = 0;
+	virtual void MoveUp() = 0;
+	virtual void MoveDown() = 0;
 
-	void Focus(glm::vec3 move_dir) { m_eye += move_dir; }
-	void Rotate(glm::vec3 rot_dir) {
-
-		glm::mat4 rot_mat = glm::mat4(1.0f);
-		float rot_speed = 1.0f;
-		float rot_angle = 10.0f;
-		rot_mat = glm::rotate(rot_mat, glm::radians(rot_speed * rot_angle), rot_dir);
-		glm::vec4 rot = rot_mat * glm::vec4(m_eye, 1.0f);
-
-		m_eye = glm::vec3(rot);
-	}
-
-	virtual void Reset() = 0;
-	virtual glm::vec3 GetPosition() = 0;
+	virtual void Rotate(glm::vec3 rot_dir) = 0;
+	virtual void Focus(glm::vec3 rot_dir) = 0;
 
 	virtual void OnUpdate(float delta_time) = 0;
 };

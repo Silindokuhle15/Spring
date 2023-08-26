@@ -10,7 +10,7 @@ GLFWwindow* BaseApplication::m_pWindow = nullptr;
 std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 std::unique_ptr<UILayer> BaseApplication::m_pUILayer = nullptr;
 std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
-
+TimeStep BaseApplication::ts;
 
 void BaseApplication::CreateMainWindow()
 {
@@ -34,7 +34,7 @@ void BaseApplication::CreateMainWindow()
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-    m_pWindow = glfwCreateWindow(1920, 1080, "Simple example", NULL, NULL);
+    m_pWindow = glfwCreateWindow(1920, 1080, "Spring Editor", NULL, NULL);
     if (!m_pWindow)
     {
         glfwTerminate();
@@ -67,49 +67,65 @@ void BaseApplication::Run()
 {
     CreateMainWindow();
     
+    /*
     Moon moon;
     moon.OnInit();
+    
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f));
     glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, 0.0));
     moon.SetTransform(scale * trans);
-    
    
     Teaport Uta_teaport;
     Uta_teaport.OnInit();
     scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
     trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.0, 0.0));
     Uta_teaport.SetTransform(scale);
-   
+    */
     // Initial Trasform
     // Rotate about y axis 180 degrees
+    
+    
     Tank tank;
     tank.OnInit();
     tank.SetTransform(glm::rotate(glm::mat4(1.0f), glm::radians(+180.0f), glm::vec3(0.0, 1.0, 0.0)));
     
+    
     Cube cb;
     cb.OnInit();
     cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+0.20f, 0.0, 0.0)));
- 
+
+    
     Square sq;
     sq.OnInit();
     sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-0.20f, 0.0, 0.0)));
 
-    Scene square_scn;
-    square_scn.AddToScene(&sq);
+    //Scene square_scn;
+    //square_scn.AddToScene(&sq);
+    
 
     Scene cube_scn;
-    cube_scn.AddToScene(&cb);
 
+    //cube_scn.AddToScene(&cb);
+    cube_scn.AddToScene(&tank);
+
+    //cube_scn.AddToScene(&sq);
+    /*
     Scene tank_scn;
     tank_scn.AddToScene(&tank);
 
+    /*
+
+    
     Scene teaport_scn;
     teaport_scn.AddToScene(&Uta_teaport);
+
 
     Scene moon_scn;
     moon_scn.AddToScene(&moon);
 
-    Scene scenes[]{square_scn, cube_scn, tank_scn, teaport_scn};
+    */
+    
+    Scene scenes[]{cube_scn};
 
     PerspectiveCamera pCam;
     pCam.m_center = glm::vec3(0.0f);
@@ -127,16 +143,21 @@ void BaseApplication::Run()
     Renderer OpenGLrenderer;
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
     
-    unsigned int active_scene = m_pUILayer->m_ActiveScene;
+    //unsigned int active_scene = m_pUILayer->m_ActiveScene;
     BaseApplication::m_Scene = std::make_shared<Scene>(scenes[0]);
     BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
 
     BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
-    BaseApplication::m_pActiveRenderer->SetUpForRendering();
+    
+    BaseApplication::m_pActiveRenderer->SetUpForRendering(); 
+    BaseApplication::m_pActiveRenderer->EnableTesselation();
     
 
-    BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
+    //BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
     int m_Width, m_Height;
+
+    BaseApplication::m_pUILayer->LoadScene(BaseApplication::m_Scene);
+
 
     while (!glfwWindowShouldClose(BaseApplication::m_pWindow))
     {
@@ -146,29 +167,29 @@ void BaseApplication::Run()
 
         glfwPollEvents();
 
-        int new_scene = BaseApplication::m_pUILayer->m_ActiveScene;
+        //int new_scene = BaseApplication::m_pUILayer->m_ActiveScene;
+        /*
         if (new_scene != active_scene)
         {
             BaseApplication::m_Scene = std::make_shared<Scene>(scenes[new_scene]);
             BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
             BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
-            BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
+            //BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
             m_Scene->Process();
         }
+        */
 
         BaseApplication::m_pUILayer->BeginFrame();
+
         BaseApplication::m_pActiveRenderer->BeginFrame();
 
-        TimeStep ts;
-
         BaseApplication::m_pActiveRenderer->OnRender();
+        BaseApplication::m_pUILayer->Enable();
 
         ts = (float)glfwGetTime() / 1000.0;
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
-        BaseApplication::m_pUILayer->OnUpdate(ts);
- 
 
-        BaseApplication::m_pUILayer->Enable();
+        BaseApplication::m_pUILayer->OnUpdate(ts);
 
         BaseApplication::m_pUILayer->m_NumIndices = BaseApplication::m_pActiveRenderer->m_LastIndexCount;
         BaseApplication::m_pUILayer->m_NumPrimitives = BaseApplication::m_pActiveRenderer->m_Samples;

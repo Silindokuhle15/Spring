@@ -44,6 +44,12 @@ public:
 	std::vector<unsigned int> m_ModelLocations;
 	std::vector<unsigned int> m_NormalMatrixLocations;
 
+	std::vector<glm::vec3> m_positions;
+	std::vector<glm::vec2> m_texcoords;
+	std::vector<glm::vec3> m_normals;
+	std::vector<unsigned int> m_indices;
+	
+
 	int m_ActiveMaterial;
 	unsigned int m_CurrentIndexCount;
 

@@ -9,6 +9,7 @@ void OrthographicCamera::OnInit()
     m_View = glm::lookAt(m_eye, m_center, m_up);
 
     V = m_View;
+    m_Proj = p;
     VP = p * m_View;
 }
 
@@ -20,6 +21,7 @@ void OrthographicCamera::Present()
     m_View = glm::lookAt(m_eye, m_center, m_up);
 
     V = m_View;
+    m_Proj = p;
     VP = p * m_View;
 }
 

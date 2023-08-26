@@ -27,6 +27,7 @@ public:
 
 	virtual glm::vec3 GetPosition() { return m_eye; }
 	virtual glm::mat4 GetV() { return V; }
+	virtual glm::mat4 GetP() { return m_Proj; }
 	virtual glm::mat4 GetVP() { return VP; }
 
 	virtual void SetWidth(int width) { m_Width = width; }

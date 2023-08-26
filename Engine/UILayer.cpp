@@ -1,5 +1,7 @@
 #include "UILayer.h"
 
+int gizmoCount = 1;
+static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
 UILayer::UILayer(GLFWwindow* win, const char* gl_ver)
 {
@@ -15,7 +17,7 @@ UILayer::UILayer(GLFWwindow* win, const char* gl_ver)
     ImGui_ImplOpenGL3_Init(gl_ver);
     // Dark Theme lemme see 
     ImGui::StyleColorsDark();
-    m_ActiveScene = 2;
+    //m_ActiveScene = 2;
 }
 
 
@@ -28,6 +30,7 @@ UILayer::~UILayer()
 }
 void UILayer::Enable()
 {
+
     glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
     glGetProgramiv(m_ActiveMaterial, GL_ACTIVE_UNIFORMS, &m_ActiveUniforms);
 
@@ -64,20 +67,23 @@ void UILayer::Enable()
     ImGui::Text("Number of Indices : %d", m_NumIndices);
     ImGui::Text("Number of Samples : %d", m_Samples);
     ImGui::Separator();
-    ImGui::SliderInt("Scene Number ", &m_ActiveScene, 0, 4);
+    //ImGui::SliderInt("Scene Number ", &, 0, 4);
     ImGui::End();
 
     ImGui::Begin("Animation panel");
-    ImGui::Button("Play", ImVec2(30.f, 30.0f));
+    ImGui::Button("Play", ImVec2(50.f, 30.0f));
     ImGui::End();
 
     ImGui::Begin("Utilities");
     ImGui::Separator();
+    ImGui::Checkbox("Enable ImGuizmo", &m_EnableImGuizmo);
+    ImGuizmo::Enable(m_EnableImGuizmo);
     ImGui::Text("Viewing and Transformation");
     ImGui::Separator();
 
     ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
-    ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
+    //ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
+    ImGui::SliderFloat3("Camera Position", (float*)glm::value_ptr(m_EditorCamera->GetPosition()), -50.0, 50.0);
     ImGui::Separator();
 
     ImGui::Text("Lights and Shadow");
@@ -134,28 +140,17 @@ void UILayer::Enable()
     //glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_BUFFER_SIZE, &size);
     ImGui::Text("Active Texture Dims : [%d , %d]", width, height);
     //ImGui::Text("Active Texture Size : [ %d ]", size);
+
+
+    ImGui::Checkbox("use Gizmo Window", &m_UseGizmoWindow);
+
     ImGui::End();
 }
 
 void UILayer::OnInit()
 {
     // TO do Add some code here bro
-
-    /*
-    PerspectiveCamera pCam;
-    pCam.m_center = glm::vec3(0.0f);
-    pCam.m_eye = glm::vec3(0.0f, 0.0, 5.0);
-    pCam.m_up = glm::vec3(0.0, 1.0, 0.0);
-
-    m_EditorCamera = std::make_shared<PerspectiveCamera>(pCam);
-
-    m_EditorCamera->SetHeight(1080);
-    m_EditorCamera->SetWidth(1920);
-    m_EditorCamera->OnInit();
-    */
-
-
-    m_ActiveScene = 1;
+    //m_ActiveScene = 1;
 
     glGenQueries(1, &m_Query);
 
@@ -168,8 +163,14 @@ void UILayer::BeginFrame()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+
+    ImGuizmo::SetOrthographic(false);
+    ImGuizmo::BeginFrame(); // ImGuizmo Begin Frame
+
     // Begin the Query the Samples Renders
-    glBeginQuery(GL_SAMPLES_PASSED, m_Query);
+    //glBeginQuery(GL_SAMPLES_PASSED, m_Query);
+
+    EditTransform((float*)glm::value_ptr(m_EditorCamera->GetV()), (float*)glm::value_ptr(m_EditorCamera->GetP()), (float*)glm::value_ptr(*m_ActiveTransform), true);
 
 }
 
@@ -182,25 +183,146 @@ void UILayer::EndFrame()
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    int count = 1000;
-    while (!m_ResultAvailable && count--)
-    {
-        glGetQueryObjectiv(m_Query, GL_QUERY_RESULT_AVAILABLE, &m_ResultAvailable);
-    }
+    int count = 10;
+    //while (!m_ResultAvailable)
+    //{
+        //glGetQueryObjectiv(m_Query, GL_QUERY_RESULT_AVAILABLE, &m_ResultAvailable);
+    //}
+    /*
     if (m_ResultAvailable)
     {
         glGetQueryObjectiv(m_Query, GL_QUERY_RESULT, &m_Samples);
     }
+    */
 }
 
 void UILayer::OnUpdate(float ts)
 {
     m_Delta = ts;
-
-    glm::vec3 cam_pos = m_EditorCamera->GetPosition();
-    m_CameraPosition[0] = cam_pos.x;
-    m_CameraPosition[1] = cam_pos.y;
-    m_CameraPosition[2] = cam_pos.z;
+    //Update the Editor camera delta right here
+    m_EditorCamera->OnUpdate(m_Delta);
 
     //glEndQuery(GL_SAMPLES_PASSED);
  }
+
+void UILayer::EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition)
+{
+    static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::LOCAL);
+    static bool useSnap = false;
+    static float snap[3] = { 1.f, 1.f, 1.f };
+    static float bounds[] = { -0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f };
+    static float boundsSnap[] = { 0.1f, 0.1f, 0.1f };
+    static bool boundSizing = false;
+    static bool boundSizingSnap = false;
+
+    if (editTransformDecomposition)
+    {
+        if (ImGui::IsKeyPressed(ImGuiKey_T))
+            mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_E))
+            mCurrentGizmoOperation = ImGuizmo::ROTATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) // r Key
+            mCurrentGizmoOperation = ImGuizmo::SCALE;
+        if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
+            mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
+            mCurrentGizmoOperation = ImGuizmo::ROTATE;
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
+            mCurrentGizmoOperation = ImGuizmo::SCALE;
+        if (ImGui::RadioButton("Universal", mCurrentGizmoOperation == ImGuizmo::UNIVERSAL))
+            mCurrentGizmoOperation = ImGuizmo::UNIVERSAL;
+        float matrixTranslation[3], matrixRotation[3], matrixScale[3];
+        ImGuizmo::DecomposeMatrixToComponents(matrix, matrixTranslation, matrixRotation, matrixScale);
+        ImGui::InputFloat3("Tr", matrixTranslation);
+        ImGui::InputFloat3("Rt", matrixRotation);
+        ImGui::InputFloat3("Sc", matrixScale);
+        ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, matrix);
+
+        if (mCurrentGizmoOperation != ImGuizmo::SCALE)
+        {
+            if (ImGui::RadioButton("Local", mCurrentGizmoMode == ImGuizmo::LOCAL))
+                mCurrentGizmoMode = ImGuizmo::LOCAL;
+            ImGui::SameLine();
+            if (ImGui::RadioButton("World", mCurrentGizmoMode == ImGuizmo::WORLD))
+                mCurrentGizmoMode = ImGuizmo::WORLD;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_S))
+            useSnap = !useSnap;
+        ImGui::Checkbox("##UseSnap", &useSnap);
+        ImGui::SameLine();
+
+        switch (mCurrentGizmoOperation)
+        {
+        case ImGuizmo::TRANSLATE:
+            ImGui::InputFloat3("Snap", &snap[0]);
+            break;
+        case ImGuizmo::ROTATE:
+            ImGui::InputFloat("Angle Snap", &snap[0]);
+            break;
+        case ImGuizmo::SCALE:
+            ImGui::InputFloat("Scale Snap", &snap[0]);
+            break;
+        }
+        ImGui::Checkbox("Bound Sizing", &boundSizing);
+        if (boundSizing)
+        {
+            ImGui::PushID(3);
+            ImGui::Checkbox("##BoundSizing", &boundSizingSnap);
+            ImGui::SameLine();
+            ImGui::InputFloat3("Snap", boundsSnap);
+            ImGui::PopID();
+        }
+    }
+
+
+    ImGuiIO& io = ImGui::GetIO();
+    float viewManipulateRight = io.DisplaySize.x;
+    float viewManipulateTop = 0;
+    static ImGuiWindowFlags gizmoWindowFlags = 0;
+    if (m_UseGizmoWindow)
+    {
+        ImGui::SetNextWindowSize(ImVec2(800, 400), ImGuiCond_Appearing);
+        ImGui::SetNextWindowPos(ImVec2(400, 20), ImGuiCond_Appearing);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, (ImVec4)ImColor(0.35f, 0.3f, 0.3f));
+        ImGui::Begin("Gizmo", 0, gizmoWindowFlags);
+        ImGuizmo::SetDrawlist();
+        float windowWidth = (float)ImGui::GetWindowWidth();
+        float windowHeight = (float)ImGui::GetWindowHeight();
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+        viewManipulateRight = ImGui::GetWindowPos().x + windowWidth;
+        viewManipulateTop = ImGui::GetWindowPos().y;
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        gizmoWindowFlags = ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(window->InnerRect.Min, window->InnerRect.Max) ? ImGuiWindowFlags_NoMove : 0;
+    }
+    else
+    {
+        ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+    }
+
+    //ImGuizmo::DrawGrid(cameraView, cameraProjection, identityMatrix, 100.f);
+    //ImGuizmo::DrawCubes(cameraView, cameraProjection, &objectMatrix[0][0], gizmoCount);
+    //ImGuizmo::DrawCubes(cameraView, cameraProjection, (float*)glm::value_ptr(*m_ActiveTransform), gizmoCount);
+    ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, matrix, NULL, useSnap ? &snap[0] : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL);
+
+    glm::vec3 displacement = m_EditorCamera->GetPosition() - glm::vec3(0);
+    float distance = glm::dot(displacement, displacement);
+    distance = glm::sqrt(distance);
+
+    ImGuizmo::ViewManipulate(cameraView, distance, ImVec2(viewManipulateRight - 128, viewManipulateTop), ImVec2(128, 128), 0x10101010);
+
+    if (m_UseGizmoWindow)
+    {
+        ImGui::End();
+        ImGui::PopStyleColor(1);
+    }
+}
+
+
+void UILayer::LoadScene(std::shared_ptr<Scene> scene)
+{
+    m_ActiveScene = std::shared_ptr<Scene>(scene);
+    m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_Objects[0]->m_Transform);
+    m_EditorCamera = std::shared_ptr<PerspectiveCamera>(scene->m_ActiveCamera);
+}

@@ -5,6 +5,7 @@
 #include "BaseApplication.h"
 #include "PerspectiveCamera.h"
 #include "OrthographicCamera.h"
+#include "Scene.h"
 
 class UILayer :
     public Layer
@@ -15,12 +16,15 @@ public:
     bool m_EnableLighting = false;
     bool m_EnableTexture = 0;
 
+    bool m_UseGizmoWindow = false;
+    bool m_EnableImGuizmo = false;
+
     bool m_RenderMode;
     unsigned int m_NumPrimitives;
     unsigned int m_NumIndices;
 
 
-    int m_ActiveScene;
+    std::shared_ptr<Scene> m_ActiveScene;
     int m_ActiveMaterial;
     int m_ActiveUniforms;
 
@@ -39,8 +43,10 @@ public:
     unsigned int m_Query;
     int m_Samples;
     int m_ResultAvailable;
+
 public:
     
+
     UILayer() : Layer() {}
     UILayer(GLFWwindow* win, const char* gl_ver);
     ~UILayer();
@@ -55,6 +61,11 @@ public:
 
     TimeStep m_Delta;
     std::shared_ptr<PerspectiveCamera> m_EditorCamera;
+    std::shared_ptr<glm::mat4> m_ActiveTransform;
+
+    virtual void EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition);
+
+    void LoadScene(std::shared_ptr<Scene> scene);
 
 };
 

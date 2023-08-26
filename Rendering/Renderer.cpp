@@ -2,7 +2,7 @@
 
 void Renderer::SetUpForRendering()
 {
-    constexpr unsigned int MAX_NUM_VERTICES = 0xffffff;
+    constexpr unsigned int MAX_NUM_VERTICES = 100000;
     unsigned int m_Width = 1920;
     unsigned int m_Height = 1080;
 
@@ -25,8 +25,8 @@ void Renderer::SetUpForRendering()
     //glCullFace(GL_BACK);
     //glFrontFace(GL_CW);
 
-    m_VAO.OnInit();
-    m_VAO.Bind();
+    //m_VAO.OnInit();
+    //m_VAO.Bind();
 
     glCreateBuffers(1, &m_VertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
@@ -58,7 +58,6 @@ void Renderer::SetUpForRendering()
     m_DeltaLocation = glGetUniformLocation(m_Material.m_MaterialID, "delta");
 
     m_ActiveScene->Process();
-
 }
 
 void Renderer::OnRender()
@@ -66,13 +65,10 @@ void Renderer::OnRender()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_CurrentIndexCount = 0;
     m_LastIndexCount = 0;
-    m_Material.Bind();
-    m_VAO.Bind();
+    //m_Material.Bind();
+    //m_VAO.Bind();
 
-    std::vector<glm::vec3> pos;
-    std::vector<glm::vec2> tex;
-    std::vector<glm::vec3> nom;
-    std::vector<unsigned int> ind;
+    
 
     for(int i = 0; i < m_ActiveScene->m_Objects.size(); i++)
     {
@@ -86,12 +82,18 @@ void Renderer::OnRender()
         unsigned int tex_offset = sizeof(glm::vec3) * m_CurrentIndexCount + pos_offset;
         unsigned int nom_offset = sizeof(glm::vec3) * m_CurrentIndexCount + tex_offset;
         unsigned int ind_offset = sizeof(unsigned int) * m_LastIndexCount * i;
-      
-        pos = std::move(m_ActiveScene->m_Objects[i]->m_Positions);
+
+        pos = (m_ActiveScene->m_positions);
+        tex = (m_ActiveScene->m_texcoords);
+        nom = (m_ActiveScene->m_normals);
+        ind = (m_ActiveScene->m_indices);
+
+        /*
+        pos = (m_ActiveScene->m_Objects[i]->m_Positions);
         tex = std::move(m_ActiveScene->m_Objects[i]->m_TexCoords);
         nom = std::move(m_ActiveScene->m_Objects[i]->m_Normals);
         ind = std::move(m_ActiveScene->m_Objects[i]->m_VertexIndices);
-
+        */
         if (m_IndexBufferSize < sizeof(ind))
         {
             m_IndexBufferSize += sizeof(ind);
@@ -100,11 +102,14 @@ void Renderer::OnRender()
             glNamedBufferSubData(m_VertexBuffer, nom_offset, sizeof(glm::vec3) * m_CurrentIndexCount, nom.data());
             glNamedBufferSubData(m_IndexBuffer, ind_offset, sizeof(unsigned int) * m_CurrentIndexCount, ind.data());
 
-        }
-
-        GLenum render_mode = m_PrimitiveModeWireFrame ? GL_LINE_STRIP : GL_TRIANGLE_STRIP;
-        glDrawElements(render_mode, m_CurrentIndexCount, GL_UNSIGNED_INT, nullptr);
+        }        
     }
+
+
+    GLenum render_mode = m_PrimitiveModeWireFrame ? GL_LINE_STRIP : GL_TRIANGLE_STRIP;
+    glDrawElements(render_mode, m_CurrentIndexCount, GL_UNSIGNED_INT, nullptr);
+
+
     glEndQuery(GL_SAMPLES_PASSED);
 }
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
@@ -122,10 +127,12 @@ void Renderer::OnUpdate()
 void Renderer::OnUpdate(float ts)
 {
     glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetVP()));
-    //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(BaseApplication::cam_ptr->GetV()));
+    //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetV()));
     glUniform1f(m_DeltaLocation, ts);
     m_ActiveScene->OnUpdate(ts);
     m_Material.OnUpdate();
+
+
 }
 
 void Renderer::EnableTesselation()

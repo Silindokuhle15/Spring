@@ -55,6 +55,11 @@ public:
 
     void BeginFrame();
     void EndFrame();
+
+    std::vector<glm::vec3> pos;
+    std::vector<glm::vec2> tex;
+    std::vector<glm::vec3> nom;
+    std::vector<unsigned int> ind;
 };
 
 

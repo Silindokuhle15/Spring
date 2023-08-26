@@ -7,14 +7,30 @@ void Scene::AddToScene(Application* draw_data)
 
 	// some more working
 	m_Objects.push_back(draw_data);
+
+	for (auto& i : draw_data->m_Positions)
+	{
+		m_positions.push_back(glm::vec3(i));
+	}
+
+	for (auto& i : draw_data->m_TexCoords)
+	{
+		m_texcoords.push_back(glm::vec2(i));
+	}
+
+	for (auto& i : draw_data->m_Normals)
+	{
+		m_normals.push_back(glm::vec3(i));
+	}
+
+	for (auto& i : draw_data->m_VertexIndices)
+	{
+		m_indices.push_back((unsigned int )(i));
+	}
 }
 
 void Scene::AttachCamera(std::shared_ptr<PerspectiveCamera> cam)
 {
-
-	//m_Cameras.push_back(*cam);
-	
-	//m_ActiveCamera = std::shared_ptr<PerspectiveCamera>(cam);
 	m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
 
 	m_ActiveCamera->SetWidth(1920);

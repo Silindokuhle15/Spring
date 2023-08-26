@@ -90,7 +90,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\ImGuizmo;C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -109,7 +109,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\ImGuizmo;C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -128,7 +128,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\ImGuizmo;C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -147,7 +147,7 @@
       <PreprocessorDefinitions>GLEW_STATIC; _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\Learning OpenGL\Dependencies\ImGuizmo;C:\dev\Learning OpenGL\Dependencies\stbi_image;C:\dev\Learning OpenGL\Viewing;C:\dev\Learning OpenGL\Utility;C:\dev\Learning OpenGL\Textures;C:\dev\Learning OpenGL\Shaders;C:\dev\Learning OpenGL\Rendering;C:\dev\Learning OpenGL\Objects;C:\dev\Learning OpenGL\Application;C:\dev\Learning OpenGL\Input;C:\dev\Learning OpenGL\Engine;C:\dev\Learning OpenGL\Materials;C:\dev\Learning OpenGL\Dependencies\EnTT;C:\dev\Learning OpenGL\Dependencies\imgui;C:\dev\Learning OpenGL\Dependencies\GLFW\include;C:\dev\Learning OpenGL\Dependencies\GLM\glm;C:\dev\Learning OpenGL\Dependencies\GLEW\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClCompile Include="Application\Application.cpp" />
     <ClCompile Include="Application\Teaport.cpp" />
+    <ClCompile Include="Dependencies\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="Dependencies\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Dependencies\imgui\imgui.cpp" />
@@ -213,6 +214,7 @@
   <ItemGroup>
     <ClInclude Include="Application\Application.h" />
     <ClInclude Include="Application\Teaport.h" />
+    <ClInclude Include="Dependencies\ImGuizmo\ImGuizmo.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="Dependencies\imgui\backends\imgui_impl_opengl3_loader.h" />

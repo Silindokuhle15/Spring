@@ -9,9 +9,9 @@ void Cube::OnInit()
     m_TexCoords = ob.m_TexCoords;
     m_Normals = ob.m_Normals;
 
-    ob.m_VertexIndices.erase(ob.m_VertexIndices.begin());
-    ob.m_TextureIndices.erase(ob.m_TextureIndices.begin());
-    ob.m_NormalIndices.erase(ob.m_NormalIndices.begin());
+    //ob.m_VertexIndices.erase(ob.m_VertexIndices.begin());
+    //ob.m_TextureIndices.erase(ob.m_TextureIndices.begin());
+    //ob.m_NormalIndices.erase(ob.m_NormalIndices.begin());
     m_VertexIndices = ob.m_VertexIndices;
     m_TextureIndices = ob.m_TextureIndices;
     m_NormalIndices = ob.m_NormalIndices;

@@ -90,22 +90,22 @@ void BaseApplication::Run()
     tank.SetTransform(glm::rotate(glm::mat4(1.0f), glm::radians(+180.0f), glm::vec3(0.0, 1.0, 0.0)));
     
     */
-    Cube cb;
-    cb.OnInit();
-    cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+0.20f, 0.0, 0.0)));
+    //Cube cb;
+    //cb.OnInit();
+    //cb.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+0.20f, 0.0, 0.0)));
 
-    /*
+    
     Square sq;
     sq.OnInit();
     sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-0.20f, 0.0, 0.0)));
-    */
-    //Scene square_scn;
-    //square_scn.AddToScene(&sq);
+    
+    Scene square_scn;
+    square_scn.AddToScene(&sq);
     
 
-    Scene cube_scn;
+    //Scene cube_scn;
 
-    cube_scn.AddToScene(&cb);
+    //cube_scn.AddToScene(&cb);
     //cube_scn.AddToScene(&tank);
 
     //cube_scn.AddToScene(&sq);
@@ -125,7 +125,7 @@ void BaseApplication::Run()
 
     */
     
-    Scene scenes[]{cube_scn};
+    Scene scenes[]{square_scn};
 
     PerspectiveCamera pCam;
     pCam.m_center = glm::vec3(0.0f);

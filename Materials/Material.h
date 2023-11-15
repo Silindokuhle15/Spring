@@ -7,9 +7,9 @@
 class Material
 {
 public:
-	ShaderInfo m_Info[2] = { {"Shaders/RndVertexShader.glsl", GL_VERTEX_SHADER}, { "Shaders/RndFragmentShader.glsl", GL_FRAGMENT_SHADER } };
+	ShaderInfo m_Info[2] = { {"C:/dev/Silindokuhle15/Spring/Shaders/RndVertexShader.glsl", GL_VERTEX_SHADER}, { "C:/dev/Silindokuhle15/Spring/Shaders/RndFragmentShader.glsl", GL_FRAGMENT_SHADER } };
 	//std::string mtl_path = "Objects/Crate/Crate1.mtl";
-	std::string mtl_path = "Objects/Tank/mytank.mtl";
+	std::string mtl_path = "C:/dev/Silindokuhle15/Spring/Objects/Tank/mytank.mtl";
 
 
 	glm::vec3 m_Ka;

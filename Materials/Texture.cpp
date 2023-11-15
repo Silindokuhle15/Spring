@@ -6,8 +6,8 @@
 void Texture::OnInit()
 {
     //int res = LoadTextureFromFile("Textures/parallax_mountain_pack/parallax_mountain_pack/layers/parallax-mountain-bg.png", &m_Tex1);
-    int res = LoadTextureFromFile("Textures/crate_1.png", &m_Tex1);
-    int res_1 = LoadTextureFromFile("Textures/UI/play.png", &m_PlayButtonTex);
+    int res = LoadTextureFromFile("C:/dev/Silindokuhle15/Spring/Textures/crate_1.png", &m_Tex1);
+    int res_1 = LoadTextureFromFile("C:/dev/Silindokuhle15/Spring/Textures/UI/play.png", &m_PlayButtonTex);
 
     glGenSamplers(1, &m_Sampler);
     //glBindSampler(4, GL_SAMPLER_2D);

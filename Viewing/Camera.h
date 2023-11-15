@@ -1,9 +1,9 @@
 #pragma once
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include "glew.h"
-#include "glm.hpp"
-#include "ext.hpp"
+#include "GL/glew.h"
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 
 template<class T>
 class Camera

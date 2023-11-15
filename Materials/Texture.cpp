@@ -2,6 +2,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
 void Texture::OnInit()
 {
     //int res = LoadTextureFromFile("Textures/parallax_mountain_pack/parallax_mountain_pack/layers/parallax-mountain-bg.png", &m_Tex1);

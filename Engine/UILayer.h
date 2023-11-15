@@ -1,6 +1,6 @@
 #pragma once
-#include "glm.hpp"
-#include "ext.hpp"
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 #include "Layer.h"
 #include "BaseApplication.h"
 #include "PerspectiveCamera.h"

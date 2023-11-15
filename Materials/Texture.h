@@ -1,5 +1,6 @@
 #pragma once
-#include "glew.h"
+#include "GL/glew.h"
+
 #include <fstream>
 #include <string>
 #include <iostream>

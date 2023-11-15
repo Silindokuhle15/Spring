@@ -12,6 +12,6 @@ public:
 	Serializer() = default;
 
 	void Serialize(Scene* scene);
-	Scene* Deserilize(const char* file_path);
+	void Deserilize(const char* file_path);
 };
 

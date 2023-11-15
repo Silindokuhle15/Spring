@@ -4,8 +4,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
-#include "glm.hpp"
-#include "ext.hpp"
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 
 // Wanna create this component to read .obj/ 3D files dyanamically
 struct PerVertex

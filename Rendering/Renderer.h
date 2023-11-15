@@ -1,6 +1,6 @@
 #pragma once
 //#include "Engine/BaseApplication.h"
-#include "glew.h"
+#include "GL/glew.h"
 #include "Scene.h"
 #include "BaseApplication.h"
 #include "FrameBuffer.h"

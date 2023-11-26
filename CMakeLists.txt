@@ -10,7 +10,8 @@ if (POLICY CMP0141)
 endif()
 
 Set(EXEC_NAME
-	"Spring")
+	"Spring"
+)
 project (${EXEC_NAME})
 
 # GLFW BUILD
@@ -28,17 +29,16 @@ include_directories(
 	"Dependencies/imgui/backends/"
 	"Dependencies/ImGuizmo/"
 	"Dependencies/GLM/"
-	"Application/"
-	"Engine/"
-	"Input/"
-	"LightAndShadow/"
-	"Materials/"
-	"Objects/"
-	"Rendering/"
-	"Shaders/"
-	"Textures/"
-	"Utility/"
-	"Viewing/"
+	"Dependencies/Lua/include/"
+	"Core/Application/"
+	"Core/Engine/"
+	"Core/Input/"
+	"Core/Materials/"
+	"Core/Rendering/"
+	"Core/Scripting/"
+	"Core/Viewing/"
+	"Editor/"
+	"Editor/Utility/"
 )
 
 Set(SOURCE_FILES 
@@ -65,74 +65,91 @@ Set(SOURCE_FILES
 	"Dependencies/ImGuizmo/ImGuizmo.cpp"
 	
 	# CORE APPLICATION INCLUDES
-	"Application/Application.h"
-	"Application/Application.cpp"
+	"Core/Application/Application.h"
+	"Core/Application/Application.cpp"
 	# ENGINE INCLUDES
-	"Engine/BaseApplication.h"
-	"Engine/BaseApplication.cpp"
-	"Engine/Layer.h"
-	"Engine/Layer.cpp"
-	"Engine/TimeStep.h"
-	"Engine/TimeStep.cpp"
-	"Engine/UILayer.h"
-	"Engine/UILayer.cpp"
+	"Core/Engine/BaseApplication.h"
+	"Core/Engine/BaseApplication.cpp"
+	"Editor/Layer.h"
+	"Editor/Layer.cpp"
+	"Core/Engine/TimeStep.h"
+	"Core/Engine/TimeStep.cpp"
+
 	# INPUT
-	"Input/InputDevice.h"
-	"Input/InputDevice.cpp"
-	"Input/Keyboard.h"
-	"Input/Keyboard.cpp"
-	"Input/Mouse.h"
-	"Input/Mouse.cpp"
+	"Core/Input/InputDevice.h"
+	"Core/Input/InputDevice.cpp"
+	"Core/Input/Keyboard.h"
+	"Core/Input/Keyboard.cpp"
+	"Core/Input/Mouse.h"
+	"Core/Input/Mouse.cpp"
 	# LIGHTS AND SHADOW
-	"LightAndShadow/PointLight.h"
-	"LightAndShadow/PointLight.cpp"
+	"Core/Rendering/LightAndShadow/PointLight.h"
+	"Core/Rendering/LightAndShadow/PointLight.cpp"
 
 	# Materials
-	"Materials/Material.h"
-	"Materials/Material.cpp"
-	"Materials/Shader.h"
-	"Materials/Shader.cpp"
-	"Materials/Texture.h"
-	"Materials/Texture.cpp"
+	"Core/Materials/Material.h"
+	"Core/Materials/Material.cpp"
+	"Core/Materials/Shader.h"
+	"Core/Materials/Shader.cpp"
+	"Core/Materials/Texture.h"
+	"Core/Materials/Texture.cpp"
 
 	# RENDERING
-	"Rendering/FrameBuffer.h"
-	"Rendering/FrameBuffer.cpp"
-	"Rendering/Renderer.h"
-	"Rendering/Renderer.cpp"
-	"Rendering/Scene.h"
-	"Rendering/Scene.cpp"
-	"Rendering/VertexArray.h"
-	"Rendering/VertexArray.cpp"
+	"Core/Rendering/FrameBuffer.h"
+	"Core/Rendering/FrameBuffer.cpp"
+	"Core/Rendering/Renderer.h"
+	"Core/Rendering/Renderer.cpp"
+	"Core/Rendering/Scene.h"
+	"Core/Rendering/Scene.cpp"
+	"Core/Rendering/VertexArray.h"
+	"Core/Rendering/VertexArray.cpp"
+
+	# SCRIPTING
+	"Core/Scripting/ScriptingEngine.h"
+	"Core/Scripting/ScriptingEngine.cpp"
 
 	# UTILITIES
-	"Utility/ObjectLoader.h"
-	"Utility/ObjectLoader.cpp"
-	"Utility/Serializer.h"
-	"Utility/Serializer.cpp"
+	"Editor/Utility/ObjectLoader.h"
+	"Editor/Utility/ObjectLoader.cpp"
+	"Editor/Utility/Serializer.h"
+	"Editor/Utility/Serializer.cpp"
 
 	# VIEWING
-	"Viewing/Camera.h"
-	"Viewing/Camera.cpp"
-	"Viewing/OrthographicCamera.h"
-	"Viewing/OrthographicCamera.cpp"
-	"Viewing/PerspectiveCamera.h"
-	"Viewing/PerspectiveCamera.cpp"
+	"Core/Viewing/Camera.h"
+	"Core/Viewing/Camera.cpp"
+	"Core/Viewing/OrthographicCamera.h"
+	"Core/Viewing/OrthographicCamera.cpp"
+	"Core/Viewing/PerspectiveCamera.h"
+	"Core/Viewing/PerspectiveCamera.cpp"
 
 	# APPLICATIONS
-	"Application/Cube.h"
-	"Application/Cube.cpp"
-	"Application/Grid.h"
-	"Application/Grid.cpp"
-	"Application/Moon.h"
-	"Application/Moon.cpp"
-	"Application/Square.h"
-	"Application/Square.cpp"
-	"Application/Tank.h"
-	"Application/Tank.cpp"
-	"Application/Teaport.h"
-	"Application/Teaport.cpp"
+	"Core/Application/Cube.h"
+	"Core/Application/Cube.cpp"
+	"Core/Application/Grid.h"
+	"Core/Application/Grid.cpp"
+	"Core/Application/Moon.h"
+	"Core/Application/Moon.cpp"
+	"Core/Application/Square.h"
+	"Core/Application/Square.cpp"
+	"Core/Application/Tank.h"
+	"Core/Application/Tank.cpp"
+	"Core/Application/Teaport.h"
+	"Core/Application/Teaport.cpp"
 
+	# EDITOR 
+
+	"Editor/UILayer.h"
+	"Editor/UILayer.cpp"
+
+)
+
+
+## BUILD LUA
+set(LIB_NAME
+	"lua54"
+)
+set(LUA_LIB_DIR
+	"${PROJECT_SOURCE_DIR}/Dependencies/Lua/${LIB_NAME}.lib"
 )
 	
 # Add source to this project's executable
@@ -141,6 +158,7 @@ add_executable (${EXEC_NAME} ${SOURCE_FILES} )
 find_package(OpenGL REQUIRED)
 target_link_libraries(${EXEC_NAME} 
 	${OPENGL_gl_LIBRARY}
+	${LUA_LIB_DIR}
 	glfw
 )
 

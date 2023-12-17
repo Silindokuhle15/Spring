@@ -4,7 +4,7 @@
 #include "Square.h"
 #include "Teaport.h"
 #include "Tank.h"
-#include "Moon.h"
+#include "Mesh.h"
 
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
 scripting::ScriptingEngine BaseApplication::m_LuaEngine = scripting::ScriptingEngine();
@@ -65,30 +65,28 @@ void BaseApplication::CreateMainWindow()
 
 
     // START THE LUA ENGINE AFTER THE WINDOW HAS BEEN CREATED
-    
-
 }
 
 void BaseApplication::Run()
 {
+    float rotation_angle = 10.0f;
+    float scale_value = 0.1f;
     CreateMainWindow();
-       
-    Moon moon;
-    moon.OnInit();
-    moon.SetTransform(glm::mat4(1.0f));
+    Square sq1;
+    sq1.OnInit();
+    sq1.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0, 0.0)));
 
-    Square sq;
-    sq.OnInit();
-    sq.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(-0.20f, 0.0, 0.0)));
-    
+    Grid grid(10);
+    grid.OnInit();
+    Mesh new_mesh = Mesh::Batch(grid.m_Cells);
+
     Scene square_scn;
-    square_scn.AddToScene(&moon);
+    square_scn.OnInit();
+    square_scn.LoadMeshData(new_mesh);
     
-    Scene scenes[]{square_scn};
-
     PerspectiveCamera pCam;
-    pCam.m_center = glm::vec3(0.0f);
-    pCam.m_eye = glm::vec3(0.0f, 0.0, 5.0);
+    pCam.m_center = glm::vec3(0,0,0.0f);
+    pCam.m_eye = glm::vec3(0.0f, 0.0, 2.50);
     pCam.m_up = glm::vec3(0.0, 1.0, 0.0);
     
     std::shared_ptr<PerspectiveCamera> cam = std::make_shared<PerspectiveCamera>(pCam);
@@ -103,16 +101,14 @@ void BaseApplication::Run()
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
     
     //unsigned int active_scene = m_pUILayer->m_ActiveScene;
-    BaseApplication::m_Scene = std::make_shared<Scene>(scenes[0]);
+    BaseApplication::m_Scene = std::make_shared<Scene>(square_scn);
     BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
 
     BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
     
     BaseApplication::m_pActiveRenderer->SetUpForRendering(); 
-    BaseApplication::m_pActiveRenderer->EnableTesselation();
+    //BaseApplication::m_pActiveRenderer->EnableTesselation();
     
-
-    //BaseApplication::m_pUILayer->m_EditorCamera = BaseApplication::m_pActiveRenderer->m_ActiveScene->m_ActiveCamera;
     int m_Width, m_Height;
 
     BaseApplication::m_pUILayer->LoadScene(BaseApplication::m_Scene);
@@ -128,7 +124,7 @@ void BaseApplication::Run()
         glfwPollEvents();
 
 
-        BaseApplication::m_LuaEngine.Run();
+        //BaseApplication::m_LuaEngine.Run();
 
         BaseApplication::m_pUILayer->BeginFrame();
 
@@ -141,10 +137,6 @@ void BaseApplication::Run()
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
 
         BaseApplication::m_pUILayer->OnUpdate(ts);
-
-        //BaseApplication::m_pUILayer->m_NumIndices = BaseApplication::m_pActiveRenderer->m_LastIndexCount;
-        //BaseApplication::m_pUILayer->m_NumPrimitives = BaseApplication::m_pActiveRenderer->m_Samples;
-        //BaseApplication::m_pActiveRenderer->m_PrimitiveModeWireFrame = BaseApplication::m_pUILayer->m_RenderMode;
 
         BaseApplication::m_pActiveRenderer->EndFrame();
 

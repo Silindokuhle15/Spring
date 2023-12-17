@@ -79,7 +79,12 @@ void UILayer::OnUpdate(float ts)
 void UILayer::LoadScene(std::shared_ptr<Scene> scene)
 {
     m_ActiveScene = std::shared_ptr<Scene>(scene);
-    m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_Objects[0]->m_Transform);
+
+    SelectedMesh = 0;
+
+   // m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_Objects[0]->m_Transform);
+    m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_MeshData[SelectedMesh].m_Transform);
+
     m_EditorCamera = std::shared_ptr<PerspectiveCamera>(scene->m_ActiveCamera);
     m_ComponentPanel.m_EditorCamera = m_EditorCamera;
     m_ComponentPanel.m_ActiveTransform = m_ActiveTransform;

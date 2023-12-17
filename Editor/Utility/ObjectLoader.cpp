@@ -2,6 +2,7 @@
 
 int ObjectLoader::LoadObjectFromFile(const char* file_path)
 {
+    unsigned int id = 1;
     // Read the file
     std::string whole_file;
     std::ifstream is(file_path, std::ios::binary | std::ios::in);
@@ -33,6 +34,8 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
             is >> std::skipws;
             is >> x >> y >> z;
             m_Positions.push_back(glm::vec3(x, y, z));
+            m_VertexIDs.push_back(id++);
+            
         }
         if (description == descriptors[1])
         {

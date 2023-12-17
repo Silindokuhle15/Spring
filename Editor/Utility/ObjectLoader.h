@@ -23,6 +23,7 @@ public:
 	std::vector<glm::vec3> m_Normals;
 	std::vector<glm::vec2> m_TexCoords;
 	std::vector<unsigned int> m_VertexIndices;
+	std::vector<unsigned int> m_VertexIDs;
 	std::vector<unsigned int> m_TextureIndices;
 	std::vector<unsigned int> m_NormalIndices;
 

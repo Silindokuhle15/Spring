@@ -37,19 +37,19 @@ void KeyBoard::key_callback(GLFWwindow* window, int key, int scancode, int actio
             break;
 
         case GLFW_KEY_UP:
-            BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectUp();
+           // BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectUp();
             break;
 
         case GLFW_KEY_DOWN:
-            BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectDown();
+           // BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectDown();
             break;
 
         case GLFW_KEY_LEFT:
-            BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectLeft();
+           // BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectLeft();
             break;
 
         case GLFW_KEY_RIGHT:
-            BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectRight();
+           // BaseApplication::m_pActiveRenderer->m_ActiveScene->MoveObjectRight();
             break;          
         }
     }

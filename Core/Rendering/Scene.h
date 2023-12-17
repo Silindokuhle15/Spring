@@ -8,59 +8,60 @@
 #include "Material.h"
 #include "TimeStep.h"
 //#include "entt.hpp"
+#include "Utility/ObjectLoader.h"
+#include "ScriptingEngine.h"
+
+#include "Mesh.h"
 
 class Scene
 {
 public:
 
-	Scene() = default;
-	~Scene()
-	{
-		m_Materials.clear();
-		m_Cameras.clear();
-		m_Objects.clear();
-
-		m_IndexData.clear();
-		m_ModelLocations.clear();
-		m_NormalMatrixLocations.clear();
-	}
-	std::shared_ptr<PerspectiveCamera> m_ActiveCamera = nullptr;
-
-	void AddToScene(Application* draw_data);
-
-	void AttachCamera(std::shared_ptr<PerspectiveCamera> cam);
-
-	void OnUpdate(float ts);
-	void Process();
-
-	// Re Write and Re structuring this whole class
-
 	std::vector<Material> m_Materials;
 	std::vector<PerspectiveCamera> m_Cameras;
-	std::vector<Application *> m_Objects;
 
 	std::vector<unsigned int> m_IndexData;
 	std::vector<unsigned int> m_ModelLocations;
 	std::vector<unsigned int> m_NormalMatrixLocations;
 
-	std::vector<glm::vec3> m_positions;
-	std::vector<glm::vec2> m_texcoords;
-	std::vector<glm::vec3> m_normals;
-	std::vector<unsigned int> m_indices;
-	
+	std::vector<unsigned int> m_IDs;
+	std::vector<Mesh>  m_MeshData;
+	unsigned int NumMeshes;
 
 	int m_ActiveMaterial;
 	unsigned int m_CurrentIndexCount;
 
 	TimeStep ts;
 
-	void MoveObjectBackward();
-	void MoveObjectForward();
+	std::shared_ptr<PerspectiveCamera> m_ActiveCamera = nullptr;
 
-	void MoveObjectLeft();
-	void MoveObjectRight();
+	void AttachCamera(std::shared_ptr<PerspectiveCamera> cam);
+	void OnCreateSceneObjects();
+	void OnInit();
 
-	void MoveObjectUp();
-	void MoveObjectDown();
+	void OnUpdate(float ts);
+	void Process();
+
+	// Re Write and Re structuring this whole class
+
+	static ObjectLoader m_ObjectLoader;
+
+	void LoadMeshData(const char* path);
+	void LoadMeshData(Mesh& other);
+
+	Scene() = default;
+	~Scene()
+	{
+		m_Materials.clear();
+		m_Cameras.clear();
+		m_IndexData.clear();
+		m_ModelLocations.clear();
+		m_NormalMatrixLocations.clear();
+	}
+
+
+private:
+
+	scripting::ScriptingEngine m_LuaEngine;
 };
 

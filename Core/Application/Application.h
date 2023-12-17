@@ -13,6 +13,9 @@ class Application
 public:
     // Declare the Serializable Data first
 
+    unsigned int NumVertices;
+    unsigned int NumIndices;
+
     volatile unsigned int m_IndexCount;
     volatile float m_Speed = 1.0;
     glm::mat4 m_Transform;
@@ -21,6 +24,7 @@ public:
     std::vector<glm::vec2 > m_TexCoords;
     std::vector<glm::vec3 > m_Normals;
     std::vector<unsigned int> m_VertexIndices;
+    std::vector<unsigned int> m_VertexIDs;
     std::vector<unsigned int> m_TextureIndices;
     std::vector<unsigned int> m_NormalIndices;
 
@@ -33,7 +37,14 @@ public:
     virtual void OnInit()  = 0;
     virtual void OnUpdate(float ts) = 0;
     virtual int GetModelLocation() const { return m_ModelLocation; }
-    virtual void SetTransform(const glm::mat4& transform) noexcept { m_Transform = transform; }
+    virtual void SetTransform(const glm::mat4& transform) noexcept 
+    { 
+        for (auto& pos : m_Positions)
+        {
+            pos = glm::vec3(transform * glm::vec4(pos, 1.0f));
+        }
+        m_Transform = transform; 
+    }
 
     // Now get the object moving
     virtual void MoveBackward() = 0;

@@ -11,6 +11,7 @@ class UILayer :
 {
 public:
 
+    unsigned int SelectedMesh;
     // Huh?
     std::shared_ptr<Scene> m_ActiveScene;
 

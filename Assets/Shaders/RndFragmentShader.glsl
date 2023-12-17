@@ -21,6 +21,7 @@ layout(location = 0) out vec4 color;
 in VS_OUT
 {
 	vec2 TexCoord;
+	uint ID;
 	vec3 Normal;
 	vec3 LightDirection;
 
@@ -28,6 +29,7 @@ in VS_OUT
 
 void main()
 {
+
 	vec4 play_col = texture(u_PlayButton, ps_in.TexCoord);
 
 	vec4 tnorm = NormalMatrix * vec4(ps_in.Normal, 1.0f);
@@ -53,5 +55,12 @@ void main()
 	vec3 final_color = mix(scattered_light, color_3, factor);
 
 	color = vec4(final_color, 1.0f);
+	//color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	//color = play_col;
+
+	if(ps_in.ID == 0) // SELECTED OBJECT
+	{
+		
+		color = vec4(final_color, 0.40f);
+	}
 }

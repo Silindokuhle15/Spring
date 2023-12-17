@@ -6,6 +6,8 @@ layout(location = 0) out vec4 color;
 in VS_OUT
 {
 	vec2 TexCoord;
+	vec3 Normal;
+	vec3 LightDirection;
 
 }ps_in;
 

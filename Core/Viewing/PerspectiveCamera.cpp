@@ -75,10 +75,14 @@ void PerspectiveCamera::OnUpdate(float ts)
 
 glm::mat4 PerspectiveCamera::GetV()
 {
-    return V;
+    //return V;
+
+    return m_View;
 }
 
 glm::mat4 PerspectiveCamera::GetVP()
 {
-    return VP;
+    //return VP;
+
+    return m_Proj * m_View;
 }

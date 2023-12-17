@@ -1,7 +1,7 @@
 #pragma once
-#include "Application.h"
+#include "Mesh.h"
 
-class Square : public Application
+class Square : public Mesh
 {
 public:
 

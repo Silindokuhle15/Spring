@@ -9,6 +9,10 @@
 
 #include <string>
 #include "Scene.h"
+#include <set>
+
+
+#include <filesystem>
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
@@ -99,6 +103,9 @@ class ContentBrowser : public Panel
 {
 public:
 
+	void ReadDirTree(const std::filesystem::path& pathToShow, int level);
+
+	void DisplayDirTree(const std::filesystem::path& pathToShow, int level);
 
 	void Run() override;
 
@@ -115,6 +122,13 @@ public:
 
 private:
 
+	std::filesystem::path root_path;
+	std::filesystem::path current_path;
+
+	std::string filename;
+	std::string stem;
+	std::set<std::string> m_DirContent;
+	std::set<std::filesystem::path> m_DirEntries;
 	std::string m_PanelName;
 };
 
@@ -299,7 +313,7 @@ inline void ComponentPanel<T>::Run()
 	ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
 	//ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
 	ImGui::SliderFloat3("Camera Position", (float*)glm::value_ptr(m_EditorCamera->GetPosition()), -50.0, 50.0);
-	ImGui::SliderFloat("Camera Speed", (float*)&m_EditorCamera->m_Speed, 0.0, 100.0f, "%.2f", 0);
+	ImGui::SliderFloat("Camera Speed", (float*)&m_EditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
 	ImGui::Separator();
 
 	ImGui::Text("Lights and Shadow");
@@ -353,11 +367,7 @@ inline void ComponentPanel<T>::Run()
 	//ImGui::Text("Active Texture Size : [ %d ]", size);
 
 	//ImGui::Checkbox("use Gizmo Window", &m_UseGizmoWindow);
-
-
 	//ImGui::End();
-
-
 	//ImGuizmo::SetOrthographic(false);
 	//ImGuizmo::BeginFrame(); // ImGuizmo Begin Frame
 
@@ -371,14 +381,117 @@ inline void ComponentPanel<T>::Run()
 
 
 template<class T>
+inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathToShow, int level)
+{
+	// GET THE PARENT WINDOW SIZE
+	auto current_window_rect = ImGui::GetCurrentWindow()->Rect();
+	//auto current_window_rect = ImGui::GetCurrentContext()->CurrentWindow->InnerRect();
+
+	float x = current_window_rect.GetWidth();
+	float y = current_window_rect.GetHeight();
+
+	float a = 0.4;
+	float b = 0.9;
+
+	//root_path = pathToShow;
+	current_path = pathToShow;
+
+	ReadDirTree(current_path, level);
+
+	if (ImGui::BeginChild("FIrst Window", ImVec2( x * a, b * y ), true))
+	{
+		ImGui::Text(pathToShow.string().c_str());
+
+		for (auto& i : m_DirEntries)
+		{
+			std::string dir_stem;
+
+			if (i.has_stem())
+			{
+				dir_stem = i.stem().string();
+			}
+
+			if (ImGui::TreeNode(dir_stem.c_str()))
+			{
+
+				if (ImGui::IsItemClicked() && ImGui::IsItemHovered())
+				{
+					m_DirContent.clear();
+					m_DirEntries.clear();
+
+					current_path = i;
+					current_path /= dir_stem;
+					root_path = current_path;
+
+					//ImGui::TreePush();
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	if (ImGui::BeginChild("Second Window", ImVec2((x * (1 - 1.09 * a )), b * y), true))
+	{
+		ImGui::Text(current_path.string().c_str());
+
+
+		for (auto& i : m_DirContent)
+		{
+			ImGui::Text(i.c_str());
+		}
+	}
+	ImGui::EndChild();
+
+}
+
+template<class T>
+inline void ContentBrowser<T>::ReadDirTree(const std::filesystem::path& pathToShow, int level)
+{
+	if (std::filesystem::exists(pathToShow) && std::filesystem::is_directory(pathToShow))
+	{
+		for (const auto& entry : std::filesystem::directory_iterator(pathToShow))
+		{
+			//auto filename = entry.path().filename();
+			filename = entry.path().string();
+			stem = entry.path().stem().string();
+
+			// MAKE THE PATH RELATIVE
+
+			if (std::filesystem::is_directory(entry.status()))
+			{
+				// DIRECTORY LEVEL
+				m_DirEntries.insert(entry.path());
+			}
+			else if (std::filesystem::is_regular_file(entry.status()))
+			{
+				if (entry.path().has_extension())
+				{
+					auto name = stem + entry.path().extension().string();
+					m_DirContent.insert(name.c_str());
+				}
+				else
+				{
+					m_DirContent.insert(stem.c_str());
+				}
+			}
+		}
+	}
+}
+
+template<class T>
 inline void ContentBrowser<T>::Run()
 {
 
 	ImGui::Begin(m_PanelName.c_str());
 
+	std::string dummy_path = "C:/dev/Silindokuhle15/Spring/Assets/";
+	root_path =  std::filesystem::path(dummy_path);
+	DisplayDirTree(root_path, 0);
 
 	ImGui::End();
-
 }
 
 
@@ -402,9 +515,6 @@ inline void StatsPanel<T>::Run()
 	ImGui::Checkbox("Wire Frame", &m_RenderMode);
 	ImGui::Separator();
 	ImGui::Text("Draw Calls : %d", 1);
-
-	ImGui::Text("Number of Indices : %d", m_NumIndices);
-	ImGui::Text("Number of Samples : %d", m_Samples);
 	ImGui::Separator();
 	//ImGui::SliderInt("Scene Number ", &, 0, 4);
 	ImGui::End();

@@ -1,15 +1,33 @@
 #pragma once
-#include <string>
-
-class Mesh
+#include "Application.h"
+#include "ObjectLoader.h"
+class Mesh :
+    public Application
 {
 public:
+    Mesh() {}
+    Mesh(std::string file_path) :
+        m_OBJFilePath{ file_path }
+    {
 
-	Mesh(std::string path);
-	Mesh(const Mesh& other);
-	~Mesh();
+    }
+
+    void OnInit() override;
+    void OnUpdate(float ts) override;
+
+    virtual void MoveBackward() override;
+    virtual void MoveForward() override;
+    virtual void MoveLeft() override;
+    virtual void MoveRight() override;
+    virtual void MoveUp() override;
+    virtual void MoveDown() override;
+
+
+    static ObjectLoader ob;
+
+    static Mesh Batch(std::vector<Mesh>& meshes);
 
 private:
-
-
+    std::string m_OBJFilePath;
 };
+

@@ -2,16 +2,25 @@
 
 #include "lua.hpp"
 #include "luaconf.h"
+#include <vector>
+#include <string>
 
 namespace scripting
 {
 	class ScriptingEngine
 	{
 	public:
-
+		std::string cmd = "";
+		std::string str = "";
+		std::string ScriptPath;
+		std::vector<std::string> Keys;
 		lua_State * m_pLuaState;
 
 		void Run();
+		void SetScriptPath(const std::string& path);
+		void SetKeys(const std::vector<std::string> keys_t);
+
+		int static getNamedfield(lua_State* L, const char* field);
 
 		ScriptingEngine() : m_pLuaState{ nullptr } {
 

@@ -17,27 +17,43 @@ void VertexArray::CreateVertexArrayLayout(unsigned int active_program)
 
 void VertexArray::CreateVertexArrayLayout(unsigned int prog, VertexAttrib attrib)
 {
+	unsigned int stride = 0;
+
 	switch (attrib)
 	{
 		case VertexAttrib::Position:
 	{
 		m_POSLocation = glGetAttribLocation(prog, "Position");
 		glVertexAttribPointer(m_POSLocation, 3, GL_FLOAT, GL_FALSE,
-			sizeof(glm::vec3), (void*)0);
+			stride, (void*)0);
 		glEnableVertexAttribArray(m_POSLocation);
 		break;
-	}	case VertexAttrib::TexCoord:
+	}		
+	case VertexAttrib::TexCoord:
 	{
 		m_UVLocation = glGetAttribLocation(prog, "TexCoord");
 		glVertexAttribPointer(m_UVLocation, 2, GL_FLOAT, GL_TRUE,
-			sizeof(glm::vec2), (void*)(sizeof(glm::vec3)));
+			stride, (void*)(sizeof(glm::vec3)));
 		glEnableVertexAttribArray(m_UVLocation);
 		break;
-	}	case VertexAttrib::Normal:
+	}
+	case VertexAttrib::UUID:
+	{
+		//unsigned int stride = sizeof(glm::vec3) + sizeof(unsigned int);
+
+		unsigned int offset = sizeof(glm::vec3) + sizeof(glm::vec2);
+		m_UUIDLocation = glGetAttribLocation(prog, "ID");
+		glVertexAttribPointer(m_UUIDLocation, 1, GL_UNSIGNED_INT, GL_FALSE,
+			stride, (void*)(offset));
+		glEnableVertexAttribArray(m_UUIDLocation);
+		break;
+	}
+	case VertexAttrib::Normal:
 	{
 		m_NORMLocation = glGetAttribLocation(prog, "Normal");
-		unsigned int size = sizeof(glm::vec3) + sizeof(glm::vec2);
-		glVertexAttribPointer(m_NORMLocation, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(size));
+		unsigned int size = sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(unsigned int);
+		glVertexAttribPointer(m_NORMLocation, 3, GL_FLOAT, GL_TRUE,
+			stride, (void*)(size));
 		glEnableVertexAttribArray(m_NORMLocation);
 		break;
 	}
@@ -50,6 +66,38 @@ void VertexArray::CreateVertexArrayLayout(unsigned int prog, std::vector<VertexA
 	{
 		CreateVertexArrayLayout(prog, i);
 	}
+}
+
+void VertexArray::EnableAttribute(const char* attribute_name, unsigned int size)
+{
+	int active_program = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &active_program);
+	
+	int location = glGetAttribLocation(active_program, attribute_name);
+	unsigned int stride = sizeof(glm::vec3) * 2 + sizeof(glm::vec2);
+	unsigned int offset = stride * location;
+	switch (location)
+	{
+	case -1:
+		// Something Wrong happened
+		break;
+	case 0:
+		offset = 0;
+		break;
+	case 1:
+		offset = sizeof(float) * size * location;
+		break;
+
+	case 2:
+
+		break;
+
+	case 3:
+
+		break;
+	}
+	glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride, (void*)offset);
+	glEnableVertexArrayAttrib(active_program, location);
 }
 
 void VertexArray::OnInit()

@@ -26,9 +26,9 @@ public:
 	float m_Delta;
 
 	virtual glm::vec3 GetPosition() { return m_eye; }
-	virtual glm::mat4 GetV() { return V; }
+	virtual glm::mat4 GetV() { return m_View; }
 	virtual glm::mat4 GetP() { return m_Proj; }
-	virtual glm::mat4 GetVP() { return VP; }
+	virtual glm::mat4 GetVP() { return m_Proj * m_View; }
 
 	virtual void SetWidth(int width) { m_Width = width; }
 	virtual void SetHeight(int height) { m_Height = height; }

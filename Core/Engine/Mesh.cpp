@@ -5,27 +5,62 @@ ObjectLoader Mesh::ob = ObjectLoader();
 void Mesh::OnInit()
 {
     ob.LoadObjectFromFile(m_OBJFilePath.c_str());
+    //m_Positions = ob.m_Positions;
+    NumVertices = ob.m_Positions.size();
+    NumIndices  = ob.m_VertexIndices.size();
+    //m_VertexIndices = ob.m_VertexIndices;
+    //m_TextureIndices = ob.m_TextureIndices;
+    //m_NormalIndices = ob.m_NormalIndices;
+    //m_TexCoords = ob.m_TexCoords;
+    //m_Normals = ob.m_Normals;
+    //m_VertexIDs = ob.m_VertexIDs;
+    
+    for (auto& i : ob.m_Positions)
+    {
+        m_Positions.push_back(i);
+    }
 
-    m_Positions = ob.m_Positions;
-    m_TexCoords = ob.m_TexCoords;
-    m_Normals = ob.m_Normals;
-    m_VertexIDs = ob.m_VertexIDs;
+    for (int i = 0; i < ob.m_VertexIndices.size(); i++)
+    {
+        uint32_t index = ob.m_VertexIndices[i];
+        if (index < NumIndices)
+        {
+            glm::vec3 pos = ob.m_Positions[index];
+            //m_Positions.push_back(pos);
+            m_VertexIDs.push_back(index);
+            m_VertexIndices.push_back(index);
+        }
+    }
+    for (int i = 0; i < ob.m_TextureIndices.size(); i++)
+    {
+        uint32_t index = ob.m_TextureIndices[i];
 
-    ob.m_VertexIndices.erase(ob.m_VertexIndices.begin());
-    ob.m_TextureIndices.erase(ob.m_TextureIndices.begin());
-    ob.m_NormalIndices.erase(ob.m_NormalIndices.begin());
-    m_VertexIndices = ob.m_VertexIndices;
-    m_TextureIndices = ob.m_TextureIndices;
-    m_NormalIndices = ob.m_NormalIndices;
-
-    m_Positions.shrink_to_fit();
-    m_VertexIndices.shrink_to_fit();
-    m_TextureIndices.shrink_to_fit();
-    m_NormalIndices.shrink_to_fit();
-    m_VertexIDs.shrink_to_fit();
+        if (index < NumIndices)
+        {
+            glm::vec2 tex_coord = ob.m_TexCoords[index];
+            m_TexCoords.push_back(tex_coord);
+            m_TextureIndices.push_back(index);
+        }
+    }
+    for (int i = 0; i < ob.m_NormalIndices.size(); i++)
+    {
+        uint32_t index = ob.m_NormalIndices[i];
+        if (index < NumIndices)
+        {
+            glm::vec3 normal = ob.m_Normals[index];
+            m_Normals.push_back(normal);
+            m_NormalIndices.push_back(index);
+        }
+    }
+    //m_Positions.shrink_to_fit();
+    //m_TexCoords.shrink_to_fit();
+    //m_VertexIDs.shrink_to_fit();
+    //m_Normals.shrink_to_fit();
 
     NumVertices = m_Positions.size();
-    NumIndices = m_VertexIndices.size();
+    NumIndices  = m_VertexIndices.size();
+
+
 }
 
 void Mesh::OnUpdate(float ts)

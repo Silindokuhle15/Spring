@@ -5,6 +5,13 @@
 #include <vector>
 #include <string>
 
+typedef struct
+{
+	double x;
+	double y;
+	double z;
+}Vector3;
+
 namespace scripting
 {
 	class ScriptingEngine
@@ -20,22 +27,13 @@ namespace scripting
 		void SetScriptPath(const std::string& path);
 		void SetKeys(const std::vector<std::string> keys_t);
 
-		int static getNamedfield(lua_State* L, const char* field);
+		lua_Number static getNamedfield(lua_State* L, const char* field);
+		void GetField(lua_State* L, std::vector<const char*>& field, Vector3* data_out);
 
 		ScriptingEngine() : m_pLuaState{ nullptr } {
 
 			m_pLuaState = luaL_newstate();
-			
-			/*
-			m_pLuaState = lua_open();			// OPENS LUA
-			luaopen_base(m_pLuaState);			// LOADS AND OPENS THE BASIC LUA LIB
-			luaopen_table(m_pLuaState);			// ***** AND ***** *** TABLE ****
-			luaopen_io(m_pLuaState);			// ***** AND ***** *** I/O LI
-			luaopen_string(m_pLuaState);		// ***** AND ***** *** STRING LIB
-			luaopen_math(m_pLuaState);			// ***** AND ***** *** MATH LIB
-			*/
-			// ALTERNATIVELY
-			luaL_openlibs(m_pLuaState);			// DOES EXACTLY AS ABOVE BUT IN ONE  LINE
+			luaL_openlibs(m_pLuaState);			
 		}
 
 		~ScriptingEngine() {
@@ -44,6 +42,4 @@ namespace scripting
 
 
 	};
-
-	
 }

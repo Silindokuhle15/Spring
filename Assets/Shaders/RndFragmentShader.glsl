@@ -17,7 +17,7 @@ uniform vec3 SpecularColor;
 uniform mat4 NormalMatrix;
 
 layout(location = 0) out vec4 color;
-
+layout(location = 1) out uint another_col;
 in VS_OUT
 {
 	vec2 TexCoord;
@@ -54,13 +54,9 @@ void main()
 	vec3 scattered_light = u_amb + LightColor * diffuse;
 	vec3 final_color = mix(scattered_light, color_3, factor);
 
-	color = vec4(final_color, 1.0f);
-	//color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	//color = play_col;
-
-	if(ps_in.ID == 0) // SELECTED OBJECT
-	{
-		
-		color = vec4(final_color, 0.40f);
-	}
+	//color = vec4(final_color, 1.0f);
+	
+	//color = vec4(ps_in.Normal, 1.0f);
+	color = vec4(ps_in.TexCoord, 1/ps_in.ID, 1.0f);
+	
 }

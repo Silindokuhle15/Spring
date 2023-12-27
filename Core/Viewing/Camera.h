@@ -26,6 +26,7 @@ public:
 	float m_Delta;
 
 	virtual glm::vec3 GetPosition() { return m_eye; }
+	virtual void SetPosition(glm::vec3 new_pos) { m_eye = new_pos; }
 	virtual glm::mat4 GetV() { return m_View; }
 	virtual glm::mat4 GetP() { return m_Proj; }
 	virtual glm::mat4 GetVP() { return m_Proj * m_View; }

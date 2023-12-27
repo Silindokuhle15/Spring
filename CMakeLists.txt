@@ -123,18 +123,18 @@ Set(SOURCE_FILES
 	"Core/Viewing/PerspectiveCamera.cpp"
 
 	# APPLICATIONS
-	"Core/Application/Cube.h"
-	"Core/Application/Cube.cpp"
+	
+	
 	"Core/Application/Grid.h"
 	"Core/Application/Grid.cpp"
 	"Core/Engine/Mesh.h"
 	"Core/Engine/Mesh.cpp"
 	"Core/Application/Square.h"
 	"Core/Application/Square.cpp"
-	"Core/Application/Tank.h"
-	"Core/Application/Tank.cpp"
-	"Core/Application/Teaport.h"
-	"Core/Application/Teaport.cpp"
+	
+	
+	
+	
 
 	# EDITOR 
 

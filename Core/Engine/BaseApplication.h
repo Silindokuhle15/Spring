@@ -10,7 +10,7 @@
 //#include "PerspectiveCamera.h"
 #include "ScriptingEngine.h"
 
-#include <glm/gtx/transform.hpp >
+//#include <glm/gtx/transform.hpp >
 
 class Renderer;
 class UILayer;

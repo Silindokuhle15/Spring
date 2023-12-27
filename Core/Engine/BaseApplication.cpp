@@ -1,10 +1,5 @@
 #include "BaseApplication.h"
-#include "Grid.h"
-#include "Cube.h"
-#include "Square.h"
-#include "Teaport.h"
-#include "Tank.h"
-#include "Mesh.h"
+
 
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
 scripting::ScriptingEngine BaseApplication::m_LuaEngine = scripting::ScriptingEngine();
@@ -69,27 +64,10 @@ void BaseApplication::CreateMainWindow()
 
 void BaseApplication::Run()
 {
-    float rotation_angle = 10.0f;
-    float scale_value = 0.1f;
     CreateMainWindow();
-    Square sq1;
-    sq1.OnInit();
-    sq1.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0, 0.0)));
-
-    Grid grid(10);
-    grid.OnInit();
-    Mesh new_mesh = Mesh::Batch(grid.m_Cells);
 
     Scene square_scn;
     square_scn.OnInit();
-    square_scn.LoadMeshData(new_mesh);
-    
-    PerspectiveCamera pCam;
-    pCam.m_center = glm::vec3(0,0,0.0f);
-    pCam.m_eye = glm::vec3(0.0f, 0.0, 2.50);
-    pCam.m_up = glm::vec3(0.0, 1.0, 0.0);
-    
-    std::shared_ptr<PerspectiveCamera> cam = std::make_shared<PerspectiveCamera>(pCam);
 
     const char* glsl_version = "#version 450 core";
     UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
@@ -99,12 +77,8 @@ void BaseApplication::Run()
 
     Renderer OpenGLrenderer;
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
-    
-    //unsigned int active_scene = m_pUILayer->m_ActiveScene;
     BaseApplication::m_Scene = std::make_shared<Scene>(square_scn);
     BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
-
-    BaseApplication::m_pActiveRenderer->m_ActiveScene->AttachCamera(std::make_shared<PerspectiveCamera>(pCam));
     
     BaseApplication::m_pActiveRenderer->SetUpForRendering(); 
     //BaseApplication::m_pActiveRenderer->EnableTesselation();
@@ -122,8 +96,6 @@ void BaseApplication::Run()
         glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
         glfwPollEvents();
-
-
         //BaseApplication::m_LuaEngine.Run();
 
         BaseApplication::m_pUILayer->BeginFrame();

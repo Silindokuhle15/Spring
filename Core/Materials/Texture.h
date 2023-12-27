@@ -9,6 +9,8 @@ class Texture
 {
 public:
 
+	std::string m_Path;
+
 	// Textures and Samplers
 	unsigned int m_Tex1;
 	unsigned int m_Sampler;
@@ -22,5 +24,17 @@ public:
 	void OnInit();
 	void Bind();
 	void OnUpdate();
+
+	Texture() :
+		m_Path{ "" }
+	{
+
+	}
+	Texture(std::string path) :
+		m_Path{ path }
+	{
+
+	}
+
 };
 

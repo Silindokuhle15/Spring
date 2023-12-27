@@ -8,6 +8,8 @@ void Material::OnInit()
 
 	m_Shader.OnInit(m_MaterialID);
     LoadMTLFile(mtl_path);
+
+    m_Texture = Texture(m_tex_path);
 	m_Texture.OnInit();
 
 	glProgramParameteri(m_MaterialID, GL_PROGRAM_SEPARABLE, GL_TRUE);
@@ -43,7 +45,7 @@ void Material::LoadMTLFile(std::string path)
 
     if (!is.is_open())
     {
-        std::cerr << "Failed to open the file\n" << path << "us not a vaild file" << std::endl;
+        std::cerr << "Failed to open the file\n" << path << " is not a vaild file" << std::endl;
         std::flush(std::cerr);
     }
 

@@ -1,5 +1,23 @@
 #include "ObjectLoader.h"
 
+
+bool CheckDescription(std::string str1, std::string str2)
+{
+    return (bool)str1.compare(str2) == 0 ? true : false;
+}
+
+bool InDescriptorSet(const char* disc, std::vector<const char*> descriptors)
+{
+    for (auto& i : descriptors)
+    {
+        if (CheckDescription(i, disc))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 int ObjectLoader::LoadObjectFromFile(const char* file_path)
 {
     unsigned int id = 1;
@@ -23,46 +41,56 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     float x, y, z;
     float u, v;
 
-    const char* descriptors[] = { "v", "vn", "vt", "f" };
+    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f" };
+    //std::string str;
 
-    for (std::string str; std::getline(is, str);)
+
+    for (std::string str=""; std::getline(is, str);)
     {
         is >> description;
-        if (description == descriptors[0])
+        if (InDescriptorSet(description.c_str(), descriptorSet))
         {
-            // Vertex Position
-            is >> std::skipws;
-            is >> x >> y >> z;
-            m_Positions.push_back(glm::vec3(x, y, z));
-            m_VertexIDs.push_back(id++);
-            
-        }
-        if (description == descriptors[1])
-        {
-            // Vertex Normal
-            is >> std::skipws;
-            is >> x >> y >> z;
-            m_Normals.push_back(glm::vec3(x, y, z));
-        }
-        if (description == descriptors[2])
-        {
-            // Texture Coordinate
-            is >> std::skipws;
-            is >> u >> v;
-            m_TexCoords.push_back(glm::vec2(u, v));
-        }
-        if (description == descriptors[3])
-        {
-            std::stringstream ss(str);
-            while(ss >> c_temp)
+            if (CheckDescription(description, "v"))
             {
-                ExtractDump(c_temp);
+                // Vertex Position
+                is >> std::skipws;
+                is >> x >> y >> z;
+                m_Positions.push_back(glm::vec3(x, y, z));
+                m_VertexIDs.push_back(id++);
+
+            }
+            else if (CheckDescription(description, "vt"))
+            {
+                // Texture Coordinate
+                is >> std::skipws;
+                is >> u >> v;
+                m_TexCoords.push_back(glm::vec2(u, v));
+            }
+            else if (CheckDescription(description, "vn"))
+            {
+                // Vertex Normal
+                is >> std::skipws;
+                is >> x >> y >> z;
+                m_Normals.push_back(glm::vec3(x, y, z));
+            }
+
+            else if (CheckDescription(description, "f"))
+            {
+                is >> std::skipws;
+                //is >> temp;
+                //std::stringstream ss(temp);
+                while (is >> c_temp)
+                {
+                    //if (CheckDescription(c_temp.c_str(), "f"))
+                    {
+                        ExtractDump(c_temp);
+                    }
+                }
             }
         }
-        else continue;
+
+        //str.clear();
     }
-    // Now Upload the data to OpenGL
-    // or Not
     return 0;
 }
 

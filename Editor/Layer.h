@@ -16,12 +16,24 @@
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
+typedef struct
+{
+	float x, y, z, a;
+}Pixel;
+
 class Layer
 {
 
 public:
 
-	Layer() = default;
+	uint32_t m_LayerWidth, m_LayerHeight;
+	Layer(uint32_t width, uint32_t height) : m_LayerWidth{ width }, m_LayerHeight{ height }
+	{
+
+	}
+
+	Layer() : m_LayerWidth{ 1920 }, m_LayerHeight{ 1080 } {}
+
 	~Layer() = default;
 
 	virtual void Enable() = 0;
@@ -35,8 +47,14 @@ class Panel
 {
 public:
 
+	uint32_t m_Width, m_Height;
+	Panel() : m_Width{ 1920 }, m_Height{ 1080 } {}
+	Panel(uint32_t width, uint32_t height) : m_Width{ width }, m_Height{ height }
+	{
+
+	}
+	
 	virtual void Run() = 0;
-	Panel() = default;
 	~Panel() = default;
 
 
@@ -51,7 +69,7 @@ class ComponentPanel : public Panel
 public:
 
 	// SETTING VARIABLES
-	bool m_EnableLighting = false;
+	int m_EnableLighting = 1;
 	bool m_EnableTexture = 0;
 	bool m_IsEnable = false;
 	// IMGUIZMO
@@ -137,17 +155,21 @@ template<class T>
 class RenderPanel : public Panel
 {
 public:
+	uint8_t* m_Pixels;
+
+	std::shared_ptr<Scene> m_ActiveScene;
 
 	void Run() override;
 	RenderPanel() :
 		m_PanelName{"Render Panel"}
 	{
 		// DO something;
+		m_Pixels = new uint8_t[1080 * 1920 * 4];
 	}
 
 	~RenderPanel()
 	{
-
+		delete[] m_Pixels;
 	}
 
 private:
@@ -165,6 +187,9 @@ public:
 	unsigned int m_NumPrimitives;
 	unsigned int m_NumIndices;
 
+	int selected_mode;
+	int selected_attr;
+
 	// Queries
 	unsigned int m_Query;
 	int m_Samples;
@@ -172,7 +197,9 @@ public:
 
 	void Run() override;
 	StatsPanel() : 
-		m_PanelName{"Stats Panel"}
+		m_PanelName{"Stats Panel"},
+		selected_mode{0},
+		selected_attr{0}
 	{
 	}
 
@@ -312,35 +339,73 @@ inline void ComponentPanel<T>::Run()
 
 	ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
 	//ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
-	ImGui::SliderFloat3("Camera Position", (float*)glm::value_ptr(m_EditorCamera->GetPosition()), -50.0, 50.0);
+	float cam_pos[3] = {
+		m_EditorCamera->GetPosition()[0],
+		m_EditorCamera->GetPosition()[1],
+		m_EditorCamera->GetPosition()[2]
+	};
+	ImGui::SliderFloat3("Camera Position", cam_pos, -50.0, 50.0);
 	ImGui::SliderFloat("Camera Speed", (float*)&m_EditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
 	ImGui::Separator();
+	m_EditorCamera->SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
 
 	ImGui::Text("Lights and Shadow");
 
-	int enable_lighting_locatin = glGetUniformLocation(m_ActiveMaterial, "EnableTexture");
+	int enable_lighting_locatin = glGetUniformLocation(m_ActiveMaterial, "EnableLighting");
+	PointLight pointLight = m_ActiveScene->m_Lights[0];
+
+	float sky_color[3];
+	float ground_color[3];
+	static bool enable_lighting = false;
+	ImGui::Checkbox("Enable Lighting", &enable_lighting);
+
+	switch (enable_lighting)
+	{
+	case true:
+		m_EnableLighting = 1;
+		break;
+	default:
+		m_EnableLighting = int(enable_lighting);
+	}	
 	glProgramUniform1i(m_ActiveMaterial, enable_lighting_locatin, m_EnableLighting);
 
-	ImGui::Checkbox("Enable Lighting", &m_EnableLighting);
 	ImGui::Text("HemiSphere Lighting Model");
 	ImGui::SliderFloat3("Sky Color", m_SkyColor, 0.0, 1.0);
 	ImGui::SliderFloat3("Grounr Color", m_GroundColor, 0.0, 1.0);
+
+	m_ActiveScene->m_SkyColor[0] = m_SkyColor[0];
+	m_ActiveScene->m_SkyColor[1] = m_SkyColor[1];
+	m_ActiveScene->m_SkyColor[2] = m_SkyColor[2];
+	m_ActiveScene->m_GroundColor[0] = m_GroundColor[0];
+	m_ActiveScene->m_GroundColor[1] = m_GroundColor[1];
+	m_ActiveScene->m_GroundColor[2] = m_GroundColor[2];
+
 	int light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
 	int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
 	int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
 	int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
 	int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
 
-	glProgramUniform3fv(m_ActiveMaterial, light_location, 1, m_PointLightPosition);
-	glProgramUniform3fv(m_ActiveMaterial, light_color_location, 1, m_LightColor);
-	glProgramUniform3fv(m_ActiveMaterial, sky_color_location, 1, m_SkyColor);
-	glProgramUniform3fv(m_ActiveMaterial, ground_color_location, 1, m_GroundColor);
+	
+
+	glProgramUniform3fv(m_ActiveMaterial, light_location, 1, glm::value_ptr(pointLight.m_Position));
+	glProgramUniform3fv(m_ActiveMaterial, light_color_location, 1, glm::value_ptr(pointLight.m_Color));
+	glProgramUniform3fv(m_ActiveMaterial, sky_color_location, 1, m_ActiveScene->m_SkyColor);
+	glProgramUniform3fv(m_ActiveMaterial, ground_color_location, 1, m_ActiveScene->m_GroundColor);
 	glProgramUniform3fv(m_ActiveMaterial, factor_location, 1, &m_Factor);
 
-	ImGui::SliderFloat3("Light Position", m_PointLightPosition, -50.0, 50.0);
-	ImGui::SliderFloat3("Light Color", m_LightColor, 0.0, 1.0);
+	float current_light_pos[] = { pointLight.m_Position.x, pointLight.m_Position.y , pointLight.m_Position.z };
+	float current_light_col[] = { pointLight.m_Color.x, pointLight.m_Color.y , pointLight.m_Color.z };
+
+	ImGui::SliderFloat3("Light Position", current_light_pos, -100.0, 100.0);
+	ImGui::SliderFloat3("Light Color", current_light_col, 0.0f, 1.0f);
 	ImGui::SliderFloat("Factor [a]", &m_Factor, 0.0, 1.0);
 	ImGui::Separator();
+
+	// RESET THE LIGHT POSITION
+
+	m_ActiveScene->m_Lights[0].SetPosition(current_light_pos);
+	m_ActiveScene->m_Lights[0].SetColor(current_light_col);
 
 	ImGui::Text("Materials");
 	ImGui::Separator();
@@ -500,6 +565,21 @@ inline void RenderPanel<T>::Run()
 {
 	ImGui::Begin(m_PanelName.c_str());
 
+	int width = m_ActiveScene->m_ActiveCamera->GetWidth();
+	int height = m_ActiveScene->m_ActiveCamera->GetHeight();
+	
+	//glReadPixels(0, 0, width, height, GL_RGB, GL_FLOAT, pixels);
+	
+	if (m_Pixels)
+	{
+		//glDrawBuffer(GL_COLOR_ATTACHMENT0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT1);
+
+		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t*)m_Pixels);
+
+	}
+
+	//delete[] m_Pixels;
 
 	ImGui::End();
 
@@ -511,14 +591,40 @@ inline void StatsPanel<T>::Run()
 	ImGui::Begin(m_PanelName.c_str());
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Separator();
-	ImGui::Text("Active Render Mode");
-	ImGui::Checkbox("Wire Frame", &m_RenderMode);
-	ImGui::Separator();
-	ImGui::Text("Draw Calls : %d", 1);
-	ImGui::Separator();
-	//ImGui::SliderInt("Scene Number ", &, 0, 4);
-	ImGui::End();
 
+	const char* names[] = { "TRIANGLES", "LINES" };
+	// Showing a menu with toggles
+	if (ImGui::Button("Render Mode"))
+		ImGui::OpenPopup("render_mode_popup");
+	ImGui::SameLine();
+	ImGui::TextUnformatted(selected_mode == -1 ? "<None>" : names[selected_mode]);
+	if (ImGui::BeginPopup("render_mode_popup"))
+	{
+		for (int i = 0; i < IM_ARRAYSIZE(names); i++)
+			if (ImGui::Selectable(names[i]))
+				selected_mode = i;
+		ImGui::EndPopup();
+	}
+	const char* attr[] = { "Base Color", "TexCoord", "Normal", "Textured" };
+
+	if (ImGui::Button("Output Attribute"))
+		ImGui::OpenPopup("output_attribute_popup");
+	ImGui::SameLine();
+	ImGui::TextUnformatted(selected_attr == -1 ? "<None>" : attr[selected_attr]);
+	if (ImGui::BeginPopup("output_attribute_popup"))
+	{
+		for (int i = 0; i < IM_ARRAYSIZE(attr); i++)
+			if (ImGui::Selectable(attr[i]))
+				selected_attr = i;
+		ImGui::EndPopup();
+	}
+
+	ImGui::End();
+	int m_ActiveMaterial = 0;
+
+	glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
+	int output_attrb_location = glGetUniformLocation(m_ActiveMaterial, "output_attrib");
+	glUniform1ui(output_attrb_location, selected_attr);
 	m_ResultAvailable = false;
 	
 	glGetQueryObjectiv(m_Query, GL_QUERY_RESULT_AVAILABLE, &m_ResultAvailable);

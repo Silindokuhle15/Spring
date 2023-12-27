@@ -21,9 +21,9 @@ void Renderer::SetUpForRendering()
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
     //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_FRONT_AND_BACK);
     //glCullFace(GL_BACK);
-    //glFrontFace(GL_CW);
+    //glCullFace(GL_FRONT);
+    //glFrontFace(GL_CCW);
 
     //m_VAO.OnInit();
     //m_VAO.Bind();
@@ -46,19 +46,26 @@ void Renderer::SetUpForRendering()
     //glCreateBuffers(1, &m_TexBuffer);
     //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_TexBuffer);
 
-    m_Material.OnInit();
-    m_Material.Bind();
-    
+    //m_Material.OnInit();
+    //m_Material.Bind();
+
     std::vector<VertexAttrib> attribs;
     attribs.push_back(VertexAttrib::Position);
     attribs.push_back(VertexAttrib::TexCoord);
     attribs.push_back(VertexAttrib::UUID);
     attribs.push_back(VertexAttrib::Normal);
-    m_VAO.CreateVertexArrayLayout(m_Material.m_MaterialID, attribs);
 
-    m_VPlocation = glGetUniformLocation(m_Material.m_MaterialID, "VP");
-    m_DeltaLocation = glGetUniformLocation(m_Material.m_MaterialID, "delta");
+    for (auto& mat : m_ActiveScene->m_Materials)
+    {
+        //mat.OnInit();
+        mat.Bind();
 
+        m_VAO.CreateVertexArrayLayout(mat.m_MaterialID, attribs);
+        m_VPlocation = glGetUniformLocation(mat.m_MaterialID, "VP");
+        m_DeltaLocation = glGetUniformLocation(mat.m_MaterialID, "delta");
+    }
+    //m_VPlocation = glGetUniformLocation(m_Material.m_MaterialID, "VP");
+    //m_DeltaLocation = glGetUniformLocation(m_Material.m_MaterialID, "delta");
     m_ActiveScene->Process();
 }
 
@@ -90,9 +97,9 @@ void Renderer::UploadToOpenGL()
         GLuint offset5 = 0;                                                     // INDICES OFFSET INTO INDEX BUFFER
 
         //offset1 += sizeof(glm::vec3) * m_ActiveScene->m_MeshData[index - 1].NumVertices;
-        offset2 += offset1 + size1;
-        offset3 += offset2 + size2;
-        offset4 += offset3 + size3;
+        offset2 += (offset1 + size1);
+        offset3 += (offset2 + size2);
+        offset4 += (offset3 + size3);
         //offset5 += sizeof(unsigned int) * m_ActiveScene->m_MeshData[index - 1].NumIndices;
 
         glBufferSubData(GL_ARRAY_BUFFER, offset1, size1, (void*)i.m_Positions.data());
@@ -109,19 +116,21 @@ void Renderer::UploadToOpenGL()
         //render_mode = m_PrimitiveModeWireFrame ? GL_LINE_STRIP : GL_TRIANGLE_STRIP;
 
         glDrawElements(render_mode, i.NumIndices, GL_UNSIGNED_INT, nullptr);
+        //glDrawArrays(render_mode, 0, i.NumVertices);
     }
 }
 
 void Renderer::OnRender()
 {
+    glClearColor(0.302, 0.192, 0.192, 0.05f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //m_Material.Bind();
     //m_VAO.Bind();
-
     // REDESIGN THE ENTIRE RENDER LOOP
     render_mode = GL_TRIANGLES;
     UploadToOpenGL();
     glEndQuery(GL_SAMPLES_PASSED);
+
 }
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
@@ -134,7 +143,6 @@ void Renderer::OnUpdate(float ts)
     //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetV()));
     glUniform1f(m_DeltaLocation, ts);
     m_ActiveScene->OnUpdate(ts);
-    m_Material.OnUpdate();
 }
 
 void Renderer::EnableTesselation()

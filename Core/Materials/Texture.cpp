@@ -6,16 +6,17 @@
 void Texture::OnInit()
 {
     //int res = LoadTextureFromFile("Textures/parallax_mountain_pack/parallax_mountain_pack/layers/parallax-mountain-bg.png", &m_Tex1);
-    int res = LoadTextureFromFile("C:/dev/Silindokuhle15/Spring/Assets/Textures/crate_1.png", &m_Tex1);
-    int res_1 = LoadTextureFromFile("C:/dev/Silindokuhle15/Spring/Assets/Textures/UI/play.png", &m_PlayButtonTex);
+    //int res = LoadTextureFromFile("C:/dev/Silindokuhle15/Spring/Assets/Textures/crate_1.png", &m_Tex1);
+    int res = LoadTextureFromFile(m_Path.c_str(), &m_Tex1);
+    int res_1 = LoadTextureFromFile(m_Path.c_str(), &m_PlayButtonTex);
 
     glGenSamplers(1, &m_Sampler);
     //glBindSampler(4, GL_SAMPLER_2D);
     glBindSampler(0, m_Sampler);
     //glSamplerParameteri(m_Sampler, GL_UNPACK_ALIGNMENT, 1);
 
-    glSamplerParameteri(m_Sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glSamplerParameteri(m_Sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(m_Sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(m_Sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     
     glGenSamplers(1, &m_Sampler1);
@@ -23,8 +24,8 @@ void Texture::OnInit()
     glBindSampler(0, m_Sampler1);
     //glSamplerParameteri(m_Sampler, GL_UNPACK_ALIGNMENT, 1);
 
-    glSamplerParameteri(m_Sampler1, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glSamplerParameteri(m_Sampler1, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glSamplerParameteri(m_Sampler1, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glSamplerParameteri(m_Sampler1, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 void Texture::Bind()

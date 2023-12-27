@@ -53,7 +53,7 @@ public:
 
     int m_Samples;
 
-    Material m_Material;
+    //Material m_Material;
 
     std::vector<glm::vec3> pos;
     std::vector<glm::vec2> tex;

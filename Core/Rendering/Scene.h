@@ -2,6 +2,7 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "Application.h"
+#include "LightAndShadow/PointLight.h"
 #include "Camera.h"
 #include "PerspectiveCamera.h"
 #include "OrthographicCamera.h"
@@ -12,12 +13,18 @@
 #include "ScriptingEngine.h"
 
 #include "Mesh.h"
+#include "Square.h"
+#include "Grid.h"
 
 class Scene
 {
 public:
 
+	float m_SkyColor[3];
+	float m_GroundColor[3];
+
 	std::vector<Material> m_Materials;
+	std::vector<PointLight> m_Lights;
 	std::vector<PerspectiveCamera> m_Cameras;
 
 	std::vector<unsigned int> m_IndexData;

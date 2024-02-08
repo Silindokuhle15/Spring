@@ -1,14 +1,13 @@
 #include "BaseApplication.h"
 
-
 GLFWwindow* BaseApplication::m_pWindow = nullptr;
-scripting::ScriptingEngine BaseApplication::m_LuaEngine = scripting::ScriptingEngine();
+Win32Window* BaseApplication::m_Win32Window = nullptr;
+scripting::ScriptingEngine* BaseApplication::m_LuaEngine = nullptr;
 std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 std::unique_ptr<UILayer> BaseApplication::m_pUILayer = nullptr;
 std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
 TimeStep BaseApplication::ts;
 bool BaseApplication::ExitWindow = false;
-
 
 void BaseApplication::CreateMainWindow()
 {
@@ -25,7 +24,7 @@ void BaseApplication::CreateMainWindow()
 
 #else
     // GL 3.0 + GLSL 130
-    const char* glsl_version = "#version 450 core";
+    const char* glsl_version = "#version 300";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
@@ -64,12 +63,22 @@ void BaseApplication::CreateMainWindow()
 
 void BaseApplication::Run()
 {
+    //Win32Window AppWindow;
+
+    //m_Win32Window = &AppWindow;
+
+    //m_Win32Window->SetUpForRendering();
+
+    //scripting::ScriptingEngine LuaEngine;
+
+    //m_LuaEngine = &LuaEngine;
+
     CreateMainWindow();
 
     Scene square_scn;
     square_scn.OnInit();
-
-    const char* glsl_version = "#version 450 core";
+    
+    const char* glsl_version = "#version 400";
     UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
 
     BaseApplication::m_pUILayer = std::make_unique<UILayer>(ImGui_Layer);
@@ -87,7 +96,6 @@ void BaseApplication::Run()
 
     BaseApplication::m_pUILayer->LoadScene(BaseApplication::m_Scene);
 
-
     while (!BaseApplication::ExitWindow)
         //!glfwWindowShouldClose(BaseApplication::m_pWindow))
     {
@@ -96,7 +104,7 @@ void BaseApplication::Run()
         glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
         glfwPollEvents();
-        //BaseApplication::m_LuaEngine.Run();
+        //BaseApplication::m_LuaEngine->Run();
 
         BaseApplication::m_pUILayer->BeginFrame();
 
@@ -106,6 +114,12 @@ void BaseApplication::Run()
         BaseApplication::m_pUILayer->Enable();
 
         ts = (float)glfwGetTime() / 1000.0;
+
+        //float now  = m_Win32Window->milliseconds_now();
+
+        //ts = (now - time) / 1000;
+
+        //m_Win32Window->OnUpdate();
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
 
         BaseApplication::m_pUILayer->OnUpdate(ts);
@@ -115,6 +129,8 @@ void BaseApplication::Run()
         BaseApplication::m_pUILayer->EndFrame();
 
         glfwSwapBuffers(BaseApplication::m_pWindow);
+
+        //m_Win32Window->SwapBuffer();
     }
 
     ShutDown();

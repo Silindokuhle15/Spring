@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <tuple>
 #include "glm/glm.hpp"
 #include "Application.h"
 #include "LightAndShadow/PointLight.h"
@@ -15,6 +16,14 @@
 #include "Mesh.h"
 #include "Square.h"
 #include "Grid.h"
+
+#include "PhysicsEngine.h"
+
+typedef enum
+{
+	LOADING, RUNNING, PAUSED, STOPPED, END
+} SceneState;
+
 
 class Scene
 {
@@ -35,6 +44,10 @@ public:
 	std::vector<Mesh>  m_MeshData;
 	unsigned int NumMeshes;
 
+	// STORE STATIC AND DYNAMIC MESHES IN SEPARATE VECTORS
+	std::vector<Mesh> m_StaticGeometry;
+	std::vector<Mesh> m_DynamicGeometry;
+
 	int m_ActiveMaterial;
 	unsigned int m_CurrentIndexCount;
 
@@ -47,14 +60,23 @@ public:
 	void OnInit();
 
 	void OnUpdate(float ts);
+	void Run();
+	void OnEnd();
+	void OnPause();
+	void OnStop();
+	void OnReload();
 	void Process();
 
 	// Re Write and Re structuring this whole class
 
 	static ObjectLoader m_ObjectLoader;
 
-	void LoadMeshData(const char* path);
+	void LoadMeshData(const char* path, int buffer);
 	void LoadMeshData(Mesh& other);
+	void LoadDynamicGeometry(Mesh& other);
+	void LoadStaticGeometry(Mesh& other);
+	void BatchStaticGeometry();
+
 
 	Scene() = default;
 	~Scene()
@@ -68,7 +90,7 @@ public:
 
 
 private:
-
+	SceneState m_State;
 	scripting::ScriptingEngine m_LuaEngine;
+	physics::PhysicsEngine m_PhysicsEngine;
 };
-

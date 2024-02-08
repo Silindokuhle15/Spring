@@ -84,9 +84,9 @@ void UILayer::LoadScene(std::shared_ptr<Scene> scene)
     SelectedMesh = 0;
 
    // m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_Objects[0]->m_Transform);
-    if (!scene->m_MeshData.empty())
+    if (!(scene->m_StaticGeometry.empty() || scene->m_DynamicGeometry.empty()))
     {
-        m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_MeshData[SelectedMesh].m_Transform);
+        m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_DynamicGeometry[SelectedMesh].m_Transform);
 
         m_EditorCamera = std::shared_ptr<PerspectiveCamera>(scene->m_ActiveCamera);
         m_ComponentPanel.m_EditorCamera = m_EditorCamera;

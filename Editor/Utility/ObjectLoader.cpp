@@ -41,7 +41,7 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     float x, y, z;
     float u, v;
 
-    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f" };
+    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#"};
     //std::string str;
 
 
@@ -79,16 +79,20 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
                 is >> std::skipws;
                 //is >> temp;
                 //std::stringstream ss(temp);
+                
                 while (is >> c_temp)
                 {
-                    //if (CheckDescription(c_temp.c_str(), "f"))
+                    if (CheckDescription(c_temp.c_str(), "f"))
+                    {
+                        c_temp.clear();
+                    }
+                    else
                     {
                         ExtractDump(c_temp);
                     }
                 }
             }
         }
-
         //str.clear();
     }
     return 0;

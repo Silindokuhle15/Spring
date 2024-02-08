@@ -34,6 +34,7 @@ include_directories(
 	"Core/Engine/"
 	"Core/Input/"
 	"Core/Materials/"
+	"Core/Physics/"
 	"Core/Rendering/"
 	"Core/Scripting/"
 	"Core/Viewing/"
@@ -74,6 +75,8 @@ Set(SOURCE_FILES
 	"Editor/Layer.cpp"
 	"Core/Engine/TimeStep.h"
 	"Core/Engine/TimeStep.cpp"
+	"Core/Engine/Window.h" 
+	"Core/Engine/Window.cpp"
 
 	# INPUT
 	"Core/Input/InputDevice.h"
@@ -94,9 +97,15 @@ Set(SOURCE_FILES
 	"Core/Materials/Texture.h"
 	"Core/Materials/Texture.cpp"
 
+	# PHYSICS SIMULATION
+	 "Core/Physics/Collider.h" 
+	 "Core/Physics/Collider.cpp"
+	 "Core/Physics/PhysicsEngine.h" 
+	 "Core/Physics/PhysicsEngine.cpp"
+
 	# RENDERING
-	"Core/Rendering/FrameBuffer.h"
-	"Core/Rendering/FrameBuffer.cpp"
+	"Core/Rendering/OpenGLFrameBuffer.h"
+	"Core/Rendering/OpenGLFrameBuffer.cpp"
 	"Core/Rendering/Renderer.h"
 	"Core/Rendering/Renderer.cpp"
 	"Core/Rendering/Scene.h"
@@ -140,7 +149,6 @@ Set(SOURCE_FILES
 
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
-
 )
 
 

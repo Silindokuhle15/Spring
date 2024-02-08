@@ -7,7 +7,7 @@
 class Material
 {
 public:
-	ShaderInfo m_Info[2] = { {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/RndVertexShader.glsl", GL_VERTEX_SHADER}, { "C:/dev/Silindokuhle15/Spring/Assets/Shaders/FragmentShader.glsl", GL_FRAGMENT_SHADER } };
+	ShaderInfo m_Info[2] = { {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/VertexShader.glsl", GL_VERTEX_SHADER}, { "C:/dev/Silindokuhle15/Spring/Assets/Shaders/FragmentShader.glsl", GL_FRAGMENT_SHADER } };
 	std::string mtl_path;
 	std::string m_tex_path;
 

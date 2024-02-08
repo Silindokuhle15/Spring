@@ -1,6 +1,6 @@
-#include "FrameBuffer.h"
+#include "OpenGLFrameBuffer.h"
 
-void FrameBuffer::OnCreate()
+void OpenGLFrameBuffer::OnCreate()
 {
 	glGenFramebuffers(1, &m_FrameBuffer);
 	glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, m_Width);
@@ -17,13 +17,13 @@ void FrameBuffer::OnCreate()
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, m_RenderBuffers[0]);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_RenderBuffers[1]);
 }
-void FrameBuffer::Bind()
+void OpenGLFrameBuffer::Bind()
 {
 	glBindBuffer(GL_FRAMEBUFFER, m_FrameBuffer);
-	glViewport(0, 0, m_Width, m_Height);
+	//glViewport(0, 0, m_Width, m_Height);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_COLOR_BUFFER_BIT);
-	glDepthRange(.010f, 1000.f);
+	//glDepthRange(.010f, 1000.f);
 }

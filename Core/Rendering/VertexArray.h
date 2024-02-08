@@ -1,12 +1,21 @@
 #pragma once
 #include "GL/glew.h"
 #include "glm/glm.hpp"
+#include <string>
 #include <vector>
 
-typedef enum
+typedef struct
 {
-	Position, TexCoord, UUID, Normal
-} VertexAttrib;
+	glm::vec3 pos;
+	glm::vec2 tex;
+	uint32_t  ID;
+	glm::vec3 norm;
+} Vertex;
+
+enum class VertexAttrib
+{
+	Position, TexCoord, ID, Normal
+};
 
 class VertexArray
 {
@@ -24,11 +33,9 @@ public:
 
 	operator unsigned int() const { return m_VAO; }
 
-	void CreateVertexArrayLayout(unsigned int prog);
-	void CreateVertexArrayLayout(unsigned int prog, VertexAttrib attrib);
-	void CreateVertexArrayLayout(unsigned int prog, std::vector<VertexAttrib> attribs);
+	void CreateVertexArrayLayout(uint32_t prog, std::vector<VertexAttrib> attribs);
 
-	void EnableAttribute(const char* attribute_name, unsigned int size);
+	void EnableAttribute(uint32_t program, const char* name);
 
 	void OnInit();
 	void Bind();

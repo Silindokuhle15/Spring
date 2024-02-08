@@ -45,7 +45,7 @@ mtl_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/kenney_mini-skate/Models
 --obj_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/House/Room.obj"
 obj_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/House/Room.obj"
 --obj_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/kenney_mini-skate/Models/OBJ format/steps.obj"
-	--"C:/dev/Silindokuhle15/Spring/Assets/Objects/Cube/Cube.obj"
+--obj_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/Cube/Cube.obj"
 --obj_path = "C:/dev/Silindokuhle15/Spring/Assets/Objects/Tree/Lowpoly_tree_sample.obj"
 --obj_path = "Grid"
 

@@ -1,15 +1,21 @@
 #pragma once
+#include <stdint.h>
 #include "GL/glew.h"
+#include "GL/wglew.h"
 
-
-class FrameBuffer
+class OpenGLFrameBuffer
 {
 private:
-	unsigned int m_FrameBuffer;
-	unsigned int m_RenderBuffers[2];
 
-	unsigned int m_Width;
-	unsigned int m_Height;
+	uint32_t m_Flags;
+	uint32_t m_BufferData;
+	uint32_t m_FBO_target;
+	uint32_t m_Format;
+	uint32_t m_Height;
+	uint32_t m_Width;
+	uint32_t m_Type;
+	uint32_t m_FrameBuffer;
+	uint32_t m_RenderBuffers[2];
 
 public:
 

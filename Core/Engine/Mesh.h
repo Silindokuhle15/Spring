@@ -1,6 +1,7 @@
 #pragma once
 #include "Application.h"
 #include "ObjectLoader.h"
+
 class Mesh :
     public Application
 {
@@ -21,7 +22,6 @@ public:
     virtual void MoveRight() override;
     virtual void MoveUp() override;
     virtual void MoveDown() override;
-
 
     static ObjectLoader ob;
 

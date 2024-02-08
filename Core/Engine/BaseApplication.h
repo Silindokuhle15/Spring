@@ -1,4 +1,5 @@
 #pragma once
+#include "Window.h"
 #include "Application.h"
 #include "Camera.h"
 #include "Mouse.h"
@@ -27,7 +28,9 @@ public:
 	static TimeStep ts;
 
 	static GLFWwindow* m_pWindow;
-	static scripting::ScriptingEngine m_LuaEngine;
+
+	static Win32Window* m_Win32Window;
+	static scripting::ScriptingEngine * m_LuaEngine;
 
 	static std::unique_ptr<Renderer> m_pActiveRenderer;
 	static std::unique_ptr<UILayer> m_pUILayer;

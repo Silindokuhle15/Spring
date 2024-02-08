@@ -1,9 +1,7 @@
 #pragma once
 //#include "Engine/BaseApplication.h"
-#include "GL/glew.h"
+#include "OpenGLFrameBuffer.h"
 #include "Scene.h"
-#include "BaseApplication.h"
-#include "FrameBuffer.h"
 #include "Mesh.h"
 
 typedef enum
@@ -11,24 +9,14 @@ typedef enum
     TRIANGLE_STRIP, WIRE_FRAME
 } PrimitiveMode;
 
-
-typedef struct
-{
-    glm::vec3 pos;
-    glm::vec2 tex;
-    unsigned int ID;
-    glm::vec3 norm;
-} GL_In;
-
 class Renderer
 {
 public:
 
     GLenum render_mode;
-
     // Buffers
-    unsigned int m_VertexBuffer;
-    unsigned int m_IndexBuffer;
+    unsigned int m_VertexBuffer[2];
+    unsigned int m_IndexBuffer[2];
     unsigned int m_TexBuffer;
 
     // Vertex Arrays
@@ -45,7 +33,8 @@ public:
     bool m_PrimitiveModeWireFrame = false;
 
     // Try Out the New Framebuffer stuff
-    FrameBuffer m_FrameBuffer;
+    OpenGLFrameBuffer m_DrawFrame;
+    OpenGLFrameBuffer m_ReadFrame;
 
     unsigned int m_IndexBufferSize = 0;
 
@@ -64,6 +53,8 @@ public:
     void BeginFrame();
 
     void BindScene(std::shared_ptr<Scene> scene);
+
+    void CreateImage();
     void EnableTesselation();
 
     void OnRender();

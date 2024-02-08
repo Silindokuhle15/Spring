@@ -59,8 +59,16 @@ void Mesh::OnInit()
 
     NumVertices = m_Positions.size();
     NumIndices  = m_VertexIndices.size();
+    
+    for (int i = 0; i < NumIndices; i++)
+    {
+        glm::vec3 pos = m_Positions[m_VertexIndices[i]];
+        glm::vec2 tex = m_TexCoords[m_TextureIndices[i]];
+        uint32_t  ID  = m_VertexIDs[m_VertexIndices[i]];
+        glm::vec3 norm = m_Normals[m_NormalIndices[i]];
 
-
+        m_V.push_back({ pos, tex, ID, norm });
+    }
 }
 
 void Mesh::OnUpdate(float ts)
@@ -119,7 +127,6 @@ Mesh Mesh::Batch(std::vector<Mesh>& meshes)
             j += padd_value;
             batchedMesh.m_VertexIndices.push_back(j);
         }
-
         for (auto& pos : i.m_Positions)
         {
             batchedMesh.m_Positions.push_back(pos);
@@ -128,15 +135,17 @@ Mesh Mesh::Batch(std::vector<Mesh>& meshes)
         {
             batchedMesh.m_TexCoords.push_back(tex);
         }
-
         for (auto& vID : i.m_VertexIDs)
         {
             batchedMesh.m_VertexIDs.push_back(vID);
         }
-
         for (auto& norm : i.m_Normals)
         {
             batchedMesh.m_Normals.push_back(norm);
+        }
+        for (auto& v : i.m_V)
+        {
+            batchedMesh.m_V.push_back(v);
         }
         padd_value += i.NumVertices;
     }

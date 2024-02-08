@@ -7,13 +7,22 @@ void Square::OnInit()
     m_TexCoords = { { 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, { 0.0f, 1.0f}};
     m_Normals = { {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0} , {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0} };
     m_VertexIDs = { 1, 2, 3, 4 };
-    m_VertexIndices = { 0, 1, 2, 2, 3, 0 };
-
+    m_VertexIndices = { 0, 1, 2, 3, 0, 2};
     m_Positions.shrink_to_fit();
     m_VertexIndices.shrink_to_fit();
  
     NumVertices = m_Positions.size();
     NumIndices = m_VertexIndices.size();
+
+    for (int i = 0; i < NumVertices; i++)
+    {
+        m_V.push_back(Vertex{
+            m_Positions[i],
+            m_TexCoords[i],
+            m_VertexIDs[i], 
+            m_Normals[i] 
+        });
+    }
  }
 
 

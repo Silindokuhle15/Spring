@@ -4,7 +4,8 @@ ObjectLoader Scene::m_ObjectLoader = ObjectLoader();
 
 void Scene::AttachCamera(std::shared_ptr<PerspectiveCamera> cam)
 {
-	m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
+	//m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
+	m_ActiveCamera = cam;
 }
 
 void Scene::OnCreateSceneObjects()
@@ -27,6 +28,8 @@ void Scene::OnCreateSceneObjects()
 	std::string str = "";
 	std::string texture_path = "", mtl_path = "";
 	std::vector<std::string> OBJ_paths;
+	std::vector<std::string> static_mesh_paths;
+	std::vector<std::string> dynamic_mesh_paths;
 
 	lua_Number number = 0;
 
@@ -36,29 +39,28 @@ void Scene::OnCreateSceneObjects()
 		switch (lua_type(m_LuaEngine.m_pLuaState, -1))
 		{
 		case LUA_TTABLE:
-			//if(!m_LuaEngine.getNamedfield(m_LuaEngine.m_pLuaState, var.c_str())) break;
-			/*
-			lua_len(m_LuaEngine.m_pLuaState, -1);
-			if (lua_type(m_LuaEngine.m_pLuaState, -1) == LUA_TNUMBER)
+
+			if (var == "static_geometry")
 			{
-				LUA_NUMBER dummy = lua_tonumber(m_LuaEngine.m_pLuaState, -1);
-				switch ((int)dummy)
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
 				{
-				case 1:
-					break;
-
-				case 2:
-
-					break;
-
-				case 3:
-
-					break;
-
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					static_mesh_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
+				break;
 			}
-			lua_pop(m_LuaEngine.m_pLuaState, 1);
-			*/
+			else if (var == "dynamic_geometry")
+			{
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
+				{
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					dynamic_mesh_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				break;
+			}
+
 			m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
 
 			if (var == "scene_camera_m_eye")
@@ -125,6 +127,7 @@ void Scene::OnCreateSceneObjects()
 			number = lua_tonumber(m_LuaEngine.m_pLuaState, -1);
 			var == "WIDTH" ? pCam.SetWidth(number) : void();
 			var == "HEIGHT" ? pCam.SetHeight(number) : void();
+			lua_pop(m_LuaEngine.m_pLuaState, 1);
  			break;
 		}
 
@@ -142,25 +145,46 @@ void Scene::OnCreateSceneObjects()
 
 	pCam.OnInit();
 	m_ActiveCamera = std::make_shared<PerspectiveCamera>(pCam);
-
-	for (auto& mesh : OBJ_paths)
+	for (auto& s_mesh : static_mesh_paths)
 	{
-			LoadMeshData(mesh.c_str());
+		LoadMeshData(s_mesh.c_str(), 0);
 	}
+
+	//BatchStaticGeometry();
+	for (auto& d_mesh : dynamic_mesh_paths)
+	{
+		LoadMeshData(d_mesh.c_str(), 1);
+	}
+
+	//Collider<SphereCollider> s1 = {0.5f, +1.0f, 0.00f, 1.0f};
+	//{ 1.0f, {-0.5f, 0.5f, 0.5f} };
+	//Collider<SphereCollider> s2 = {0.5f, +1.0f, 0.00f, 0.49f};
+	//{ 1.0f, {+0.5f, 0.5f, 0.5f} };
+
+	Collider<GenericCollider> g1 = {glm::vec3(-5.4, 1.0, 0.5), m_StaticGeometry[0].m_Positions };
+	Collider<GenericCollider> g2 = {glm::vec3(+5.6, 1.0, 0.0), m_DynamicGeometry[0].m_Positions };
+	
+	//bool intersect = s1.Intersect(s2);
+
+	bool intersect = g1.Intersect(g2);
 }
 
 void Scene::OnInit()
 {
+	m_State = SceneState::LOADING;
+
 	NumMeshes = 0;
 	m_LuaEngine.SetScriptPath(
-		"C:/dev/Silindokuhle15/Spring/Assets/test.lua"
+		"C:/dev/Silindokuhle15/Spring/Assets/dynamic_scene.lua"
 	);
 
 	m_LuaEngine.SetKeys(
 		std::vector<std::string>({ 
 			"WIDTH",
 			"HEIGHT",
-			"obj_path" ,
+			//"obj_path" ,
+			"dynamic_geometry",
+			"static_geometry",
 			//LIGHTS
 			"light_position",
 			"light_color",
@@ -178,71 +202,167 @@ void Scene::OnInit()
 	);
 	m_LuaEngine.Run();
 	OnCreateSceneObjects();
+
+	m_PhysicsEngine.OnInit();
+
+	m_State = SceneState::RUNNING;
 }
 
 void Scene::OnUpdate(float ts)
 {
-	m_ActiveCamera->OnUpdate(ts);
-	for (int i = 0; i < m_MeshData.size(); i++)
+	auto func = [this, ts](std::vector<Mesh> buffer)
 	{
-		m_MeshData[i].OnUpdate(ts);
-		unsigned int model_location = m_ModelLocations[i];
-		unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
+		m_ActiveCamera->OnUpdate(ts);
+		for (int i = 0; i < buffer.size(); i++)
+		{
+			buffer[i].OnUpdate(ts);
+			unsigned int model_location = m_ModelLocations[i];
+			unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
 
-		glm::mat4 transform = m_MeshData[i].m_Transform;
-		glm::mat4 model_view = transform * m_ActiveCamera->GetV();
+			glm::mat4 transform = buffer[i].m_Transform;
+			glm::mat4 model_view = transform * m_ActiveCamera->GetV();
 
-		glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
+			glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
 
-		glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
-		glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
-	}
+			glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
+			glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+		}
 
-	// UPDATE THE MATERIALS
+		// UPDATE THE MATERIALS
 
-	for (auto& mtl : m_Materials)
+		for (auto& mtl : m_Materials)
+		{
+			mtl.OnUpdate();
+		}
+	};
+
+	switch (m_State)
 	{
-		mtl.OnUpdate();
+	case SceneState::LOADING:
+
+		break;
+
+	case SceneState::RUNNING:
+
+		func(m_StaticGeometry);
+		func(m_DynamicGeometry);
+		m_PhysicsEngine.OnUpdate(ts);
+		break;
+
+	case SceneState::PAUSED:
+		break;
+
+	case SceneState::END:
+		break;
+
+	case SceneState::STOPPED:
+		break;
 	}
+}
+
+void Scene::Run()
+{
+	//m_State = SceneState::RUNNING;
+}
+
+void Scene::OnEnd()
+{
+	//m_State = SceneState::END;
+}
+
+void Scene::OnPause()
+{
+	//m_State = SceneState::PAUSED;
+}
+
+void Scene::OnStop()
+{
+	//m_State = SceneState::STOPPED;
+}
+
+void Scene::OnReload()
+{
+	//m_State = SceneState::LOADING;
 }
 
 
 void Scene::Process()
 {	
-	for (int i = 0; i < m_MeshData.size(); i++)
+	auto func = [this](std::vector<Mesh> buffer)
 	{
-		glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
-		unsigned int model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
-		unsigned int normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
+		for (int i = 0; i < buffer.size(); i++)
+		{
+			glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
+			uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
+			uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
 
-		m_ModelLocations.push_back(model_location);
-		m_NormalMatrixLocations.push_back(normal_matrix_location);
-	}
+			uint32_t light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
+			//int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
+			//int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
+			//int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
+			//int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
+
+			m_ModelLocations.push_back(model_location);
+			m_NormalMatrixLocations.push_back(normal_matrix_location);
+		}
+	};
+
+	func(m_StaticGeometry);
+	func(m_DynamicGeometry);
+
 }
 
-void Scene::LoadMeshData(const char* path)
+void Scene::LoadMeshData(const char* path, int buffer)
 {
 	Mesh new_mesh;
 
 	if (std::string(path) == "Grid")
 	{
-		Grid dummy_grid = Grid(1, 1);
+		Grid dummy_grid = Grid(3, 3);
 		dummy_grid.OnInit();
-		Mesh dummy_mesh = Mesh::Batch(dummy_grid.m_Cells);
-		
-		LoadMeshData(dummy_mesh);
+		new_mesh = Mesh::Batch(dummy_grid.m_Cells);
+		//LoadMeshData(new_mesh);
+
 	}
 	else
 	{
 		new_mesh = Mesh(path);
 		new_mesh.OnInit();
 		new_mesh.SetTransform(glm::mat4(1.0f));
-		LoadMeshData(new_mesh);
+		//LoadMeshData(new_mesh);
 	}
+	switch (buffer)
+	{
+	case 1: // DYANAMIC GEOMETRY
+		LoadDynamicGeometry(new_mesh);
+		break;
+	default:
+		LoadStaticGeometry(new_mesh);
+	}
+
 }
 
 void Scene::LoadMeshData(Mesh& other)
 {
 	m_MeshData.push_back(other);
+	NumMeshes++;
+}
+
+void Scene::LoadDynamicGeometry(Mesh& other)
+{
+	m_DynamicGeometry.push_back(other);
+	NumMeshes++;
+}
+
+void Scene::BatchStaticGeometry()
+{
+	Mesh BatchedMesh = Mesh::Batch(m_StaticGeometry);
+	m_StaticGeometry.clear();
+	m_StaticGeometry.push_back(BatchedMesh);
+}
+
+void Scene::LoadStaticGeometry(Mesh& other)
+{
+	m_StaticGeometry.push_back(other);
 	NumMeshes++;
 }

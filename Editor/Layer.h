@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ImGuizmo.h"
+#include "imgui_impl_win32.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 
@@ -58,15 +59,30 @@ public:
 	~Panel() = default;
 
 
-private:
+protected:
 	std::string m_PanelName;
 };
 
 
 template<class T>
+class MenuBar : public Panel
+{
+public:
+
+	void Run() override;
+
+	MenuBar() : m_PanelName{ "MenuBar" } {}
+	~MenuBar() {}
+
+protected:
+	std::string m_PanelName;
+};
+
+template<class T>
 class ComponentPanel : public Panel
 {
 public:
+	int32_t create_handle = 0;
 
 	// SETTING VARIABLES
 	int m_EnableLighting = 1;
@@ -94,7 +110,7 @@ public:
 	float m_PointLightPosition[3] = { 0.0, 0.0, 0.0 };
 
 	// OBJECT POINTERS
-	std::shared_ptr<PerspectiveCamera> m_EditorCamera;
+	std::shared_ptr<Camera> m_EditorCamera;
 	std::shared_ptr<glm::mat4> m_ActiveTransform;
 
 	void EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition);
@@ -373,12 +389,16 @@ inline void ComponentPanel<T>::Run()
 	ImGui::SliderFloat3("Sky Color", m_SkyColor, 0.0, 1.0);
 	ImGui::SliderFloat3("Grounr Color", m_GroundColor, 0.0, 1.0);
 
+	/*
 	m_ActiveScene->m_SkyColor[0] = m_SkyColor[0];
 	m_ActiveScene->m_SkyColor[1] = m_SkyColor[1];
 	m_ActiveScene->m_SkyColor[2] = m_SkyColor[2];
 	m_ActiveScene->m_GroundColor[0] = m_GroundColor[0];
 	m_ActiveScene->m_GroundColor[1] = m_GroundColor[1];
 	m_ActiveScene->m_GroundColor[2] = m_GroundColor[2];
+	*/
+	m_ActiveScene->m_SkyLights[0] = glm::vec3(m_SkyColor[0], m_SkyColor[1], m_SkyColor[2]);
+	m_ActiveScene->m_GroundLights[0] = glm::vec3(m_GroundColor[0], m_GroundColor[1], m_GroundColor[2]);
 
 	int light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
 	int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
@@ -387,13 +407,13 @@ inline void ComponentPanel<T>::Run()
 	int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
 
 	
-
+	/*
 	glProgramUniform3fv(m_ActiveMaterial, light_location, 1, glm::value_ptr(pointLight.m_Position));
 	glProgramUniform3fv(m_ActiveMaterial, light_color_location, 1, glm::value_ptr(pointLight.m_Color));
 	glProgramUniform3fv(m_ActiveMaterial, sky_color_location, 1, m_ActiveScene->m_SkyColor);
 	glProgramUniform3fv(m_ActiveMaterial, ground_color_location, 1, m_ActiveScene->m_GroundColor);
 	glProgramUniform3fv(m_ActiveMaterial, factor_location, 1, &m_Factor);
-
+	*/
 	float current_light_pos[] = { pointLight.m_Position.x, pointLight.m_Position.y , pointLight.m_Position.z };
 	float current_light_col[] = { pointLight.m_Color.x, pointLight.m_Color.y , pointLight.m_Color.z };
 
@@ -441,6 +461,42 @@ inline void ComponentPanel<T>::Run()
 
 	EditTransform((float*)glm::value_ptr(m_EditorCamera->GetV()), (float*)glm::value_ptr(m_EditorCamera->GetP()), (float*)glm::value_ptr(*m_ActiveTransform), true);
 
+
+	const char* attr[] = { "Mesh", "Grid"};
+
+	if (ImGui::Button("Create..."))
+		ImGui::OpenPopup("Create..._popup");
+	//ImGui::SameLine();
+	//ImGui::TextUnformatted(create_handle == -1 ? "<None>" : attr[create_handle]);
+	ImGuiTextFilter filter;
+	const char* lines[] = { "aaa1.c", "bbb1.c", "ccc1.c", "aaa2.cpp", "bbb2.cpp", "ccc2.cpp", "abc.h", "hello, world" };
+	if (ImGui::BeginPopup("Create..._popup"))
+	{
+		for (int i = 0; i < IM_ARRAYSIZE(attr); i++)
+		{
+			if (ImGui::Selectable(attr[i]))
+			{
+				ImGui::SameLine();
+				filter.Draw();
+				for (int j = 0; j < IM_ARRAYSIZE(lines); j++)
+				{
+					if (filter.PassFilter(lines[j]))
+					{
+
+					}
+				}
+
+				if (ImGui::IsItemClicked(ImGui::Selectable(attr[i])))
+				{
+					create_handle = i;
+				}
+			}
+
+		}
+
+		ImGui::EndPopup();
+	}
+
 	ImGui::End();
 }
 
@@ -458,7 +514,6 @@ inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathT
 	float a = 0.4;
 	float b = 0.9;
 
-	//root_path = pathToShow;
 	current_path = pathToShow;
 
 	ReadDirTree(current_path, level);
@@ -478,22 +533,26 @@ inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathT
 
 			if (ImGui::TreeNode(dir_stem.c_str()))
 			{
+				//current_path = root_path;
+				root_path = current_path;
 
 				if (ImGui::IsItemClicked() && ImGui::IsItemHovered())
 				{
-					m_DirContent.clear();
-					m_DirEntries.clear();
-
 					current_path = i;
-					current_path /= dir_stem;
-					root_path = current_path;
+					//current_path /= dir_stem;
+					//pathToShow /= dir_stem;
 
 					//ImGui::TreePush();
+					//ImGui::TreePop();
+					DisplayDirTree(i, level);
 				}
 				ImGui::TreePop();
 			}
 		}
 	}
+
+	//m_DirContent.clear();
+	//m_DirEntries.clear();
 	ImGui::EndChild();
 
 	ImGui::SameLine();
@@ -552,7 +611,7 @@ inline void ContentBrowser<T>::Run()
 
 	ImGui::Begin(m_PanelName.c_str());
 
-	std::string dummy_path = "C:/dev/Silindokuhle15/Spring/Assets/";
+	std::string dummy_path = "C:/dev/Silindokuhle15/Spring/Assets";
 	root_path =  std::filesystem::path(dummy_path);
 	DisplayDirTree(root_path, 0);
 
@@ -634,4 +693,62 @@ inline void StatsPanel<T>::Run()
 	}
 }
 
+template<class T>
+inline void MenuBar<T>::Run()
+{
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::MenuItem("New", "...")) 
+			{
+			}
+			if (ImGui::MenuItem("Open", "..."))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Close", "..."))
+			{
+			}
+			if (ImGui::MenuItem("Close Project", "..."))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Save Selected", "crtl+s"))
+			{
+			}
+			if (ImGui::MenuItem("Save All", "crtl+shift+s"))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Recent Files", "..."))
+			{
+			}
+			if (ImGui::MenuItem("Recent Projects", "..."))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Quit", "alt+'?'"))
+			{
+			}
+		}
+		if (ImGui::BeginMenu("Edit"))
+		{
+			if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+			if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+			ImGui::Separator();
+			if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+			if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+			if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+			ImGui::EndMenu();
+		}
 
+		if (ImGui::BeginMenu("View"))
+		{
+		}
+		if (ImGui::BeginMenu("Project"))
+		{
+		}
+		ImGui::EndMainMenuBar();
+	}
+}

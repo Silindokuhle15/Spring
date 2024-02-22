@@ -1,8 +1,9 @@
 #pragma once
 #include "Camera.h"
 
+/*
 class OrthographicCamera :
-    public Camera<OrthographicCamera>
+    public Camera<Orthographic>
 {
 public:
 
@@ -10,11 +11,6 @@ public:
 
 	void OnInit() override;
 	void Present()override;
-
-	//void SetWidth(int width) { m_Width = width; }
-	//void SetHeight(int height) { m_Height = height; }
-	//int GetWidth() const { return m_Width; }
-	//int GetHeight() const { return m_Height; }
 
 	void MoveForward() override;
 	void MoveBackward() override;
@@ -31,4 +27,4 @@ public:
 
 	void OnUpdate(float ts) override;
 };
-
+*/

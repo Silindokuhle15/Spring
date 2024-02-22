@@ -6,6 +6,7 @@ scripting::ScriptingEngine* BaseApplication::m_LuaEngine = nullptr;
 std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 std::unique_ptr<UILayer> BaseApplication::m_pUILayer = nullptr;
 std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
+
 TimeStep BaseApplication::ts;
 bool BaseApplication::ExitWindow = false;
 
@@ -50,6 +51,8 @@ void BaseApplication::CreateMainWindow()
 
     glfwSetErrorCallback(BaseApplication::error_callback);
 
+    /*
+
     glfwSetKeyCallback(BaseApplication::m_pWindow, KeyBoard::key_callback);
     glfwSetWindowSizeCallback(BaseApplication::m_pWindow, BaseApplication::window_size_callback);
 
@@ -57,15 +60,15 @@ void BaseApplication::CreateMainWindow()
     glfwSetScrollCallback(BaseApplication::m_pWindow, Mouse::mouse_scroll_callback);
     glfwSetWindowCloseCallback(BaseApplication::m_pWindow, BaseApplication::window_close_call);
 
-
+    */
     // START THE LUA ENGINE AFTER THE WINDOW HAS BEEN CREATED
 }
 
 void BaseApplication::Run()
 {
-    //Win32Window AppWindow;
+    Win32Window AppWindow;
 
-    //m_Win32Window = &AppWindow;
+    m_Win32Window = &AppWindow;
 
     //m_Win32Window->SetUpForRendering();
 
@@ -74,16 +77,16 @@ void BaseApplication::Run()
     //m_LuaEngine = &LuaEngine;
 
     CreateMainWindow();
-
     Scene square_scn;
     square_scn.OnInit();
     
+    
     const char* glsl_version = "#version 400";
-    UILayer ImGui_Layer(BaseApplication::m_pWindow, glsl_version);
+    UILayer ImGui_Layer(BaseApplication::m_pWindow, AppWindow,  glsl_version);
 
     BaseApplication::m_pUILayer = std::make_unique<UILayer>(ImGui_Layer);
     BaseApplication::m_pUILayer->OnInit();
-
+    
     Renderer OpenGLrenderer;
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
     BaseApplication::m_Scene = std::make_shared<Scene>(square_scn);
@@ -101,7 +104,7 @@ void BaseApplication::Run()
     {
         float time = 0;
 
-        glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
+        //glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
 
         glfwPollEvents();
         //BaseApplication::m_LuaEngine->Run();
@@ -117,10 +120,13 @@ void BaseApplication::Run()
 
         //float now  = m_Win32Window->milliseconds_now();
 
-        //ts = (now - time) / 1000;
+        //ts = (now - time) / 1000000.0f;
 
         //m_Win32Window->OnUpdate();
+ 
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
+        
+        BaseApplication::OnUpdate();
 
         BaseApplication::m_pUILayer->OnUpdate(ts);
 
@@ -140,6 +146,36 @@ void BaseApplication::ShutDown()
 {
     glfwDestroyWindow(BaseApplication::m_pWindow);
     glfwTerminate();
+}
+
+void BaseApplication::OnUpdate()
+{
+    for (auto & v : m_Win32Window->m_SceneEventQueue.m_Queue)
+    {
+        switch (v)
+        {
+        case EventID::None:
+            break;
+        case EventID::A:
+            m_Scene->m_ActiveCamera->MoveLeft();
+            break;
+        case EventID::D:
+            m_Scene->m_ActiveCamera->MoveRight();
+            break;
+        case EventID::Q:
+            m_Scene->m_ActiveCamera->MoveForward();
+            break;
+        case EventID::S:
+            m_Scene->m_ActiveCamera->MoveDown();
+            break;
+        case EventID::W:
+            m_Scene->m_ActiveCamera->MoveUp();
+            break;
+        case EventID::Z:
+            m_Scene->m_ActiveCamera->MoveBackward();
+        }
+        v.Resolve();
+    }
 }
 
 void BaseApplication::AttachRenderer(std::unique_ptr<Renderer> Ren)
@@ -195,12 +231,12 @@ void BaseApplication::MoveCameraRight()
 
 void BaseApplication::RotateCamera(glm::vec3 rot_dir)
 {
-    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Rotate(rot_dir);
+    //m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Rotate(rot_dir);
 }
 
 void BaseApplication::FocusCamera(glm::vec3 rot_dir)
 {
-    m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Focus(rot_dir);
+    //m_pActiveRenderer->m_ActiveScene->m_ActiveCamera->Focus(rot_dir);
 }
 
 void BaseApplication::CreateNewScene()

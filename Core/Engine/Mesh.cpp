@@ -1,10 +1,12 @@
 #include "Mesh.h"
 
 ObjectLoader Mesh::ob = ObjectLoader();
+//TinyWrapper Mesh::TWr = TinyWrapper();
 
 void Mesh::OnInit()
 {
     ob.LoadObjectFromFile(m_OBJFilePath.c_str());
+    //TWr.LoadObjectFromFile(m_OBJFilePath.c_str());
     //m_Positions = ob.m_Positions;
     NumVertices = ob.m_Positions.size();
     NumIndices  = ob.m_VertexIndices.size();

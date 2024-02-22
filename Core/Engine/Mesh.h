@@ -1,6 +1,7 @@
 #pragma once
 #include "Application.h"
 #include "ObjectLoader.h"
+#include "TinyWrapper.h"
 
 class Mesh :
     public Application
@@ -24,7 +25,7 @@ public:
     virtual void MoveDown() override;
 
     static ObjectLoader ob;
-
+    //static TinyWrapper TWr;
     static Mesh Batch(std::vector<Mesh>& meshes);
 
 private:

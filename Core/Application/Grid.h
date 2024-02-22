@@ -1,5 +1,5 @@
 #pragma once
-#include "Square.h"
+#include "Mesh.h"
 
 class Grid : public Mesh
 {
@@ -9,9 +9,7 @@ public:
     Grid(unsigned int size) : m_Rows{ size }, m_Columns{ size } {}
     Grid(unsigned int rows, unsigned int cols) : m_Rows{ rows}, m_Columns{ cols } {}
 
-    void OnInit();
-
-    std::vector<Mesh> m_Cells;
+    void OnInit() override;
 
 private:
 

@@ -1,21 +1,20 @@
 #pragma once
 #include "Camera.h"
 
+/*
 
 class PerspectiveCamera :
-    public Camera<PerspectiveCamera>
+    public Camera<Perspective>
 {
 public:
 
 	float m_Speed;
 
 	PerspectiveCamera()	:
-		m_Speed{100.0f}
+		m_Speed{1.0f}
 	{}
-
-	void OnResize(int new_width, int new_height);
-    void OnInit() override;
-	void Present() override;
+    //void OnInit() override;
+	//void Present() override;
 
 	void MoveForward() override;
 	void MoveBackward() override;
@@ -35,3 +34,4 @@ public:
 	glm::mat4 GetVP() override;
 };
 
+*/

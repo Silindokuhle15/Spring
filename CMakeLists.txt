@@ -30,12 +30,14 @@ include_directories(
 	"Dependencies/ImGuizmo/"
 	"Dependencies/GLM/"
 	"Dependencies/Lua/include/"
+	"Dependencies/tiny/"
 	"Core/Application/"
 	"Core/Engine/"
 	"Core/Input/"
 	"Core/Materials/"
 	"Core/Physics/"
 	"Core/Rendering/"
+	"Core/SceneMgr/"
 	"Core/Scripting/"
 	"Core/Viewing/"
 	"Editor/"
@@ -61,6 +63,10 @@ Set(SOURCE_FILES
 	"Dependencies/ImGui/backends/imgui_impl_opengl3.cpp"
 	"Dependencies/ImGui/backends/imgui_impl_glfw.h"
 	"Dependencies/ImGui/backends/imgui_impl_glfw.cpp"
+	"Dependencies/ImGui/backends/imgui_impl_win32.h"
+	"Dependencies/ImGui/backends/imgui_impl_win32.cpp"
+	#"Dependencies/tiny/tiny_obj_loader.h"
+	#"Dependencies/tiny/tiny_obj_loader.cc"
 
 	"Dependencies/ImGuizmo/ImGuizmo.h"
 	"Dependencies/ImGuizmo/ImGuizmo.cpp"
@@ -71,8 +77,7 @@ Set(SOURCE_FILES
 	# ENGINE INCLUDES
 	"Core/Engine/BaseApplication.h"
 	"Core/Engine/BaseApplication.cpp"
-	"Editor/Layer.h"
-	"Editor/Layer.cpp"
+
 	"Core/Engine/TimeStep.h"
 	"Core/Engine/TimeStep.cpp"
 	"Core/Engine/Window.h" 
@@ -108,8 +113,8 @@ Set(SOURCE_FILES
 	"Core/Rendering/OpenGLFrameBuffer.cpp"
 	"Core/Rendering/Renderer.h"
 	"Core/Rendering/Renderer.cpp"
-	"Core/Rendering/Scene.h"
-	"Core/Rendering/Scene.cpp"
+	"Core/SceneMgr/Scene.h"
+	"Core/SceneMgr/Scene.cpp"
 	"Core/Rendering/VertexArray.h"
 	"Core/Rendering/VertexArray.cpp"
 
@@ -122,6 +127,8 @@ Set(SOURCE_FILES
 	"Editor/Utility/ObjectLoader.cpp"
 	"Editor/Utility/Serializer.h"
 	"Editor/Utility/Serializer.cpp"
+	"Editor/Utility/TinyWrapper.h"
+	"Editor/Utility/TinyWrapper.cpp"
 
 	# VIEWING
 	"Core/Viewing/Camera.h"
@@ -142,15 +149,13 @@ Set(SOURCE_FILES
 	"Core/Application/Square.cpp"
 	
 	
-	
-	
-
 	# EDITOR 
-
+	"Editor/Layer.h"
+	"Editor/Layer.cpp"
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
-)
 
+ "Core/SceneMgr/SceneEvent.h" "Core/SceneMgr/SceneEvent.cpp")
 
 ## BUILD LUA
 set(LIB_NAME

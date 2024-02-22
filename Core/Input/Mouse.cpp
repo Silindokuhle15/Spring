@@ -7,9 +7,11 @@ int Mouse::CheckForRawMotionSupport()
 
 int Mouse::CheckForRawInputSupport()
 {
-    int ret = glfwRawMouseMotionSupported();
-    return ret;
+    //int ret = glfwRawMouseMotionSupported();
+    return 0;
 }
+
+/*
 void Mouse::cursor_position_callback(GLFWwindow* window, double x_pos, double y_pos)
 {
 
@@ -46,4 +48,4 @@ void Mouse::EnableRawMotion(GLFWwindow * window)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED ); // disable the cursor 
 
     glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); // Enable Raw Mouse Motion
-}
+}*/

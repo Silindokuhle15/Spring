@@ -2,7 +2,7 @@
 
 ObjectLoader Scene::m_ObjectLoader = ObjectLoader();
 
-void Scene::AttachCamera(std::shared_ptr<PerspectiveCamera> cam)
+void Scene::AttachCamera(std::shared_ptr<Camera> cam)
 {
 	//m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
 	m_ActiveCamera = cam;
@@ -17,7 +17,7 @@ void Scene::OnCreateSceneObjects()
 	Vector3 dummy_color = {};
 
 	// CREATE THE SCENE CAMERA(s)
-	PerspectiveCamera pCam;
+	Camera pCam;
 	std::vector<const char*> vec3_keys =
 	{
 		"x",
@@ -85,15 +85,19 @@ void Scene::OnCreateSceneObjects()
 			}
 			else if (var == "sky_color")
 			{
-				m_SkyColor[0] = vec3.x;
-				m_SkyColor[1] = vec3.y;
-				m_SkyColor[2] = vec3.z;
+				//m_SkyColor[0] = vec3.x;
+				//m_SkyColor[1] = vec3.y;
+				//m_SkyColor[2] = vec3.z;
+				auto var = glm::vec3(vec3.x, vec3.y, vec3.z);
+				m_SkyLights.push_back(SkyLight(var));
 			}
 			else if (var == "ground_color")
 			{
-				m_GroundColor[0] = vec3.x;
-				m_GroundColor[1] = vec3.y;
-				m_GroundColor[2] = vec3.z;
+				//m_GroundColor[0] = vec3.x;
+				//m_GroundColor[1] = vec3.y;
+				//m_GroundColor[2] = vec3.z;
+				auto var = glm::vec3(vec3.x, vec3.y, vec3.z);
+				m_GroundLights.push_back(GroundLight(var));
 			}
 			/*
 			else if (var == "obj_path")
@@ -144,13 +148,13 @@ void Scene::OnCreateSceneObjects()
 		);
 
 	pCam.OnInit();
-	m_ActiveCamera = std::make_shared<PerspectiveCamera>(pCam);
+	m_ActiveCamera = std::make_shared<Camera>(pCam);
 	for (auto& s_mesh : static_mesh_paths)
 	{
 		LoadMeshData(s_mesh.c_str(), 0);
 	}
 
-	//BatchStaticGeometry();
+	BatchStaticGeometry();
 	for (auto& d_mesh : dynamic_mesh_paths)
 	{
 		LoadMeshData(d_mesh.c_str(), 1);
@@ -175,7 +179,7 @@ void Scene::OnInit()
 
 	NumMeshes = 0;
 	m_LuaEngine.SetScriptPath(
-		"C:/dev/Silindokuhle15/Spring/Assets/dynamic_scene.lua"
+		"C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua"
 	);
 
 	m_LuaEngine.SetKeys(
@@ -317,12 +321,11 @@ void Scene::LoadMeshData(const char* path, int buffer)
 	Mesh new_mesh;
 
 	if (std::string(path) == "Grid")
-	{
-		Grid dummy_grid = Grid(3, 3);
-		dummy_grid.OnInit();
-		new_mesh = Mesh::Batch(dummy_grid.m_Cells);
-		//LoadMeshData(new_mesh);
-
+	{		
+		Grid d = Grid(250,250);
+		d.OnInit();
+		new_mesh = Mesh(d);
+		new_mesh.SetTransform(glm::mat4(1.0f));
 	}
 	else
 	{

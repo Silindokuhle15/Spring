@@ -41,7 +41,7 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     float x, y, z;
     float u, v;
 
-    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#"};
+    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#", "o"};
     //std::string str;
 
 
@@ -72,6 +72,13 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
                 is >> std::skipws;
                 is >> x >> y >> z;
                 m_Normals.push_back(glm::vec3(x, y, z));
+            }
+            else if (CheckDescription(description, "o"))
+            {
+                // CREATE NEW MESH AND THEN BASH THEM TOGETHER
+                //std::string obj_name = "";
+                is >> str;
+                //is.clear();
             }
 
             else if (CheckDescription(description, "f"))

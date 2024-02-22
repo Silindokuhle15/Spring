@@ -1,5 +1,5 @@
 #include "OrthographicCamera.h"
-
+/*
 void OrthographicCamera::OnInit()
 {
     m_AspectRatio = float(m_Width) / m_Height;
@@ -9,8 +9,8 @@ void OrthographicCamera::OnInit()
     m_View = glm::lookAt(m_eye, m_center, m_up);
 
     V = m_View;
-    m_Proj = p;
-    VP = p * m_View;
+    //m_Proj = p;
+    //VP = p * m_View;
 }
 
 void OrthographicCamera::Present()
@@ -21,7 +21,7 @@ void OrthographicCamera::Present()
     m_View = glm::lookAt(m_eye, m_center, m_up);
 
     V = m_View;
-    m_Proj = p;
+    //m_Proj = p;
     VP = p * m_View;
 }
 
@@ -62,3 +62,4 @@ void OrthographicCamera::OnUpdate(float ts)
 {
     m_Delta= ts;
 }
+*/

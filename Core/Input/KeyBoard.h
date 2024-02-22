@@ -1,11 +1,10 @@
 #pragma once
 #include "InputDevice.h"
-#include "BaseApplication.h"
 class KeyBoard :
     public InputDevice
 {
 public:
 
-    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    //static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 };
 

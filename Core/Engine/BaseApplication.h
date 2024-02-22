@@ -7,11 +7,13 @@
 #include "UILayer.h"
 #include "Renderer.h"
 #include "Scene.h"
+#include "SceneEvent.h"
 #include "TimeStep.h"
 //#include "PerspectiveCamera.h"
 #include "ScriptingEngine.h"
 
 //#include <glm/gtx/transform.hpp >
+#include "GLFW/glfw3.h"
 
 class Renderer;
 class UILayer;
@@ -54,6 +56,7 @@ public:
 	static void CreateNewScene();
 	static void Run();
 	static void ShutDown();
+	static void OnUpdate();
 	
 	BaseApplication() = default;
 };

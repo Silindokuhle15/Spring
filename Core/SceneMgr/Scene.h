@@ -24,17 +24,34 @@ typedef enum
 	LOADING, RUNNING, PAUSED, STOPPED, END
 } SceneState;
 
+template <class _ObjectType>
+class SceneObject
+{
+public:
+	uint32_t m_UUID;
+	SceneObject() : m_UUID{ 0 } {}
+};
+
+class SkyLight : public SceneObject<SkyLight>
+{
+public:
+	SkyLight(glm::vec3 col = glm::vec3(0.0)) : m_Color{col}
+	{	
+	}
+	glm::vec3 m_Color;
+};
+
+using GroundLight = SkyLight;
 
 class Scene
 {
 public:
 
-	float m_SkyColor[3];
-	float m_GroundColor[3];
-
+	std::vector<SkyLight> m_SkyLights;
+	std::vector<GroundLight> m_GroundLights;
 	std::vector<Material> m_Materials;
 	std::vector<PointLight> m_Lights;
-	std::vector<PerspectiveCamera> m_Cameras;
+	std::vector<Camera> m_Cameras;
 
 	std::vector<unsigned int> m_IndexData;
 	std::vector<unsigned int> m_ModelLocations;
@@ -53,9 +70,11 @@ public:
 
 	TimeStep ts;
 
-	std::shared_ptr<PerspectiveCamera> m_ActiveCamera = nullptr;
+	std::shared_ptr<Camera> m_ActiveCamera = nullptr;
 
-	void AttachCamera(std::shared_ptr<PerspectiveCamera> cam);
+	void AttachCamera(std::shared_ptr<Camera> cam);
+
+
 	void OnCreateSceneObjects();
 	void OnInit();
 

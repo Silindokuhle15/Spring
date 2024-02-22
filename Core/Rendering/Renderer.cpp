@@ -2,7 +2,7 @@
 
 void Renderer::SetUpForRendering()
 {
-    constexpr unsigned int MAX_NUM_VERTICES = 10000;
+    constexpr unsigned int MAX_NUM_VERTICES = 1000000;
     unsigned int m_Width = 1920;
     unsigned int m_Height = 1080;
 
@@ -197,8 +197,8 @@ void Renderer::UploadToOpenGL()
             }
         };
 
-    //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[1], m_IndexBuffer[1]);
-    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
+    UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
+    //UploadBuffer3v(m_ActiveScene->m_StaticGeometry, GL_LINES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
 
 void Renderer::OnRender()
@@ -207,7 +207,7 @@ void Renderer::OnRender()
     CreateImage();
     UploadToOpenGL();
 
-    GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+    GLbitfield flags = GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT;
     glBlitFramebuffer(0, 0, 1920, 1080, 0, 0, 1920, 1080, flags, GL_NEAREST);
     glEndQuery(GL_SAMPLES_PASSED);
 
@@ -228,7 +228,8 @@ void Renderer::OnUpdate(float ts)
 void Renderer::CreateImage()
 {
     glClearColor(0.02, 0.019, 0.092, 1.0f);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    //glDrawBuffer(GL_DEPTH_ATTACHMENT);
 }
 
 void Renderer::EnableTesselation()

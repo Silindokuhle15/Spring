@@ -1,16 +1,21 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
+#include <Windows.h>
 #include "Layer.h"
-#include "BaseApplication.h"
 #include "PerspectiveCamera.h"
 #include "OrthographicCamera.h"
+
+typedef enum class ImGui_BeckEnd
+{
+    None, Win32, GLFW
+};
 
 class UILayer :
     public Layer
 {
 public:
-
+    ImGui_BeckEnd m_ImguiBackEnd;
     unsigned int SelectedMesh;
     // Huh?
     std::shared_ptr<Scene> m_ActiveScene;
@@ -25,7 +30,7 @@ public:
     int m_ResultAvailable;
 
     // OBJECT POINTERS
-    std::shared_ptr<PerspectiveCamera> m_EditorCamera;
+    std::shared_ptr<Camera> m_EditorCamera;
     std::shared_ptr<glm::mat4> m_ActiveTransform;
 
     // DISPLAY PANELS
@@ -33,6 +38,7 @@ public:
     RenderPanel<Panel> m_RenderPanel;
     StatsPanel<Panel> m_StatsPanel;
     ContentBrowser<Panel> m_ContentBrowser;
+    MenuBar<Panel> m_FileMenuBar;
 
 
 public:
@@ -47,6 +53,6 @@ public:
     virtual void OnUpdate(float ts) override;
     // CONSTRUCTORS
     UILayer() : Layer() {}
-    UILayer(GLFWwindow* win, const char* gl_ver);
+    UILayer(GLFWwindow* win, HWND m_HWnd, const char* gl_ver);
     ~UILayer();
 };

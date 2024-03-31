@@ -6,21 +6,24 @@ void Square::OnInit()
     m_Positions = { {-1.0f, -1.0f, 0.0f}, { +1.0f, -1.0f, 0.0f }, {+1.0f, +1.0f, 0.0f}, { -1.0f, +1.0f, 0.0f} };
     m_TexCoords = { { 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, { 0.0f, 1.0f}};
     m_Normals = { {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0} , {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0} };
-    m_VertexIDs = { 1, 2, 3, 4 };
+    m_VertexIDs = { 0, 1, 2, 3};
     m_VertexIndices = { 0, 1, 2, 3, 0, 2};
+    // CHANGE THE VERTEX INDICES ORDER LATER
+
     m_Positions.shrink_to_fit();
     m_VertexIndices.shrink_to_fit();
  
     NumVertices = m_Positions.size();
     NumIndices = m_VertexIndices.size();
 
-    for (int i = 0; i < NumVertices; i++)
+    for (int i = 0; i < NumIndices; i++)
     {
+        uint32_t temp_index = m_VertexIndices[i];
         m_V.push_back(Vertex{
-            m_Positions[i],
-            m_TexCoords[i],
-            m_VertexIDs[i], 
-            m_Normals[i] 
+            m_Positions[temp_index],
+            m_TexCoords[temp_index],
+            m_VertexIDs[temp_index], 
+            m_Normals[temp_index]
         });
     }
  }

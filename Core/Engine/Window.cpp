@@ -2,49 +2,68 @@
 
 LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    SceneEvent dummy_event;
     switch (uMsg)
     {
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+    case WM_LBUTTONDOWN:
+        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::LEFT));
+        break;
+    case WM_LBUTTONUP:
+        break;
+    case WM_MBUTTONDOWN:
+        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::MIDDLE));
+        break;
+    case WM_MBUTTONUP:
+        break;
+    case WM_RBUTTONDOWN:
+        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::RIGHT));
+        break;
+    case WM_RBUTTONUP:
+        break;
+    case WM_XBUTTONDOWN:
+        break;
+    case WM_XBUTTONUP:
+        break;
+    case WM_MOUSEMOVE:
+        m_SceneEventQueue.Push(new MouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
+        break;
+    case WM_MOUSEWHEEL:
+        m_SceneEventQueue.Push(new MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam)));
+        break;
+
     case WM_KEYDOWN:
         switch (wParam)
         {
         case 0x41 :
             // 65 - A
-            dummy_event = SceneEvent(EventID::A);
-            //m_SceneEventQueue.Push(dummy_event);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::A));
             break;
         case 0x44:
             // 68 - D
-            dummy_event = SceneEvent(EventID::D);
-            //m_SceneEventQueue.Push(dummy_event);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::D));
             break;
         case 0x51:
             // 81 - Q
-            dummy_event = SceneEvent(EventID::Q);
-            //m_SceneEventQueue.Push(dummy_event);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::Q));
             break;
         case 0x53:
             // 83 - S
-            dummy_event = SceneEvent(EventID::S);
-            //m_SceneEventQueue.Push(dummy_event);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::S));
             break;
         case 0x57:
             // 87 - W
-            dummy_event = SceneEvent(EventID::W);
-            //m_SceneEventQueue.Push(dummy_event);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::W));
             break;
         case 0x5A:
-            dummy_event = SceneEvent(EventID::Z);
+            m_SceneEventQueue.Push(new SceneEvent(EventID::Z));
             break;
         }
-        m_SceneEventQueue.Push(dummy_event);
         break;
-
     case WM_KEYUP:
         break;
+
     default:
         return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
     }
@@ -52,9 +71,16 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 Win32Window::Win32Window()
 {
-    CreateWin32Window(1920, 1080, "Spring Editor");
-    //ShowWindow(m_Hwnd, 10);
+    CreateWin32Window(1920, 1080, "Empty Window");
+    ShowWindow(m_Hwnd, 10);
 }
+
+Win32Window::Win32Window(uint32_t width, uint32_t height, const char* name, bool show)
+{
+    CreateWin32Window(width, height, name);
+    show ? ShowWindow(m_Hwnd, 10) : 0;
+}
+
 
 Win32Window::~Win32Window()
 {
@@ -135,12 +161,6 @@ void Win32Window::CreateOpenGLContext()
 
 void Win32Window::DestroyOpenGLContext()
 {
-    /*
-    // IMGUI SHUTDOWN
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
-    */
 }
 
 void Win32Window::SetUpForRendering()
@@ -162,6 +182,7 @@ void Win32Window::OnUpdate()
         DispatchMessage(&msg);
     }
     m_SceneEventQueue.OnUpdate();
+    ts = m_EndTime - m_StartTime;
 }
 
 long long Win32Window::milliseconds_now() {

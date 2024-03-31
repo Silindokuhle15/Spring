@@ -1,8 +1,10 @@
 #pragma once
 #include <Windows.h>
+#include <windowsx.h>
 #include "SceneEvent.h"
 #include <memory>
 #include "OpenGLFrameBuffer.h"
+#include "TimeStep.h"
 
 template <class WindowClass>
 class BaseWindowClass
@@ -11,6 +13,14 @@ public:
 	SceneEventQueue m_SceneEventQueue;
 	HWND m_Hwnd;
 	HINSTANCE m_Handle;
+
+	TimeStep m_StartTime;
+	TimeStep m_EndTime;
+
+	virtual void OnUpdate() = 0;
+	virtual void StartTimer() = 0;
+	virtual void EndTimer() = 0;
+	virtual void SwapBuffer() = 0;
 
 	BOOL CreateWin32Window(INT width, INT height, const char* app_name)
 	{
@@ -76,23 +86,37 @@ public:
 	//const char* CLASS_NAME = "Win32Window";
 	HDC m_Hdc;
 	HGLRC m_Hrc;
+	TimeStep ts;
 
 	void CreateOpenGLContext();
 	void DestroyOpenGLContext();
 	void SetUpForRendering();
 
-	void SwapBuffer();
+	void SwapBuffer() override;
 
-	void OnUpdate();
-	long long milliseconds_now();
+	void OnUpdate() override;
+	
 	operator HWND() const { return m_Hwnd; }
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
 	Win32Window();
+	Win32Window(uint32_t width, uint32_t height, const char* name, bool show = true);
 	~Win32Window();
+
+	void StartTimer() override {
+		m_StartTime = milliseconds_now();
+	}
+	void EndTimer() override {
+		m_EndTime = milliseconds_now();
+	}
+
+
+protected:
+	long long milliseconds_now();
 
 private:
 	// FRAMEBUFFERS
 	OpenGLFrameBuffer m_DrawFrame;
 	OpenGLFrameBuffer m_ReadFrame;
 };
+

@@ -1,7 +1,6 @@
 #pragma once
 #include "Application.h"
-#include "ObjectLoader.h"
-#include "TinyWrapper.h"
+#include "Utility/ObjectLoader.h"
 
 class Mesh :
     public Application

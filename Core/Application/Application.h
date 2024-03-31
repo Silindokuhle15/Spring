@@ -1,11 +1,8 @@
 #pragma once
 #include "GL/glew.h"
-#include <iostream>
 #include <fstream>
-#include "glm/glm.hpp"
 #include "Material.h"
-#include <vector>
-#include "VertexArray.h"
+#include "Common.h"
 #include "TimeStep.h"
 
 class Application
@@ -30,14 +27,9 @@ public:
     std::vector<unsigned int> m_NormalIndices;
 
     // Fields don't necessarily need to be saved in the .scn file
-    // Vertex Arrays
-    VertexArray m_VAO;
     TimeStep m_Ts;
-    int m_ModelLocation;
-
     virtual void OnInit()  = 0;
     virtual void OnUpdate(float ts) = 0;
-    virtual int GetModelLocation() const { return m_ModelLocation; }
     virtual void SetTransform(const glm::mat4& transform) noexcept 
     { 
         for (auto& pos : m_Positions)

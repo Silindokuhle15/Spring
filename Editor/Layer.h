@@ -9,11 +9,10 @@
 #include "backends/imgui_impl_opengl3.h"
 
 #include <string>
-#include "Scene.h"
 #include <set>
-
-
-#include <filesystem>
+#include "Scene.h"
+#include "Project.h"
+#include "TimeStep.h"
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
@@ -26,7 +25,7 @@ class Layer
 {
 
 public:
-
+	TimeStep m_Delta;
 	uint32_t m_LayerWidth, m_LayerHeight;
 	Layer(uint32_t width, uint32_t height) : m_LayerWidth{ width }, m_LayerHeight{ height }
 	{
@@ -54,7 +53,6 @@ public:
 	{
 
 	}
-	
 	virtual void Run() = 0;
 	~Panel() = default;
 
@@ -696,59 +694,69 @@ inline void StatsPanel<T>::Run()
 template<class T>
 inline void MenuBar<T>::Run()
 {
-	if (ImGui::BeginMainMenuBar())
-	{
-		if (ImGui::BeginMenu("File"))
+	bool is_open = true;
+		if (ImGui::BeginMainMenuBar())
 		{
-			if (ImGui::MenuItem("New", "...")) 
+			if (ImGui::BeginMenu("File"))
 			{
-			}
-			if (ImGui::MenuItem("Open", "..."))
-			{
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Close", "..."))
-			{
-			}
-			if (ImGui::MenuItem("Close Project", "..."))
-			{
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Save Selected", "crtl+s"))
-			{
-			}
-			if (ImGui::MenuItem("Save All", "crtl+shift+s"))
-			{
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Recent Files", "..."))
-			{
-			}
-			if (ImGui::MenuItem("Recent Projects", "..."))
-			{
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Quit", "alt+'?'"))
-			{
-			}
-		}
-		if (ImGui::BeginMenu("Edit"))
-		{
-			if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-			if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
-			ImGui::Separator();
-			if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-			if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-			if (ImGui::MenuItem("Paste", "CTRL+V")) {}
-			ImGui::EndMenu();
-		}
+				if (ImGui::MenuItem("New", "..."))
+				{
+					if (ImGui::IsItemClicked())
+					{
+						char buffer[512];
+						ImGui::InputText("File Name", buffer, sizeof(char) * 512);
+						std::string file_name(buffer);
+						Project NewProject(file_name);
 
-		if (ImGui::BeginMenu("View"))
-		{
+					}
+				}
+				if (ImGui::MenuItem("Open", "..."))
+				{
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Close", "..."))
+				{
+				}
+				if (ImGui::MenuItem("Close Project", "..."))
+				{
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Save Selected", "crtl+s"))
+				{
+				}
+				if (ImGui::MenuItem("Save All", "crtl+shift+s"))
+				{
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Recent Files", "..."))
+				{
+				}
+				if (ImGui::MenuItem("Recent Projects", "..."))
+				{
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Quit", "alt+'?'"))
+				{
+				}
+			}
+			if (ImGui::BeginMenu("Edit"))
+			{
+				if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+				if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+				ImGui::Separator();
+				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+				if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("View"))
+			{
+			}
+			if (ImGui::BeginMenu("Project"))
+			{
+
+			}
+			ImGui::EndMainMenuBar();
 		}
-		if (ImGui::BeginMenu("Project"))
-		{
-		}
-		ImGui::EndMainMenuBar();
-	}
 }

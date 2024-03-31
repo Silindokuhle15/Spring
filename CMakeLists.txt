@@ -32,10 +32,13 @@ include_directories(
 	"Dependencies/Lua/include/"
 	"Dependencies/tiny/"
 	"Core/Application/"
+	"Core/Common/"
 	"Core/Engine/"
+	"Core/Event"
 	"Core/Input/"
 	"Core/Materials/"
 	"Core/Physics/"
+	"Core/Project"
 	"Core/Rendering/"
 	"Core/SceneMgr/"
 	"Core/Scripting/"
@@ -45,7 +48,7 @@ include_directories(
 )
 
 Set(SOURCE_FILES 
-	"SpinningTriangleModified.cpp"
+	"SpringEditor.cpp"
 
 	# DEPENDENCIES
 	"Dependencies/GLEW/include/GL/glew.h"
@@ -74,6 +77,9 @@ Set(SOURCE_FILES
 	# CORE APPLICATION INCLUDES
 	"Core/Application/Application.h"
 	"Core/Application/Application.cpp"
+
+	# COMMON
+	"Core/Common/Common.h"
 	# ENGINE INCLUDES
 	"Core/Engine/BaseApplication.h"
 	"Core/Engine/BaseApplication.cpp"
@@ -82,6 +88,12 @@ Set(SOURCE_FILES
 	"Core/Engine/TimeStep.cpp"
 	"Core/Engine/Window.h" 
 	"Core/Engine/Window.cpp"
+	"Core/Engine/NGLFWwindow.h"
+	"Core/Engine/NGLFWwindow.cpp"
+	
+	# EVENTS
+	"Core/Event/Event.h" 
+	"Core/Event/Event.cpp"
 
 	# INPUT
 	"Core/Input/InputDevice.h"
@@ -108,15 +120,23 @@ Set(SOURCE_FILES
 	 "Core/Physics/PhysicsEngine.h" 
 	 "Core/Physics/PhysicsEngine.cpp"
 
+	# PROJECTS
+	"Core/Project/Project.h" 
+	"Core/Project/Project.cpp"
+
 	# RENDERING
 	"Core/Rendering/OpenGLFrameBuffer.h"
 	"Core/Rendering/OpenGLFrameBuffer.cpp"
 	"Core/Rendering/Renderer.h"
 	"Core/Rendering/Renderer.cpp"
-	"Core/SceneMgr/Scene.h"
-	"Core/SceneMgr/Scene.cpp"
 	"Core/Rendering/VertexArray.h"
 	"Core/Rendering/VertexArray.cpp"
+
+	# SCENE MANAGER
+	"Core/SceneMgr/Scene.h"
+	"Core/SceneMgr/Scene.cpp"
+	"Core/SceneMgr/SceneEvent.h" 
+	"Core/SceneMgr/SceneEvent.cpp" 
 
 	# SCRIPTING
 	"Core/Scripting/ScriptingEngine.h"
@@ -140,7 +160,6 @@ Set(SOURCE_FILES
 
 	# APPLICATIONS
 	
-	
 	"Core/Application/Grid.h"
 	"Core/Application/Grid.cpp"
 	"Core/Engine/Mesh.h"
@@ -155,7 +174,7 @@ Set(SOURCE_FILES
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
 
- "Core/SceneMgr/SceneEvent.h" "Core/SceneMgr/SceneEvent.cpp")
+)
 
 ## BUILD LUA
 set(LIB_NAME

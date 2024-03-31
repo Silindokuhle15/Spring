@@ -24,7 +24,7 @@ public:
 	int m_Height;
 	float m_AspectRatio;
 
-	float m_Speed = 0.10f;
+	float m_Speed = 1.0f;
 	float m_Delta;
 
 	virtual glm::vec3 GetPosition() { return m_eye; }

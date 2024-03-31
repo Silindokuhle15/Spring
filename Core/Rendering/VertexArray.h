@@ -1,21 +1,6 @@
 #pragma once
 #include "GL/glew.h"
-#include "glm/glm.hpp"
-#include <string>
-#include <vector>
-
-typedef struct
-{
-	glm::vec3 pos;
-	glm::vec2 tex;
-	uint32_t  ID;
-	glm::vec3 norm;
-} Vertex;
-
-enum class VertexAttrib
-{
-	Position, TexCoord, ID, Normal
-};
+#include "Common.h"
 
 class VertexArray
 {

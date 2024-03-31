@@ -1,39 +1,22 @@
 #pragma once
+#include "Event.h"
 #include <vector>
 
-enum class EventID 
-{
-	None = 0,
-	A = 0x41,
-	D = 0x44,
-	Q = 0x51,
-	S = 0x53,
-	W = 0x57,
-	Z = 0x5A	
-};
-
-template <class EventClass>
-class Event
+class SceneEvent : public Event
 {
 public:
-	bool m_Resolved;
-	virtual bool Resolve() = 0;
-	Event() : m_Resolved{false}{}
-};
 
-class SceneEvent : public Event<SceneEvent>
-{
-public:
-	EventID m_EventID;
-	SceneEvent() :m_EventID{ EventID::None } {};
-	SceneEvent(EventID id) : m_EventID{ id } {}
+	SceneEvent(EventID id = EventID::None) 
+	{
+		m_ID = id;
+		m_Resolved = false;
+	}
 	bool Resolve() override;
-
-	operator EventID() const { return m_EventID; }
+	operator EventID() const { return m_ID; }
 
 	bool operator!= (const SceneEvent& other)
 	{
-		return !(m_EventID == other.m_EventID);
+		return !(m_ID == other.m_ID);
 	}
 private:
 
@@ -42,17 +25,17 @@ private:
 class SceneEventQueue
 {
 public:
-	std::vector<SceneEvent> m_Queue;
+	std::vector<Event*> m_Queue;
 	SceneEventQueue() {};
 
-	operator std::vector<SceneEvent>() const { return m_Queue; }
-	void Push(SceneEvent& value)
+	operator std::vector<Event*>() const { return m_Queue; }
+	void Push(Event* value)
 	{
 		m_Queue.push_back(value);
 	}
 
 	void OnUpdate()
 	{
-		m_Queue.erase(std::remove_if(m_Queue.begin(), m_Queue.end(), [](auto& event) { return event.m_Resolved; }), m_Queue.end());
+		m_Queue.erase(std::remove_if(m_Queue.begin(), m_Queue.end(), [](auto& event) { return event->m_Resolved; }), m_Queue.end());
 	}
 };

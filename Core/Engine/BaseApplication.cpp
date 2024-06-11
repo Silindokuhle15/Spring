@@ -13,6 +13,7 @@ TimeStep BaseApplication::ts;
 bool BaseApplication::ExitWindow = false;
 
 using WINDOW_BASE = Win32Window;
+//using WINDOW_BASE = NGLFWwindow;
 
 void BaseApplication::Run()
 {
@@ -24,6 +25,8 @@ void BaseApplication::Run()
 
     //scripting::ScriptingEngine LuaEngine;
     //m_LuaEngine = &LuaEngine;
+
+    //TestFonts();
 
     Scene square_scn;
     square_scn.OnInit();
@@ -83,6 +86,40 @@ void BaseApplication::ShutDown()
 {
     m_Window<WINDOW_BASE> = nullptr;
 }
+
+/*
+
+void BaseApplication::TestFonts()
+{
+
+    auto AtlasGeneratorFunc = [](const char* fontFilename) {
+        using namespace msdfgen;
+
+        FreetypeHandle* ft = initializeFreetype();
+        if (ft) {
+            FontHandle* font = loadFont(ft, "C:\\Windows\\Fonts\\arialbd.ttf");
+            if (font) {
+                Shape shape;
+                if (loadGlyph(shape, font, 'A')) {
+                    shape.normalize();
+                    //                      max. angle
+                    edgeColoringSimple(shape, 3.0);
+                    //          output width, height
+                    Bitmap<float, 3> msdf(32, 32);
+                    //                           scale, translation
+                    SDFTransformation t(Projection(1.0, Vector2(4.0, 4.0)), Range(4.0));
+                    generateMSDF(msdf, shape, t);
+                    savePng(msdf, "output.png");
+                }
+                destroyFont(font);
+            }
+            deinitializeFreetype(ft);
+        }
+    };
+
+    AtlasGeneratorFunc("");
+}
+*/
 
 template<class T>
 void BaseApplication::OnUpdate()

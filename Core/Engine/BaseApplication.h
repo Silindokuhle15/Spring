@@ -1,6 +1,5 @@
 #pragma once
 #include "Window.h"
-#include "Application.h"
 #include "Camera.h"
 #include "Mouse.h"
 #include "KeyBoard.h"
@@ -8,11 +7,12 @@
 #include "Renderer.h"
 #include "Scene.h"
 #include "SceneEvent.h"
-#include "TimeStep.h"
-//#include "PerspectiveCamera.h"
 #include "ScriptingEngine.h"
 #include "NGLFWwindow.h"
-
+ 
+#include "msdfgen.h"
+#include "msdfgen-ext.h"
+//#include "msdf-atlas-gen.h"
 class Renderer;
 //class UILayer;
 
@@ -35,6 +35,8 @@ public:
 	static void AttachRenderer(std::unique_ptr<Renderer> Ren);
 	static void Run();
 	static void ShutDown();
+
+	//static void TestFonts();
 
 	template<class T>
 	static void OnUpdate();

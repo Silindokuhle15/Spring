@@ -19,7 +19,14 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
+
+set(VCPKG_ROOT "E:/vcpkg-master/")
+
 add_subdirectory("Dependencies/GLFW/")
+
+#add_subdirectory("Dependencies/MSDF/")
+
+add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake )
 
 include_directories(
 	"Dependencies/stbi_image/"
@@ -30,6 +37,10 @@ include_directories(
 	"Dependencies/ImGuizmo/"
 	"Dependencies/GLM/"
 	"Dependencies/Lua/include/"
+	"Dependencies/MSDF/msdfgen/"
+	"Dependencies/MSDF/msdfgen/core/"
+	"Dependencies/MSDF/msdfgen/ext/"
+	"Dependencies/MSDF/msdf-atlas-gen/"
 	"Dependencies/tiny/"
 	"Core/Application/"
 	"Core/Common/"
@@ -68,15 +79,20 @@ Set(SOURCE_FILES
 	"Dependencies/ImGui/backends/imgui_impl_glfw.cpp"
 	"Dependencies/ImGui/backends/imgui_impl_win32.h"
 	"Dependencies/ImGui/backends/imgui_impl_win32.cpp"
-	#"Dependencies/tiny/tiny_obj_loader.h"
-	#"Dependencies/tiny/tiny_obj_loader.cc"
 
 	"Dependencies/ImGuizmo/ImGuizmo.h"
 	"Dependencies/ImGuizmo/ImGuizmo.cpp"
+
+	#"Dependencies/MSDF/msdfgen/msdfgen.h"
+	#"Dependencies/MSDF/msdfgen/core/msdfgen.cpp"
+	#"Dependencies/MSDF/msdfgen/ext/import-font.h"
+	#"Dependencies/MSDF/msdfgen/ext/import-font.cpp"
+	#"Dependencies/MSDF/msdfgen/msdfgen-ext.h"
+	#"Dependencies/MSDF/msdf-atlas-gen/msdf-atlas-gen.h"
 	
 	# CORE APPLICATION INCLUDES
-	"Core/Application/Application.h"
-	"Core/Application/Application.cpp"
+	
+	
 
 	# COMMON
 	"Core/Common/Common.h"
@@ -188,6 +204,7 @@ set(LUA_LIB_DIR
 add_executable (${EXEC_NAME} ${SOURCE_FILES} )
 
 find_package(OpenGL REQUIRED)
+
 target_link_libraries(${EXEC_NAME} 
 	${OPENGL_gl_LIBRARY}
 	${LUA_LIB_DIR}

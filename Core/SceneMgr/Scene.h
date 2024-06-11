@@ -1,8 +1,5 @@
 #pragma once
-#include <vector>
-#include <tuple>
-#include "glm/glm.hpp"
-#include "Application.h"
+#include "Common.h"
 #include "LightAndShadow/PointLight.h"
 #include "Camera.h"
 #include "PerspectiveCamera.h"

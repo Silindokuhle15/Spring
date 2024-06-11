@@ -23,12 +23,6 @@ struct SphereCollider : Mesh
 
 	void OnInit() override {}
 	void OnUpdate(float ts) override {}
-	void MoveBackward() override {}
-	void MoveForward() override {}
-	void MoveLeft() override {}
-	void MoveRight() override {}
-	void MoveUp()   override {}
-	void MoveDown()  override {}
 };
 
 struct GenericCollider : Mesh
@@ -53,12 +47,6 @@ struct GenericCollider : Mesh
 
 	void OnInit() override {}
 	void OnUpdate(float ts) override {}
-	void MoveBackward() override {}
-	void MoveForward() override {}
-	void MoveLeft() override {}
-	void MoveRight() override {}
-	void MoveUp()   override {}
-	void MoveDown()  override {}
 
 	void FindMinMax() 
 	{

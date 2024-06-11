@@ -1,21 +1,11 @@
 #include "Mesh.h"
 
-ObjectLoader Mesh::ob = ObjectLoader();
-//TinyWrapper Mesh::TWr = TinyWrapper();
-
 void Mesh::OnInit()
 {
+    ObjectLoader ob;
     ob.LoadObjectFromFile(m_OBJFilePath.c_str());
-    //TWr.LoadObjectFromFile(m_OBJFilePath.c_str());
-    //m_Positions = ob.m_Positions;
     NumVertices = ob.m_Positions.size();
-    NumIndices  = ob.m_VertexIndices.size();
-    //m_VertexIndices = ob.m_VertexIndices;
-    //m_TextureIndices = ob.m_TextureIndices;
-    //m_NormalIndices = ob.m_NormalIndices;
-    //m_TexCoords = ob.m_TexCoords;
-    //m_Normals = ob.m_Normals;
-    //m_VertexIDs = ob.m_VertexIDs;
+    NumIndices = ob.m_VertexIndices.size();
     
     for (auto& i : ob.m_Positions)
     {
@@ -71,6 +61,8 @@ void Mesh::OnInit()
 
         m_V.push_back({ pos, tex, ID, norm });
     }
+
+    NumIndices = m_V.size();
 }
 
 void Mesh::OnUpdate(float ts)
@@ -78,42 +70,6 @@ void Mesh::OnUpdate(float ts)
     // Update the model transform 
     //m_Transform = glm::mat4(glm::translate(m_Transform, glm::vec3(0.0, 0.0, -0.10))); // Not the best solution, still needs to be updated,, all in due time
     m_Ts = ts;
-}
-
-void Mesh::MoveBackward()
-{
-    glm::vec3 translation = glm::vec3(0.0, 0.0, +1.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
-}
-
-void Mesh::MoveForward()
-{
-    glm::vec3 translation = glm::vec3(0.0, 0.0, -1.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
-}
-
-void Mesh::MoveLeft()
-{
-    glm::vec3 translation = glm::vec3(+1.0, 0.0, 0.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
-}
-
-void Mesh::MoveRight()
-{
-    glm::vec3 translation = glm::vec3(-1.0, 0.0, 0.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
-}
-
-void Mesh::MoveUp()
-{
-    glm::vec3 translation = glm::vec3(0.0, +1.0, 0.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
-}
-
-void Mesh::MoveDown()
-{
-    glm::vec3 translation = glm::vec3(0.0, -1.0, 0.0) * m_Speed * (float)m_Ts;
-    m_Transform = glm::mat4(glm::translate(m_Transform, translation));
 }
 
 Mesh Mesh::Batch(std::vector<Mesh>& meshes)

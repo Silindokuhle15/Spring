@@ -147,8 +147,9 @@ public:
         {
             m_ImguiBackEnd = ImGui_BeckEnd::GLFW;
             ImGui_ImplGlfw_InitForOpenGL(window, true);
-        }*/
-        
+        }
+        */
+
         const char* gl_ver = "#version 450";
         ImGui_ImplOpenGL3_Init(gl_ver);
         ImGui::StyleColorsDark();

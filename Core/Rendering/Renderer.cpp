@@ -198,7 +198,7 @@ void Renderer::UploadToOpenGL()
         };
 
     //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
-    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
+    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, GL_LINE_STRIP, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
 
 void Renderer::OnRender()

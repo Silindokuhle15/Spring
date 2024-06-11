@@ -80,7 +80,7 @@ public:
 	}
 };
 
-class Projection
+class _Projection
 {
 public:
 	//int32_t left, right, up, down;
@@ -89,10 +89,10 @@ public:
 
 	virtual glm::mat4 GetP() const { return m_ProjectionMatrix; }
 
-	Projection() : m_ProjectionType{PROJECTION::PERSPECTIVE} {}
+	_Projection() : m_ProjectionType{PROJECTION::PERSPECTIVE} {}
 };
 
-class Camera : public CameraView, public Projection
+class Camera : public CameraView, public _Projection
 {
 public:
 	void Present()

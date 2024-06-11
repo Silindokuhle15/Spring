@@ -1,7 +1,13 @@
 #include "Window.h"
+#include "imgui_impl_win32.h"
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+
+    ImGui_ImplWin32_WndProcHandler(m_Hwnd, uMsg, wParam, lParam);
+
     switch (uMsg)
     {
     case WM_DESTROY:
@@ -36,25 +42,99 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_KEYDOWN:
         switch (wParam)
         {
-        case 0x41 :
-            // 65 - A
+        case VK_UP :
+            m_SceneEventQueue.Push(new SceneEvent(EventID::UP));
+            break;
+        case VK_RIGHT:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::RIGHT));
+            break;
+        case VK_DOWN:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::DOWN));
+            break;
+        case VK_LEFT:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::LEFT));
+            break;
+        case VK_SPACE:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::SPACE));
+            break;
+        case VK_ESCAPE:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::ESCAPE));
+            break;
+
+        case 0x41:
             m_SceneEventQueue.Push(new SceneEvent(EventID::A));
             break;
+        case 0x42:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::B));
+            break;
+        case 0x43:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::C));
+            break;
         case 0x44:
-            // 68 - D
             m_SceneEventQueue.Push(new SceneEvent(EventID::D));
             break;
+        case 0x45:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::E));
+            break;
+        case 0x46:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::F));
+            break;
+        case 0x47:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::G));
+            break;
+        case 0x48:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::H));
+            break;
+        case 0x49:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::I));
+            break;
+        case 0x4A:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::J));
+            break;
+        case 0x4B:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::K));
+            break;
+        case 0x4C:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::L));
+            break;
+        case 0x4D:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::M));
+            break;
+        case 0x4E:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::N));
+            break;
+        case 0x4F:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::O));
+            break;
+        case 0x50:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::P));
+            break;
         case 0x51:
-            // 81 - Q
             m_SceneEventQueue.Push(new SceneEvent(EventID::Q));
             break;
+        case 0x52:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::R));
+            break;
         case 0x53:
-            // 83 - S
             m_SceneEventQueue.Push(new SceneEvent(EventID::S));
             break;
+        case 0x54:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::T));
+            break;
+        case 0x55:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::U));
+            break;
+        case 0x56:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::V));
+            break;
         case 0x57:
-            // 87 - W
             m_SceneEventQueue.Push(new SceneEvent(EventID::W));
+            break;
+        case 0x58:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::X));
+            break;
+        case 0x59:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::Y));
             break;
         case 0x5A:
             m_SceneEventQueue.Push(new SceneEvent(EventID::Z));
@@ -170,6 +250,7 @@ void Win32Window::SetUpForRendering()
 
 void Win32Window::SwapBuffer()
 {
+    wglSwapIntervalEXT(1.0f);
     SwapBuffers(m_Hdc);
 }
 

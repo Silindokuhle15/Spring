@@ -695,68 +695,70 @@ template<class T>
 inline void MenuBar<T>::Run()
 {
 	bool is_open = true;
-		if (ImGui::BeginMainMenuBar())
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::BeginMenu("File"))
+			if (ImGui::MenuItem("New", "..."))
 			{
-				if (ImGui::MenuItem("New", "..."))
+				if (ImGui::IsItemClicked())
 				{
-					if (ImGui::IsItemClicked())
-					{
-						char buffer[512];
-						ImGui::InputText("File Name", buffer, sizeof(char) * 512);
-						std::string file_name(buffer);
-						Project NewProject(file_name);
+					char buffer[512];
+					ImGui::InputText("File Name", buffer, sizeof(char) * 512);
+					std::string file_name(buffer);
+					Project NewProject(file_name);
 
-					}
-				}
-				if (ImGui::MenuItem("Open", "..."))
-				{
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Close", "..."))
-				{
-				}
-				if (ImGui::MenuItem("Close Project", "..."))
-				{
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Save Selected", "crtl+s"))
-				{
-				}
-				if (ImGui::MenuItem("Save All", "crtl+shift+s"))
-				{
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Recent Files", "..."))
-				{
-				}
-				if (ImGui::MenuItem("Recent Projects", "..."))
-				{
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Quit", "alt+'?'"))
-				{
 				}
 			}
-			if (ImGui::BeginMenu("Edit"))
-			{
-				if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-				if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
-				ImGui::Separator();
-				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-				if (ImGui::MenuItem("Paste", "CTRL+V")) {}
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu("View"))
+			if (ImGui::MenuItem("Open", "..."))
 			{
 			}
-			if (ImGui::BeginMenu("Project"))
+			ImGui::Separator();
+			if (ImGui::MenuItem("Close", "..."))
 			{
-
 			}
-			ImGui::EndMainMenuBar();
+			if (ImGui::MenuItem("Close Project", "..."))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Save Selected", "crtl+s"))
+			{
+			}
+			if (ImGui::MenuItem("Save All", "crtl+shift+s"))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Recent Files", "..."))
+			{
+			}
+			if (ImGui::MenuItem("Recent Projects", "..."))
+			{
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Quit", "alt+'?'"))
+			{
+			}
+			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Edit"))
+		{
+			if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+			if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+			ImGui::Separator();
+			if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+			if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+			if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("View"))
+		{
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Project"))
+		{
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
 }

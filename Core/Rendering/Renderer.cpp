@@ -20,7 +20,7 @@ void Renderer::SetUpForRendering()
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
     //glCullFace(GL_FRONT);
     //glFrontFace(GL_CCW);
@@ -198,7 +198,7 @@ void Renderer::UploadToOpenGL()
         };
 
     //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
-    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, GL_LINE_STRIP, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
+    UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
 
 void Renderer::OnRender()

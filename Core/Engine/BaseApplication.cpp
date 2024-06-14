@@ -28,9 +28,11 @@ void BaseApplication::Run()
 
     //TestFonts();
 
-    Scene square_scn;
+    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/Box2.fbx");
     square_scn.OnInit();
 
+
+    //NewScene nsbox("C:/dev/Silindokuhle15/Spring/Assets/Box2.fbx");
     
     UILayer<WINDOW_BASE> ImGui_Layer(AppWindow);
     BaseApplication::m_pUILayer<WINDOW_BASE> = std::make_unique<UILayer<WINDOW_BASE>>(ImGui_Layer);

@@ -29,6 +29,7 @@ add_subdirectory("Dependencies/GLFW/")
 add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake )
 
 include_directories(
+	"E:/FBX/include/"
 	"Dependencies/stbi_image/"
 	"Dependencies/GLEW/include/"
 	"Dependencies/GLFW/include/"
@@ -92,8 +93,6 @@ Set(SOURCE_FILES
 	
 	# CORE APPLICATION INCLUDES
 	
-	
-
 	# COMMON
 	"Core/Common/Common.h"
 	# ENGINE INCLUDES
@@ -163,8 +162,8 @@ Set(SOURCE_FILES
 	"Editor/Utility/ObjectLoader.cpp"
 	"Editor/Utility/Serializer.h"
 	"Editor/Utility/Serializer.cpp"
-	"Editor/Utility/TinyWrapper.h"
-	"Editor/Utility/TinyWrapper.cpp"
+	
+	
 
 	# VIEWING
 	"Core/Viewing/Camera.h"
@@ -183,7 +182,6 @@ Set(SOURCE_FILES
 	"Core/Application/Square.h"
 	"Core/Application/Square.cpp"
 	
-	
 	# EDITOR 
 	"Editor/Layer.h"
 	"Editor/Layer.cpp"
@@ -199,6 +197,10 @@ set(LIB_NAME
 set(LUA_LIB_DIR
 	"${PROJECT_SOURCE_DIR}/Dependencies/Lua/${LIB_NAME}.lib"
 )
+
+SET(FBX_LIB_DIR
+	"E:/FBX/lib/x64/debug/libfbxsdk.lib"
+)
 	
 # Add source to this project's executable
 add_executable (${EXEC_NAME} ${SOURCE_FILES} )
@@ -209,6 +211,7 @@ target_link_libraries(${EXEC_NAME}
 	${OPENGL_gl_LIBRARY}
 	${LUA_LIB_DIR}
 	glfw
+	${FBX_LIB_DIR}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

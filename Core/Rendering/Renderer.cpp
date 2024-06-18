@@ -73,98 +73,6 @@ void Renderer::SetUpForRendering()
 
 void Renderer::UploadToOpenGL()
 {
-    /*
-    auto uploadBuffer = [](std::vector<Mesh> buffer, GLenum render_mode)
-        {
-            // UPLOAD DATA TO OPENGL
-            for (auto& i : buffer)
-            {
-                int index = &i - &buffer[0];
-                // Keep track of the buffer size
-                // Make sure to properly offset the data
-
-                static GLuint size1 = sizeof(glm::vec3) * i.m_Positions.size();                // POSITIONS TO BE SENT TO OPENGL
-                static GLuint size2 = sizeof(glm::vec2) * i.m_TexCoords.size();                // TEXCOORDS TO BE SENT TO OPENGL
-                static GLuint size3 = sizeof(unsigned int) * i.m_VertexIDs.size();             // GUID TO BE SENT TO OPENGL
-                static GLuint size4 = sizeof(glm::vec3) * i.m_Normals.size();                  // NORMALS TO BE SENT TO OPENGL
-                static GLuint size5 = sizeof(unsigned int) * i.NumIndices;                      // INDICES TO BE SENT TO OPENGL
-
-                // YOU HAVE THE INDEX IN THE ARRAY
-                // YOU ALSO HAVE THE NUMBER OF ALL THE ELEMENTS IN THE ARRAY
-                // YOU KNOW WHERE YOU ARE CURRENT LOOKING IN THE ARRAY
-                // YOU HAVE TO FIND OUT HOW MANY MESHES IN THE ARRAY COME BEFORE ME, THAT IS GIVEN BY INDEX,
-                // FIND OUT THE ACCUMULATIVE SIZE OF THE PRIOR DATA
-                static GLuint offset1 = 0;                                                     // POSITIONS OFFSET INTO VERTEX ARRAY BUFFER
-                offset1 += index <= 0 ? 0 : sizeof(Vertex) * buffer[index - 1].NumVertices;
-                static GLuint offset2 = 0;                                                     // TEXCOORDS OFFSET INTO VERTEX ARRAY BUFFER
-                static GLuint offset3 = 0;                                                     // GUID OFFSET INTO VERTEX ARRAY BUFFER
-                static GLuint offset4 = 0;                                                     // NORMALS OFFSET INTO VERTEX ARRAY BUFFER
-                static GLuint offset5 = 0;                                                     // INDICES OFFSET INTO INDEX BUFFER
-
-                //offset1 += sizeof(glm::vec3) * m_ActiveScene->m_MeshData[index - 1].NumVertices;
-                offset2 += (offset1 + size1);
-                offset3 += (offset2 + size2);
-                offset4 += (offset3 + size3);
-                //offset5 += sizeof(unsigned int) * m_ActiveScene->m_MeshData[index - 1].NumIndices;
-
-                glBufferSubData(GL_ARRAY_BUFFER, offset1, size1, (void*)i.m_Positions.data());
-                glBufferSubData(GL_ARRAY_BUFFER, offset2, size2, (void*)i.m_TexCoords.data());
-                glBufferSubData(GL_ARRAY_BUFFER, offset3, size3, (void*)i.m_VertexIDs.data());
-                glBufferSubData(GL_ARRAY_BUFFER, offset4, size4, (void*)i.m_Normals.data());
-
-                offset5 += index <= 0 ? 0 : sizeof(unsigned int) * buffer[index - 1].NumIndices;
-
-                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset5, size5, (void*)i.m_VertexIndices.data());
-
-                //m_LastIndexCount += i.NumIndices;
-
-                //render_mode = m_PrimitiveModeWireFrame ? GL_LINE_STRIP : GL_TRIANGLE_STRIP;
-
-                glDrawElements(render_mode, i.NumIndices, GL_UNSIGNED_INT, nullptr);
-                //glDrawArrays(render_mode, 0, i.NumVertices);
-            }
-        };
-
-    //uploadBuffer(m_ActiveScene->m_StaticGeometry, GL_TRIANGLES);
-    //uploadBuffer(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES);
-
-    auto UploadBuffer2v = [](std::vector<Mesh> buffer, GLenum render_mode, uint32_t vbo, uint32_t ibo)
-    {
-        for (auto& i : buffer)
-        {
-            int index = &i - &buffer[0];
-
-            GLuint size1 = sizeof(Vertex) * i.NumIndices;
-            static GLuint offset1 = 0;                                                      // POSITIONS OFFSET INTO VERTEX ARRAY BUFFER
-            offset1 += index <= 0 ? 0 : sizeof(Vertex) * buffer[index - 1].NumIndices;
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferSubData(GL_ARRAY_BUFFER, offset1, size1, (Vertex*)i.m_V.data());
-            
-            //glNamedBufferSubData(vbo, offset1, size1, (Vertex*)i.m_V.data());
-            GLuint size2 = sizeof(unsigned int) * i.NumIndices;                             // INDICES TO BE SENT TO OPENGL
-            static GLuint offset2 = 0;
-            offset2 += index <= 0 ? 0 : sizeof(unsigned int) * buffer[index - 1].NumIndices;
-
-            //glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, draw_offset, size2, (void*)i.m_VertexIndices.data());
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            glNamedBufferSubData(ibo, offset2, size2, (void*)i.m_VertexIndices.data());
-
-            glDrawElements(render_mode, i.NumIndices, GL_UNSIGNED_INT, nullptr);
-            uint32_t index_offset = offset2 / sizeof(uint32_t);
-            //glDrawArrays(render_mode, index_offset, i.NumIndices);
-
-            //glBindBuffer(GL_ARRAY_BUFFER, 0);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        }
-    };
-
-    //m_VAO.Bind();
-    UploadBuffer2v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VertexBuffer[0], m_IndexBuffer[0]);
-    //m_VAO.Bind();
-    UploadBuffer2v(m_ActiveScene->m_StaticGeometry, GL_TRIANGLES, m_VertexBuffer[1], m_IndexBuffer[0]);
-
-    */
-
     auto UploadBuffer3v = [](std::vector<Mesh> buffer, GLenum render_mode, uint32_t vao, uint32_t vbo, uint32_t ibo)
         {
             for (auto& i : buffer)
@@ -214,6 +122,8 @@ void Renderer::OnRender()
 }
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
+    if (m_ActiveScene)
+        m_ActiveScene.reset();
     m_ActiveScene = scene;
 }
 

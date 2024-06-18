@@ -7,7 +7,9 @@
 #include "Window.h"
 #include "NGLFWwindow.h"
 #include <typeinfo>
+#include "Renderer.h"
 
+#define IMPORT_FROM_EDITBOX 1003
 
 typedef enum class ImGui_BeckEnd
 {
@@ -21,11 +23,11 @@ public:
     ImGui_BeckEnd m_ImguiBackEnd;
     unsigned int SelectedMesh;
     // Huh?
+    std::shared_ptr<WindowBase> m_ParentWindow;
     std::shared_ptr<Scene> m_ActiveScene;
+    std::shared_ptr<Renderer> m_ActiveRenderer;
 
     // EDITOR CAMERA VARIABLES
-
-    //TimeStep m_Delta;
 
     // Queries
     unsigned int m_Query;
@@ -37,11 +39,11 @@ public:
     std::shared_ptr<glm::mat4> m_ActiveTransform;
 
     // DISPLAY PANELS
-    ComponentPanel<Panel> m_ComponentPanel;
-    RenderPanel<Panel> m_RenderPanel;
-    StatsPanel<Panel> m_StatsPanel;
-    ContentBrowser<Panel> m_ContentBrowser;
-    MenuBar<Panel> m_FileMenuBar;
+    ComponentPanel<UILayer> m_ComponentPanel;
+    RenderPanel<UILayer> m_RenderPanel;
+    StatsPanel<UILayer> m_StatsPanel;
+    ContentBrowser<UILayer> m_ContentBrowser;
+    MenuBar<UILayer> m_FileMenuBar;
 
 
 public:
@@ -54,21 +56,32 @@ public:
         m_StatsPanel.Run();
         m_FileMenuBar.Run();
     }
+
+    void BindRenderer(std::shared_ptr<Renderer> renderer)
+    {
+        m_ActiveRenderer = renderer;
+    }
     void LoadScene(std::shared_ptr<Scene> scene)
     {
         m_ActiveScene = std::shared_ptr<Scene>(scene);
 
         SelectedMesh = 0;
 
-        // m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_Objects[0]->m_Transform);
-        if (!(scene->m_StaticGeometry.empty() || scene->m_DynamicGeometry.empty()))
+        //if (!(scene->m_StaticGeometry.empty() || scene->m_DynamicGeometry.empty()))
+        if (!(scene->m_MeshData.empty()))
         {
-            m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_DynamicGeometry[SelectedMesh].m_Transform);
+            m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_MeshData[SelectedMesh].m_Transform);
 
             m_EditorCamera = std::shared_ptr<Camera>(scene->m_ActiveCamera);
             m_ComponentPanel.m_EditorCamera = m_EditorCamera;
+            if (m_ComponentPanel.m_ActiveTransform)
+                m_ComponentPanel.m_ActiveTransform.reset();
             m_ComponentPanel.m_ActiveTransform = m_ActiveTransform;
+            if (m_ComponentPanel.m_ActiveScene)
+                m_ComponentPanel.m_ActiveScene.reset();
             m_ComponentPanel.m_ActiveScene = m_ActiveScene;
+            if (m_RenderPanel.m_ActiveScene)
+                m_RenderPanel.m_ActiveScene.reset();
             m_RenderPanel.m_ActiveScene = m_ActiveScene;
 
         }
@@ -111,7 +124,6 @@ public:
     {
         // TO do Add some code here bro
         //m_ActiveScene = 1;
-
         glGenQueries(1, &m_Query);
     }
     virtual void OnUpdate(float ts) override
@@ -120,9 +132,58 @@ public:
         //Update the Editor camera delta right here
         m_EditorCamera->OnUpdate(m_Delta);
     }
+
+    virtual std::string GetFileName() override
+    {
+        auto temp_parent = m_ParentWindow.get();
+        auto win32_window = reinterpret_cast<Win32Window*>(temp_parent);
+
+        OPENFILENAME ofn;
+        ZeroMemory(&ofn, sizeof(ofn));
+
+        char szFile[_MAX_PATH];  // buffer for file name
+        ZeroMemory(szFile, sizeof(szFile));
+
+        // Initialize OPENFILENAME
+        ofn.lStructSize = sizeof(ofn);
+        ofn.hwndOwner = win32_window->m_Hwnd;
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        ofn.nFilterIndex = 1;
+        ofn.lpstrFileTitle = NULL;
+        ofn.nMaxFileTitle = 0;
+        ofn.lpstrInitialDir = NULL;
+        ofn.lpstrTitle = "Select the file to import from ... (use the file type filter)";
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+        // get a description of all readers registered in the FBX SDK
+        //const char* filter = GetReaderOFNFilters();
+        const char* filter = ".fbx";
+        ofn.lpstrFilter = filter;
+
+        // Display the Open dialog box. 
+        if (GetOpenFileName(&ofn) == false)
+        {
+            // user cancel
+            delete filter;
+            return "";
+        }
+        // show the file name selected
+        SetWindowText(GetDlgItem(win32_window->m_Hwnd, IMPORT_FROM_EDITBOX), szFile);
+
+        return std::string(szFile);
+        // Keep a copy of the file name
+        //FBXSDK_strcpy(gszInputFile, _MAX_PATH, szFile);
+    }
     // CONSTRUCTORS
 
-    UILayer(WindowBase window) 
+    UILayer(WindowBase window) :
+        m_ParentWindow{std::make_shared<WindowBase>(window)},
+        m_ComponentPanel{},
+        m_ContentBrowser{},
+        m_RenderPanel{},
+        m_StatsPanel{},
+        m_FileMenuBar{this}
     {
         //start the Imgui code here
         //Initialization Code

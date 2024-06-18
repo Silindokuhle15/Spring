@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <windowsx.h>
 #include "SceneEvent.h"
-#include <memory>
 #include "OpenGLFrameBuffer.h"
 #include "TimeStep.h"
 

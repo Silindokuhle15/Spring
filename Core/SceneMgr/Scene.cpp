@@ -1,7 +1,5 @@
 #include "Scene.h"
 
-ObjectLoader Scene::m_ObjectLoader = ObjectLoader();
-
 void Scene::AttachCamera(std::shared_ptr<Camera> cam)
 {
 	//m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
@@ -26,8 +24,8 @@ void Scene::OnCreateSceneObjects()
 	};
 	Vector3 vec3 = {};
 	std::string str = "";
-	std::string texture_path = "", mtl_path = "";
 	std::vector<std::string> OBJ_paths;
+	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;
 	std::vector<std::string> dynamic_mesh_paths;
 
@@ -60,22 +58,59 @@ void Scene::OnCreateSceneObjects()
 				}
 				break;
 			}
+			else if (var == "material")
+			{
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "VShaderPath"))
+				{
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					shader_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "FShaderPath"))
+				{
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					shader_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "material_texture"))
+				{
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					shader_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "mtl_path"))
+				{
+					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
+					shader_paths.push_back(str);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				break;
+			}
+			else if (var == "scene_camera")
+			{
 
-			m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "eye"))
+				{
+					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
+					pCam.m_eye = glm::vec3(vec3.x, vec3.y, vec3.z);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "center"))
+				{
+					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
+					pCam.m_center = glm::vec3(vec3.x, vec3.y, vec3.z);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "up"))
+				{
+					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
+					pCam.m_up = glm::vec3(vec3.x, vec3.y, vec3.z);
+					lua_pop(m_LuaEngine.m_pLuaState, 1);
+				}
+				break;
+			}
 
-			if (var == "scene_camera_m_eye")
-			{
-				pCam.m_eye = glm::vec3(vec3.x, vec3.y, vec3.z);
-			}
-			else if (var == "scene_camera_m_center")
-			{
-				pCam.m_center = glm::vec3(vec3.x, vec3.y, vec3.z);
-			}
-			else if (var == "scene_camera_m_up")
-			{
-				pCam.m_up = glm::vec3(vec3.x, vec3.y, vec3.z);
-			}
-			else if (var == "light_position")
+			if (var == "light_position")
 			{
 				dummy_pos = vec3;
 			}
@@ -85,27 +120,14 @@ void Scene::OnCreateSceneObjects()
 			}
 			else if (var == "sky_color")
 			{
-				//m_SkyColor[0] = vec3.x;
-				//m_SkyColor[1] = vec3.y;
-				//m_SkyColor[2] = vec3.z;
 				auto var = glm::vec3(vec3.x, vec3.y, vec3.z);
 				m_SkyLights.push_back(SkyLight(var));
 			}
 			else if (var == "ground_color")
 			{
-				//m_GroundColor[0] = vec3.x;
-				//m_GroundColor[1] = vec3.y;
-				//m_GroundColor[2] = vec3.z;
 				auto var = glm::vec3(vec3.x, vec3.y, vec3.z);
 				m_GroundLights.push_back(GroundLight(var));
 			}
-			/*
-			else if (var == "obj_path")
-			{
-				str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
-				OBJ_paths.push_back(str);
-				lua_pop(m_LuaEngine.m_pLuaState, 1);
-			}*/
 			break;
 		case LUA_TSTRING:
 			
@@ -114,16 +136,6 @@ void Scene::OnCreateSceneObjects()
 				str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
 				OBJ_paths.push_back(str);
 				lua_pop(m_LuaEngine.m_pLuaState, 1);
-			}
-			
-			else if (var == "material_texture")
-			{
-				texture_path = lua_tostring(m_LuaEngine.m_pLuaState, -1);
-			}
-
-			else if (var == "mtl_path")
-			{
-				mtl_path = lua_tostring(m_LuaEngine.m_pLuaState, -1);
 			}
 			break;
 
@@ -137,9 +149,24 @@ void Scene::OnCreateSceneObjects()
 
 	}
 	
-	m_Materials.push_back(
-		Material(texture_path, mtl_path)
-	);
+	std::vector<ShaderInfo> m_shaderInfo;
+	for (size_t index = 0; index < shader_paths.size(); index += 4)
+	{
+		m_shaderInfo = { ShaderInfo{ shader_paths[index], GL_VERTEX_SHADER },
+			ShaderInfo{ shader_paths[index+1], GL_FRAGMENT_SHADER } };
+		Shader temp_shader(m_shaderInfo);
+
+		std::string& texture_path = shader_paths[index + 2];
+		std::string& mtl_path = shader_paths[index + 3];
+		m_Materials.push_back(
+			Material(texture_path, mtl_path, m_shaderInfo));
+
+		m_shaderInfo.clear();
+	}
+	for (auto& mat : m_Materials)
+	{
+		mat.OnInit();
+	}
 	m_Lights.push_back(
 		PointLight(
 			glm::vec3(dummy_pos.x, dummy_pos.y, dummy_pos.z),
@@ -159,18 +186,6 @@ void Scene::OnCreateSceneObjects()
 	{
 		LoadMeshData(d_mesh.c_str(), 1);
 	}
-
-	//Collider<SphereCollider> s1 = {0.5f, +1.0f, 0.00f, 1.0f};
-	//{ 1.0f, {-0.5f, 0.5f, 0.5f} };
-	//Collider<SphereCollider> s2 = {0.5f, +1.0f, 0.00f, 0.49f};
-	//{ 1.0f, {+0.5f, 0.5f, 0.5f} };
-
-	//Collider<GenericCollider> g1 = {glm::vec3(-5.4, 1.0, 0.5), m_StaticGeometry[0].m_Positions };
-	//Collider<GenericCollider> g2 = {glm::vec3(+5.6, 1.0, 0.0), m_DynamicGeometry[0].m_Positions };
-	
-	//bool intersect = s1.Intersect(s2);
-
-	//bool intersect = g1.Intersect(g2);
 }
 
 void Scene::OnInit()
@@ -184,21 +199,17 @@ void Scene::OnInit()
 		std::vector<std::string>({ 
 			"WIDTH",
 			"HEIGHT",
-			//"obj_path" ,
-			"dynamic_geometry",
-			"static_geometry",
+			//"dynamic_geometry",
+			//"static_geometry",
 			//LIGHTS
 			"light_position",
 			"light_color",
 			"sky_color",
 			"ground_color",
 			//CAMERA
-			"scene_camera_m_eye",
-			"scene_camera_m_center",
-			"scene_camera_m_up",
+			"scene_camera",
 			// TEXTUTES
-			"material_texture",
-			"mtl_path"
+			"material"
 			}
 		)
 	);
@@ -248,6 +259,7 @@ void Scene::OnUpdate(float ts)
 
 		func(m_StaticGeometry);
 		func(m_DynamicGeometry);
+		func(m_MeshData);
 		m_PhysicsEngine.OnUpdate(ts);
 		break;
 
@@ -312,7 +324,6 @@ void Scene::Process()
 	func(m_StaticGeometry);
 	func(m_DynamicGeometry);
 	func(m_MeshData);
-
 }
 
 void Scene::LoadMeshData(const char* path, int buffer)
@@ -363,7 +374,6 @@ Scene::Scene(std::string path)
 	m_State{ SceneState::LOADING },
 	NumMeshes{ 0 },
 	m_ActiveMaterial{0},
-	//m_CurrentIndexCount{0},
 	m_MeshData{},
 	m_DynamicGeometry{},
 	m_StaticGeometry{}
@@ -621,7 +631,7 @@ Scene::Scene(std::string path)
 							auto y = static_cast<float>(lCurrentVertex[1]);
 							auto z = static_cast<float>(lCurrentVertex[2]);
 							pos.push_back(glm::vec3(x, y, z));
-							id.push_back(1);
+							id.push_back(lMaterialIndex);
 
 							if (mHasNormal)
 							{
@@ -675,27 +685,69 @@ Scene::Scene(std::string path)
 			return v;
 		};
 
+	// RETRIEVE ANIMATION DATA
+	int i = 0;
+	//int numStacks = m_pScene->GetSrcObjectCount< FbxAnimStack>();
+	//for (auto anim_index = 0; anim_index < numStacks; anim_index++)
+	{
+		//auto anim_stack = m_pScene->GetSrcObject< FbxAnimStack>(anim_index);
+		//auto num_layers = anim_stack->GetMemberCount<FbxAnimLayer>();
+		//for (auto layer_index = 0; layer_index < num_layers; layer_index++)
+		{
+		//	auto anim_layer = anim_stack->GetMember<FbxAnimLayer>(layer_index);
+		}
+
+	}
+
+
+	FbxNodeAttribute::EType lAttributeType;
 
 	auto node_count = m_pScene->GetNodeCount();
 	//for (auto node_index = 0; node_index < 1; node_index++)
-	for (auto node_index = 0; node_index < m_pScene->GetNodeCount(); node_index++)
+	for (auto node_index = 1; node_index < m_pScene->GetNodeCount(); node_index++)
 	{
 		auto child_node = m_pScene->GetNode(node_index);
-		auto child_count = child_node->GetChildCount();
-		std::cout << child_node->GetName() << std::endl;
-		//std::cout << child_count << std::endl;
-	}
-	auto geometry_count = m_pScene->GetGeometryCount();
-	//for (auto obj_index = 0; obj_index < 1; obj_index++)
-	for (auto obj_index = 0; obj_index < geometry_count; obj_index++)
-	{
-		auto object = m_pScene->GetGeometry(obj_index);
-		std::cout << object->GetName() << std::endl;
-		auto mesh = reinterpret_cast<FbxMesh*>(object);
-		auto m_v = ConstructMesh(mesh);
-		m_MeshData.push_back(Mesh(m_v));
-	}
+		auto node_attrib = child_node->GetNodeAttribute();
+		auto node_attrib_type = node_attrib->GetAttributeType();
 
+		auto _scl = child_node->LclScaling.Get();
+		auto _rot = child_node->LclRotation.Get();
+		auto _pos = child_node->LclTranslation.Get();
+
+		glm::vec3 scl = glm::vec3(_scl[0] * 0.001, _scl[1] * 0.001, _scl[2] * 0.001);
+		glm::vec3 rot = glm::vec3(_rot[0] * 0.001, _rot[1] * 0.001, _rot[2] * 0.001);
+		glm::vec3 pos = glm::vec3(_pos[0] * 0.001, _pos[1] * 0.001, _pos[2]* 0.001);
+
+		auto transform = glm::scale(glm::mat4(1.0f), scl);
+		transform = glm::rotate(transform, glm::radians(90.0f), rot);
+		transform = glm::translate(transform, pos);
+		auto _transform = child_node->EvaluateGlobalTransform();
+;
+
+		std::cout << "name:"<< child_node->GetName() << std::endl;
+		std::cout << "node type: " << node_attrib_type << std::endl;
+		std::cout << "scale:" << _scl.Buffer() << std::endl;
+		std::cout << "rotation:" << _rot.Buffer() << std::endl;
+		std::cout << "translation:" << _pos.Buffer() << std::endl;
+		std::cout << "transform:" << _transform.Buffer() << std::endl;
+
+		FbxLight* light = nullptr;
+		switch (node_attrib_type)
+		{
+			case FbxNodeAttribute::EType::eCamera:
+				break;
+
+			case FbxNodeAttribute::EType::eLight:
+				light = reinterpret_cast<FbxLight*>(child_node->GetLight());
+				break;
+
+			case FbxNodeAttribute::EType::eMesh:
+				auto mesh = reinterpret_cast<FbxMesh*>(child_node->GetGeometry());
+				auto m_v = ConstructMesh(mesh);
+				m_MeshData.push_back(Mesh(m_v, transform));
+				break;
+		}
+	}
 	pFbxImporter->Destroy();
 }
 

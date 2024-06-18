@@ -2,15 +2,13 @@
 
 void Shader::OnInit(unsigned int mat_id)
 {
-    //m_ShaderProgram = glCreateProgram();
-
     //Tryna Refactor this entire Functuion
     std::ifstream is;
     std::string file_data;
 
     for (int i = 0; i < 2; i++)   // Must Update this not to use the hard-coded value for the number of shaders
     {
-        const char* file_path = m_Info[i].FilePath;
+        const char* file_path = m_Info[i].FilePath.c_str();
 
         is = std::ifstream(file_path);
         is.seekg(0, std::ios::end);

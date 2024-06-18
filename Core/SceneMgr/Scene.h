@@ -68,8 +68,6 @@ public:
 	std::vector<Mesh> m_DynamicGeometry;
 
 	int m_ActiveMaterial;
-	//unsigned int m_CurrentIndexCount;
-
 	TimeStep ts;
 
 	std::shared_ptr<Camera> m_ActiveCamera = nullptr;
@@ -88,9 +86,6 @@ public:
 	void Process();
 
 	// Re Write and Re structuring this whole class
-
-	static ObjectLoader m_ObjectLoader;
-
 	void LoadMeshData(const char* path, int buffer);
 	void LoadDynamicGeometry(Mesh& other);
 	void LoadStaticGeometry(Mesh& other);
@@ -108,6 +103,7 @@ public:
 		m_IndexData.clear();
 		m_ModelLocations.clear();
 		m_NormalMatrixLocations.clear();
+		//m_LuaEngine.~ScriptingEngine();
 	}
 
 
@@ -121,7 +117,6 @@ private:
 	std::string m_Title;
 
 	const int TRIANGLE_VERTEX_COUNT = 3;
-
 	// Four floats for every position.
 	const int VERTEX_STRIDE = 4;
 	// Three floats for every normal.

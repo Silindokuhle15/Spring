@@ -13,8 +13,9 @@ public:
     {
 
     }
-    Mesh(std::vector<Vertex> m_points):
-        m_Transform{ glm::mat4(1.0f) }
+    Mesh(std::vector<Vertex> m_points, glm::mat4 transform=glm::mat4(1.0f)):
+        m_Transform{ transform},
+        m_Color{ glm::vec3(1.0f, 1.0f, 1.0f) }
     {
         this->m_V = m_points;
         this->NumIndices = m_points.size();

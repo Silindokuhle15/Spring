@@ -41,18 +41,27 @@ public:
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
 	virtual void OnUpdate(float ts) = 0;
+
+	virtual std::string GetFileName() = 0;
 };
 
 class Panel
 {
 public:
-
+	std::shared_ptr<Layer*> m_ParentLayer;
 	uint32_t m_Width, m_Height;
 	Panel() : m_Width{ 1920 }, m_Height{ 1080 } {}
 	Panel(uint32_t width, uint32_t height) : m_Width{ width }, m_Height{ height }
 	{
 
 	}
+	virtual void OnInit(Layer* parent)
+	{
+		m_ParentLayer = std::make_shared<Layer*>(parent); 
+		m_Height = parent->m_LayerHeight;
+		m_Width = parent->m_LayerWidth;
+	}
+
 	virtual void Run() = 0;
 	~Panel() = default;
 
@@ -70,6 +79,10 @@ public:
 	void Run() override;
 
 	MenuBar() : m_PanelName{ "MenuBar" } {}
+	MenuBar(Layer* parent) : m_PanelName{ "MenuBar" } 
+	{
+		OnInit(parent);
+	}
 	~MenuBar() {}
 
 protected:
@@ -694,6 +707,7 @@ inline void StatsPanel<T>::Run()
 template<class T>
 inline void MenuBar<T>::Run()
 {
+	auto parent = reinterpret_cast<T*>(*(m_ParentLayer.get()));
 	bool is_open = true;
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -712,6 +726,11 @@ inline void MenuBar<T>::Run()
 			}
 			if (ImGui::MenuItem("Open", "..."))
 			{
+				parent->m_ActiveScene.reset();
+				std::string file_name = parent->GetFileName();
+				parent->m_ActiveScene = std::shared_ptr<Scene>(new Scene(file_name));
+				parent->m_ActiveRenderer->BindScene(parent->m_ActiveScene);
+				parent->LoadScene(parent->m_ActiveScene);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Close", "..."))
@@ -735,9 +754,6 @@ inline void MenuBar<T>::Run()
 			{
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("Quit", "alt+'?'"))
-			{
-			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit"))

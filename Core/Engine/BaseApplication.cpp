@@ -1,6 +1,5 @@
 #include "BaseApplication.h"
 
-scripting::ScriptingEngine* BaseApplication::m_LuaEngine = nullptr;
 std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 template<class T>
 std::unique_ptr<UILayer<T>> BaseApplication::m_pUILayer = nullptr;
@@ -26,28 +25,31 @@ void BaseApplication::Run()
     //scripting::ScriptingEngine LuaEngine;
     //m_LuaEngine = &LuaEngine;
 
-    //TestFonts();
+    TestFonts();
 
-    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/Box2.fbx");
+    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/cat_rigged.fbx");
+    std::shared_ptr<Scene> pscene = std::make_shared<Scene>(square_scn);
     square_scn.OnInit();
 
-
-    //NewScene nsbox("C:/dev/Silindokuhle15/Spring/Assets/Box2.fbx");
     
     UILayer<WINDOW_BASE> ImGui_Layer(AppWindow);
+    ImGui_Layer.LoadScene(pscene);
     BaseApplication::m_pUILayer<WINDOW_BASE> = std::make_unique<UILayer<WINDOW_BASE>>(ImGui_Layer);
     BaseApplication::m_pUILayer<WINDOW_BASE>->OnInit();
     
     
-    
     Renderer OpenGLrenderer;
+
+    std::shared_ptr<Renderer> pOpenGLRenderer = std::shared_ptr<Renderer>(&OpenGLrenderer);
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
     BaseApplication::m_Scene = std::make_shared<Scene>(square_scn);
     BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
     
     BaseApplication::m_pActiveRenderer->SetUpForRendering(); 
-    //BaseApplication::m_pActiveRenderer->EnableTesselation();
+
+    ImGui_Layer.BindRenderer(pOpenGLRenderer);
     
+    BaseApplication::m_pUILayer<WINDOW_BASE>->BindRenderer(pOpenGLRenderer);
     BaseApplication::m_pUILayer<WINDOW_BASE>->LoadScene(BaseApplication::m_Scene);
 
     while (!BaseApplication::ExitWindow)
@@ -89,7 +91,7 @@ void BaseApplication::ShutDown()
     m_Window<WINDOW_BASE> = nullptr;
 }
 
-/*
+
 
 void BaseApplication::TestFonts()
 {
@@ -111,7 +113,7 @@ void BaseApplication::TestFonts()
                     //                           scale, translation
                     SDFTransformation t(Projection(1.0, Vector2(4.0, 4.0)), Range(4.0));
                     generateMSDF(msdf, shape, t);
-                    savePng(msdf, "output.png");
+                    //savePng(msdf, "output.png");
                 }
                 destroyFont(font);
             }
@@ -121,7 +123,7 @@ void BaseApplication::TestFonts()
 
     AtlasGeneratorFunc("");
 }
-*/
+
 
 template<class T>
 void BaseApplication::OnUpdate()

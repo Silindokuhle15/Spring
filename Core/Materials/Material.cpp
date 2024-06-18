@@ -3,13 +3,8 @@
 void Material::OnInit()
 {
 	m_MaterialID = glCreateProgram();
-	m_Shader.m_Info[0] = this->m_Info[0];
-	m_Shader.m_Info[1] = this->m_Info[1];
-
 	m_Shader.OnInit(m_MaterialID);
     LoadMTLFile(mtl_path);
-
-    m_Texture = Texture(m_tex_path);
 	m_Texture.OnInit();
 
 	glProgramParameteri(m_MaterialID, GL_PROGRAM_SEPARABLE, GL_TRUE);

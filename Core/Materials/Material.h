@@ -7,10 +7,8 @@
 class Material
 {
 public:
-	ShaderInfo m_Info[2] = { {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/VertexShader.glsl", GL_VERTEX_SHADER}, { "C:/dev/Silindokuhle15/Spring/Assets/Shaders/FragmentShader.glsl", GL_FRAGMENT_SHADER } };
 	std::string mtl_path;
 	std::string m_tex_path;
-
 
 	glm::vec3 m_Ka;
 	glm::vec3 m_Kd;
@@ -32,17 +30,11 @@ public:
 	void OnUpdate();
 	void LoadMTLFile(std::string path);
 
-	Material(): 
-		m_tex_path{""}, 
-		mtl_path{ "C:/dev/Silindokuhle15/Spring/Assets/Objects/Tree/Lowpoly_tree_sample.mtl"}
+	Material(std::string tex_path, std::string mat_path, Shader shader) :
+		m_MaterialID{0},
+		m_Texture{tex_path},
+		mtl_path{ mat_path },
+		m_Shader{shader}
 	{
-		OnInit();
-	}
-
-	Material(std::string tex_path, std::string mat_path) :
-		m_tex_path{ tex_path },
-		mtl_path{ mat_path }
-	{
-		OnInit();
 	}
 };

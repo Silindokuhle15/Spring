@@ -12,20 +12,17 @@
  
 #include "msdfgen.h"
 #include "msdfgen-ext.h"
-//#include "msdf-atlas-gen.h"
+#include "msdf-atlas-gen.h"
 class Renderer;
-//class UILayer;
 
 class BaseApplication
 {	
 public:
-
 	static bool ExitWindow;
 	// maybe make the timestep a member of the base application to have access to it
 	static TimeStep ts;
 	template<class T>
 	static T* m_Window;
-	static scripting::ScriptingEngine * m_LuaEngine;
 
 	static std::unique_ptr<Renderer> m_pActiveRenderer;
 	template<class T>
@@ -36,7 +33,7 @@ public:
 	static void Run();
 	static void ShutDown();
 
-	//static void TestFonts();
+	static void TestFonts();
 
 	template<class T>
 	static void OnUpdate();

@@ -20,12 +20,10 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 
-set(VCPKG_ROOT "E:/vcpkg-master/")
-
+#set(FREETYPE_INCLUDE_DIRS
+#	"Dependencies/FREETYPE/include/"
+#)
 add_subdirectory("Dependencies/GLFW/")
-
-#add_subdirectory("Dependencies/MSDF/")
-
 add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake )
 
 include_directories(
@@ -38,6 +36,7 @@ include_directories(
 	"Dependencies/ImGuizmo/"
 	"Dependencies/GLM/"
 	"Dependencies/Lua/include/"
+	"Dependencies/FREETYPE/include/"
 	"Dependencies/MSDF/msdfgen/"
 	"Dependencies/MSDF/msdfgen/core/"
 	"Dependencies/MSDF/msdfgen/ext/"
@@ -58,6 +57,13 @@ include_directories(
 	"Editor/"
 	"Editor/Utility/"
 )
+
+file(GLOB MSDF_CR_INC "Dependencies/MSDF/msdfgen/core/*.h")
+file(GLOB MSDF_CR_SRC "Dependencies/MSDF/msdfgen/core/*.cpp")
+file(GLOB MSDF_XT_INC "Dependencies/MSDF/msdfgen/ext/*.h")
+file(GLOB MSDF_XT_SRC "Dependencies/MSDF/msdfgen/ext/*.cpp")
+file(GLOB MSDG_ATGN_INC "Dependencies/MSDF/msdfgen-atlas-gen/*.h")
+file(GLOB MSDG_ATGN_SRC "Dependencies/MSDF/msdfgen-atlas-gen/*.cpp")
 
 Set(SOURCE_FILES 
 	"SpringEditor.cpp"
@@ -84,12 +90,12 @@ Set(SOURCE_FILES
 	"Dependencies/ImGuizmo/ImGuizmo.h"
 	"Dependencies/ImGuizmo/ImGuizmo.cpp"
 
-	#"Dependencies/MSDF/msdfgen/msdfgen.h"
-	#"Dependencies/MSDF/msdfgen/core/msdfgen.cpp"
-	#"Dependencies/MSDF/msdfgen/ext/import-font.h"
-	#"Dependencies/MSDF/msdfgen/ext/import-font.cpp"
-	#"Dependencies/MSDF/msdfgen/msdfgen-ext.h"
-	#"Dependencies/MSDF/msdf-atlas-gen/msdf-atlas-gen.h"
+	${MSDF_CR_INC}
+	${MSDF_CR_SRC}
+	${MSDF_XT_INC}
+	${MSDF_XT_SRC}
+	${MSDG_ATGN_INC}
+	${MSDG_ATGN_SRC}
 	
 	# CORE APPLICATION INCLUDES
 	
@@ -201,17 +207,23 @@ set(LUA_LIB_DIR
 SET(FBX_LIB_DIR
 	"E:/FBX/lib/x64/debug/libfbxsdk.lib"
 )
+
+SET(FREETYPE_LIBRARY
+	"${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib"
+)
 	
 # Add source to this project's executable
 add_executable (${EXEC_NAME} ${SOURCE_FILES} )
 
 find_package(OpenGL REQUIRED)
+find_package(FREETYPE REQUIRED)
 
 target_link_libraries(${EXEC_NAME} 
 	${OPENGL_gl_LIBRARY}
 	${LUA_LIB_DIR}
 	glfw
 	${FBX_LIB_DIR}
+	${FREETYPE_LIBRARY}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

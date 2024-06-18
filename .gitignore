@@ -363,3 +363,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/Dependencies/FREETYPE/demos/win64
+*.md

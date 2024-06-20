@@ -19,7 +19,10 @@ typedef struct
 	glm::vec3 norm;
 } Vertex;
 
-
+typedef enum
+{
+	TRIANGLE_STRIP, WIRE_FRAME
+} PrimitiveMode;
 enum class VertexAttrib
 {
 	Position, TexCoord, ID, Normal

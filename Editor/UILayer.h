@@ -11,7 +11,7 @@
 
 #define IMPORT_FROM_EDITBOX 1003
 
-typedef enum class ImGui_BeckEnd
+enum class ImGui_BeckEnd
 {
     None, Win32, GLFW
 };
@@ -35,8 +35,8 @@ public:
     int m_ResultAvailable;
 
     // OBJECT POINTERS
-    std::shared_ptr<Camera> m_EditorCamera;
-    std::shared_ptr<glm::mat4> m_ActiveTransform;
+    std::shared_ptr<Camera> m_pEditorCamera;
+    std::shared_ptr<glm::mat4> m_pActiveTransform;
 
     // DISPLAY PANELS
     ComponentPanel<UILayer> m_ComponentPanel;
@@ -55,6 +55,11 @@ public:
         m_RenderPanel.Run();
         m_StatsPanel.Run();
         m_FileMenuBar.Run();
+        
+        if (m_ActiveScene)
+        {
+            m_ActiveScene->m_CurrentRenderMode = m_StatsPanel.selected_mode ? PrimitiveMode::WIRE_FRAME : PrimitiveMode::TRIANGLE_STRIP;
+        }
     }
 
     void BindRenderer(std::shared_ptr<Renderer> renderer)
@@ -64,27 +69,19 @@ public:
     void LoadScene(std::shared_ptr<Scene> scene)
     {
         m_ActiveScene = std::shared_ptr<Scene>(scene);
+        m_pEditorCamera = scene->m_pActiveCamera;
+        m_pActiveTransform = scene->m_pActiveTransform;
 
-        SelectedMesh = 0;
-
-        //if (!(scene->m_StaticGeometry.empty() || scene->m_DynamicGeometry.empty()))
-        if (!(scene->m_MeshData.empty()))
-        {
-            m_ActiveTransform = std::shared_ptr<glm::mat4>(&scene->m_MeshData[SelectedMesh].m_Transform);
-
-            m_EditorCamera = std::shared_ptr<Camera>(scene->m_ActiveCamera);
-            m_ComponentPanel.m_EditorCamera = m_EditorCamera;
-            if (m_ComponentPanel.m_ActiveTransform)
-                m_ComponentPanel.m_ActiveTransform.reset();
-            m_ComponentPanel.m_ActiveTransform = m_ActiveTransform;
-            if (m_ComponentPanel.m_ActiveScene)
-                m_ComponentPanel.m_ActiveScene.reset();
-            m_ComponentPanel.m_ActiveScene = m_ActiveScene;
-            if (m_RenderPanel.m_ActiveScene)
-                m_RenderPanel.m_ActiveScene.reset();
-            m_RenderPanel.m_ActiveScene = m_ActiveScene;
-
-        }
+        m_ComponentPanel.m_pEditorCamera = m_pEditorCamera;
+        if (m_ComponentPanel.m_ActiveTransform)
+            m_ComponentPanel.m_ActiveTransform.reset();
+        m_ComponentPanel.m_ActiveTransform = m_pActiveTransform;
+        if (m_ComponentPanel.m_ActiveScene)
+            m_ComponentPanel.m_ActiveScene.reset();
+        m_ComponentPanel.m_ActiveScene = m_ActiveScene;
+        if (m_RenderPanel.m_ActiveScene)
+            m_RenderPanel.m_ActiveScene.reset();
+        m_RenderPanel.m_ActiveScene = m_ActiveScene;
     }
 
     // VIRTUAL FUNCTIONS
@@ -126,14 +123,19 @@ public:
         //m_ActiveScene = 1;
         glGenQueries(1, &m_Query);
     }
-    virtual void OnUpdate(float ts) override
+    virtual void OnUpdate(TimeStep ts) override
     {
         m_Delta = ts;
         //Update the Editor camera delta right here
-        m_EditorCamera->OnUpdate(m_Delta);
+        m_pEditorCamera->OnUpdate(m_Delta);
+        
     }
 
-    virtual std::string GetFileName() override
+    virtual std::shared_ptr<Camera>& GetLayerCamera() override
+    {
+        return m_pEditorCamera;
+    }
+    virtual std::string GetFileName(const char* filter) override
     {
         auto temp_parent = m_ParentWindow.get();
         auto win32_window = reinterpret_cast<Win32Window*>(temp_parent);
@@ -157,15 +159,13 @@ public:
         ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
         // get a description of all readers registered in the FBX SDK
-        //const char* filter = GetReaderOFNFilters();
-        const char* filter = ".fbx";
         ofn.lpstrFilter = filter;
 
         // Display the Open dialog box. 
         if (GetOpenFileName(&ofn) == false)
         {
             // user cancel
-            delete filter;
+            //delete filter;
             return "";
         }
         // show the file name selected
@@ -179,7 +179,7 @@ public:
 
     UILayer(WindowBase window) :
         m_ParentWindow{std::make_shared<WindowBase>(window)},
-        m_ComponentPanel{},
+        m_ComponentPanel{this},
         m_ContentBrowser{},
         m_RenderPanel{},
         m_StatsPanel{},

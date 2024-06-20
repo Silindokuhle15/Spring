@@ -19,15 +19,14 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-
-#set(FREETYPE_INCLUDE_DIRS
-#	"Dependencies/FREETYPE/include/"
-#)
 add_subdirectory("Dependencies/GLFW/")
 add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake )
+add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS)
+add_compile_definitions(-DFBXSDK_SHARED)
 
 include_directories(
 	"E:/FBX/include/"
+	"E:/PhysX/physx/include/"
 	"Dependencies/stbi_image/"
 	"Dependencies/GLEW/include/"
 	"Dependencies/GLFW/include/"
@@ -169,8 +168,6 @@ Set(SOURCE_FILES
 	"Editor/Utility/Serializer.h"
 	"Editor/Utility/Serializer.cpp"
 	
-	
-
 	# VIEWING
 	"Core/Viewing/Camera.h"
 	"Core/Viewing/Camera.cpp"
@@ -180,7 +177,6 @@ Set(SOURCE_FILES
 	"Core/Viewing/PerspectiveCamera.cpp"
 
 	# APPLICATIONS
-	
 	"Core/Application/Grid.h"
 	"Core/Application/Grid.cpp"
 	"Core/Engine/Mesh.h"
@@ -208,22 +204,25 @@ SET(FBX_LIB_DIR
 	"E:/FBX/lib/x64/debug/libfbxsdk.lib"
 )
 
-SET(FREETYPE_LIBRARY
+SET(FT_LIB_DIR
 	"${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib"
+)
+
+SET(PHYSX_LIB_DIR
+	"E:/PhysX/physx/bin/win.x86_64.vc143.mt/debug/PhysXDevice64.dll"
 )
 	
 # Add source to this project's executable
 add_executable (${EXEC_NAME} ${SOURCE_FILES} )
 
 find_package(OpenGL REQUIRED)
-find_package(FREETYPE REQUIRED)
-
 target_link_libraries(${EXEC_NAME} 
 	${OPENGL_gl_LIBRARY}
 	${LUA_LIB_DIR}
 	glfw
 	${FBX_LIB_DIR}
-	${FREETYPE_LIBRARY}
+	${FT_LIB_DIR}
+	#${PHYSX_LIB_DIR}
 )
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)

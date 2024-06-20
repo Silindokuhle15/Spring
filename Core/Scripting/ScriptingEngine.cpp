@@ -25,7 +25,7 @@ void scripting::ScriptingEngine::SetKeys(const std::vector<std::string> keys_t)
 
 lua_Number scripting::ScriptingEngine::getNamedfield(lua_State* L, const char * field)
 {
-	lua_Number result;
+	lua_Number result{ 0 };
 	int isnum;
 	//lua_pushstring(L, field);
 	switch (lua_getfield(L, -1, field))
@@ -43,10 +43,10 @@ lua_Number scripting::ScriptingEngine::getNamedfield(lua_State* L, const char * 
 	case LUA_TTABLE:
 		lua_len(L, -1);
 		return lua_tonumber(L, -1);
-
-	defualt:
-		return -3;
+	default:
+		result = static_cast<lua_Number>(-3);
 	}
+	return result;
 }
 
 void scripting::ScriptingEngine::GetField(lua_State* L, std::vector<const char*>& fields, Vector3* data_out)

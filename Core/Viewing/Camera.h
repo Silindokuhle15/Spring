@@ -1,7 +1,5 @@
 #pragma once
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
-
+#include "Common.h"
 enum class PROJECTION
 {
 	ORTHOGRAPHIC = 0,
@@ -25,7 +23,7 @@ public:
 	float m_AspectRatio;
 
 	float m_Speed = 1.0f;
-	float m_Delta;
+	TimeStep m_Delta;
 
 	virtual glm::vec3 GetPosition() { return m_eye; }
 	virtual void SetPosition(glm::vec3 new_pos) { m_eye = new_pos; }
@@ -48,33 +46,33 @@ public:
 
 	virtual void MoveForward() 
 	{
-		m_eye -= glm::vec3(0.0, 0.0, 1.0) * m_Speed * m_Delta;
+		m_eye -= glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveBackward() 
 	{
-		m_eye += glm::vec3(0.0, 0.0, 1.0) * m_Speed * m_Delta;
+		m_eye += glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveRight() 
 	{
-		m_eye += glm::vec3(1.0, 0.0, 0.0) * m_Speed * m_Delta;
+		m_eye += glm::vec3(1.0, 0.0, 0.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveLeft() 
 	{
-		m_eye -= glm::vec3(1.0, 0.0, 0.0) * m_Speed * m_Delta;
+		m_eye -= glm::vec3(1.0, 0.0, 0.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveUp() 
 	{
-		m_eye += glm::vec3(0.0, 1.0, 0.0) * m_Speed * m_Delta;
+		m_eye += glm::vec3(0.0, 1.0, 0.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveDown() 
 	{
-		m_eye -= glm::vec3(0.0, 1.0, 0.0) * m_Speed * m_Delta;
+		m_eye -= glm::vec3(0.0, 1.0, 0.0) * m_Speed * (float)m_Delta;
 	}
 
 	//virtual void Rotate(glm::vec3 rot_dir) = 0;
 	//virtual void Focus(glm::vec3 rot_dir) = 0;
 
-	virtual void OnUpdate(float delta_time) 
+	virtual void OnUpdate(TimeStep delta_time) 
 	{
 		m_Delta = delta_time;
 	}
@@ -83,13 +81,10 @@ public:
 class _Projection
 {
 public:
-	//int32_t left, right, up, down;
 	glm::mat4 m_ProjectionMatrix;
 	PROJECTION m_ProjectionType;
-
 	virtual glm::mat4 GetP() const { return m_ProjectionMatrix; }
-
-	_Projection() : m_ProjectionType{PROJECTION::PERSPECTIVE} {}
+	_Projection() : m_ProjectionMatrix{ glm::mat4(1.0f)}, m_ProjectionType { PROJECTION::PERSPECTIVE } {}
 };
 
 class Camera : public CameraView, public _Projection

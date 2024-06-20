@@ -1,9 +1,16 @@
 #include "Scene.h"
-
-void Scene::AttachCamera(std::shared_ptr<Camera> cam)
+/*
+void Scene::AddNewMesh(Mesh mesh)
 {
-	//m_ActiveCamera = std::make_shared<PerspectiveCamera>(*cam);
-	m_ActiveCamera = cam;
+	mesh.OnInit();
+	m_MeshData.push_back(mesh);
+}
+*/
+void Scene::AddNewMesh(Mesh& mesh)
+{
+	mesh.OnInit();
+	//m_StaticGeometry.insert(m_StaticGeometry.end(), mesh);
+	m_StaticGeometry.push_back(mesh);
 }
 
 void Scene::OnCreateSceneObjects()
@@ -15,7 +22,6 @@ void Scene::OnCreateSceneObjects()
 	Vector3 dummy_color = {};
 
 	// CREATE THE SCENE CAMERA(s)
-	Camera pCam;
 	std::vector<const char*> vec3_keys =
 	{
 		"x",
@@ -92,19 +98,19 @@ void Scene::OnCreateSceneObjects()
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "eye"))
 				{
 					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
-					pCam.m_eye = glm::vec3(vec3.x, vec3.y, vec3.z);
+					m_ActiveCamera.m_eye = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "center"))
 				{
 					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
-					pCam.m_center = glm::vec3(vec3.x, vec3.y, vec3.z);
+					m_ActiveCamera.m_center = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "up"))
 				{
 					m_LuaEngine.GetField(m_LuaEngine.m_pLuaState, vec3_keys, &vec3);
-					pCam.m_up = glm::vec3(vec3.x, vec3.y, vec3.z);
+					m_ActiveCamera.m_up = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
 				break;
@@ -141,8 +147,8 @@ void Scene::OnCreateSceneObjects()
 
 		case LUA_TNUMBER:
 			number = lua_tonumber(m_LuaEngine.m_pLuaState, -1);
-			var == "WIDTH" ? pCam.SetWidth(number) : void();
-			var == "HEIGHT" ? pCam.SetHeight(number) : void();
+			var == "WIDTH" ? m_ActiveCamera.SetWidth(static_cast<int>(number)) : void();
+			var == "HEIGHT" ? m_ActiveCamera.SetHeight(static_cast<int>(number)) : void();
 			lua_pop(m_LuaEngine.m_pLuaState, 1);
  			break;
 		}
@@ -174,8 +180,6 @@ void Scene::OnCreateSceneObjects()
 			)
 		);
 
-	pCam.OnInit();
-	m_ActiveCamera = std::make_shared<Camera>(pCam);
 	for (auto& s_mesh : static_mesh_paths)
 	{
 		LoadMeshData(s_mesh.c_str(), 0);
@@ -186,21 +190,38 @@ void Scene::OnCreateSceneObjects()
 	{
 		LoadMeshData(d_mesh.c_str(), 1);
 	}
+
+	//m_ActiveCamera.OnInit();
+	m_SelectedMesh = 0;
+	m_SelectedBuffer = (m_StaticGeometry.size() > 0 ? 0 : (m_DynamicGeometry.size() > 0 ? 1 : 2));
+	switch (m_SelectedBuffer)
+	{
+	case 0:
+		m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_StaticGeometry[m_SelectedMesh].m_Transform));
+		break;
+	case 1:
+		m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_DynamicGeometry[m_SelectedMesh].m_Transform));
+		break;
+	case 2:
+		m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_MeshData[m_SelectedMesh].m_Transform));
+		break;
+	}
+
+	m_pActiveCamera = std::shared_ptr<Camera>(&m_ActiveCamera);
+	m_pActiveCamera->OnInit();
 }
 
 void Scene::OnInit()
 {
 	m_State = SceneState::LOADING;
-	m_LuaEngine.SetScriptPath(
-		"C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua"
-	);
+	m_LuaEngine.SetScriptPath(m_Title);
 
 	m_LuaEngine.SetKeys(
 		std::vector<std::string>({ 
 			"WIDTH",
 			"HEIGHT",
-			//"dynamic_geometry",
-			//"static_geometry",
+			"dynamic_geometry",
+			"static_geometry",
 			//LIGHTS
 			"light_position",
 			"light_color",
@@ -221,11 +242,11 @@ void Scene::OnInit()
 	m_State = SceneState::RUNNING;
 }
 
-void Scene::OnUpdate(float ts)
+void Scene::OnUpdate(TimeStep ts)
 {
 	auto func = [this, ts](std::vector<Mesh> buffer)
 	{
-		m_ActiveCamera->OnUpdate(ts);
+		m_ActiveCamera.OnUpdate(ts);
 		for (int i = 0; i < buffer.size(); i++)
 		{
 			buffer[i].OnUpdate(ts);
@@ -233,7 +254,7 @@ void Scene::OnUpdate(float ts)
 			unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
 
 			glm::mat4 transform = buffer[i].m_Transform;
-			glm::mat4 model_view = transform * m_ActiveCamera->GetV();
+			glm::mat4 model_view = transform * m_ActiveCamera.GetV();
 
 			glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
 
@@ -248,6 +269,20 @@ void Scene::OnUpdate(float ts)
 			mtl.OnUpdate();
 		}
 	};
+
+	auto new_transform = *(m_pActiveTransform.get());
+	switch (m_SelectedBuffer)
+	{
+	case 0:
+		m_StaticGeometry[m_SelectedMesh].SetTransform(new_transform);
+		break;
+	case 1:
+		m_DynamicGeometry[m_SelectedMesh].SetTransform(new_transform);
+		break;
+	case 2:
+		m_MeshData[m_SelectedMesh].SetTransform(new_transform);
+		break;
+	}
 
 	switch (m_State)
 	{
@@ -326,59 +361,8 @@ void Scene::Process()
 	func(m_MeshData);
 }
 
-void Scene::LoadMeshData(const char* path, int buffer)
+void Scene::LoadFbxScene(const std::string& path)
 {
-	Mesh new_mesh;
-
-	if (std::string(path) == "Grid")
-	{		
-		Grid d = Grid(250,250);
-		d.OnInit();
-		new_mesh = Mesh(d);
-		new_mesh.SetTransform(glm::mat4(1.0f));
-	}
-	else
-	{
-		new_mesh = Mesh(path);
-		new_mesh.OnInit();
-		new_mesh.SetTransform(glm::mat4(1.0f));
-		//LoadMeshData(new_mesh);
-	}
-	switch (buffer)
-	{
-	case 1: // DYANAMIC GEOMETRY
-		LoadDynamicGeometry(new_mesh);
-		break;
-	default:
-		LoadStaticGeometry(new_mesh);
-	}
-
-}
-
-void Scene::LoadDynamicGeometry(Mesh& other)
-{
-	m_DynamicGeometry.push_back(other);
-	NumMeshes++;
-}
-
-void Scene::BatchStaticGeometry()
-{
-	Mesh BatchedMesh = Mesh::Batch(m_StaticGeometry);
-	m_StaticGeometry.clear();
-	m_StaticGeometry.push_back(BatchedMesh);
-}
-
-Scene::Scene(std::string path)
-	:
-	m_Title{path},
-	m_State{ SceneState::LOADING },
-	NumMeshes{ 0 },
-	m_ActiveMaterial{0},
-	m_MeshData{},
-	m_DynamicGeometry{},
-	m_StaticGeometry{}
-{
-
 	//GLuint mVBONames[VBO_COUNT];
 	FbxArray<SubMesh*> mSubMeshes;
 	bool mHasNormal;
@@ -391,7 +375,7 @@ Scene::Scene(std::string path)
 
 	FbxImporter* pFbxImporter = FbxImporter::Create(m_pManager, "");
 
-	auto filename = m_Title.c_str();
+	auto filename = path.c_str();
 
 	bool import_status = pFbxImporter->Initialize(filename, -1, m_pManager->GetIOSettings());
 
@@ -516,8 +500,8 @@ Scene::Scene(std::string path)
 			{
 				lPolygonVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
 			}
-			float *lVertices = new float[lPolygonVertexCount * VERTEX_STRIDE];
-			unsigned int *lIndices = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
+			float* lVertices = new float[lPolygonVertexCount * VERTEX_STRIDE];
+			unsigned int* lIndices = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
 			float* lNormals = NULL;
 			if (mHasNormal)
 			{
@@ -666,11 +650,12 @@ Scene::Scene(std::string path)
 
 			std::vector<Vertex> v;
 
+
 			for (auto index = 0; index < lPolygonVertexCount; index++)
 			{
-				v.push_back(Vertex{ pos[index], tex[index], id[index], norm[index] });
+				auto uv = mHasUV ? tex[index] : glm::normalize(glm::vec2(index, lPolygonCount));
+				v.push_back(Vertex{ pos[index], uv, id[index], norm[index] });
 			}
-
 			/*
 			if (lVertices)
 			{
@@ -680,34 +665,42 @@ Scene::Scene(std::string path)
 			if (lIndices)
 			{
 				delete[] lIndices;
-			}*/
-
+			}
+			*/
 			return v;
 		};
 
 	// RETRIEVE ANIMATION DATA
 	int i = 0;
-	//int numStacks = m_pScene->GetSrcObjectCount< FbxAnimStack>();
-	//for (auto anim_index = 0; anim_index < numStacks; anim_index++)
+	int numObjects = m_pScene->GetSrcObjectCount<FbxGeometry>();
+	for (int object_index = 0; object_index < numObjects; object_index++)
 	{
-		//auto anim_stack = m_pScene->GetSrcObject< FbxAnimStack>(anim_index);
-		//auto num_layers = anim_stack->GetMemberCount<FbxAnimLayer>();
-		//for (auto layer_index = 0; layer_index < num_layers; layer_index++)
+		auto object = m_pScene->GetSrcObject<FbxGeometry>(object_index);
+		int numStacks = object->GetSrcObjectCount<FbxAnimStack>();
+		if (numStacks)
 		{
-		//	auto anim_layer = anim_stack->GetMember<FbxAnimLayer>(layer_index);
+			for (auto anim_index = 0; anim_index < numStacks; anim_index++)
+			{
+				auto anim_stack = object->GetSrcObject< FbxAnimStack>(anim_index);
+				auto num_layers = anim_stack->GetMemberCount<FbxAnimLayer>();
+				for (auto layer_index = 0; layer_index < num_layers; layer_index++)
+				{
+					auto anim_layer = anim_stack->GetMember<FbxAnimLayer>(layer_index);
+
+
+				}
+			}
+
 		}
-
 	}
-
-
-	FbxNodeAttribute::EType lAttributeType;
-
 	auto node_count = m_pScene->GetNodeCount();
-	//for (auto node_index = 0; node_index < 1; node_index++)
+	int numMeshes = 0, numSkeleton = 0, numLights = 0, numCameras = 0;
+	///for (auto node_index = 0; node_index < 1; node_index++)
 	for (auto node_index = 1; node_index < m_pScene->GetNodeCount(); node_index++)
 	{
 		auto child_node = m_pScene->GetNode(node_index);
 		auto node_attrib = child_node->GetNodeAttribute();
+		auto sc = node_attrib->GetSrcObjectCount<FbxAnimStack>();
 		auto node_attrib_type = node_attrib->GetAttributeType();
 
 		auto _scl = child_node->LclScaling.Get();
@@ -716,39 +709,87 @@ Scene::Scene(std::string path)
 
 		glm::vec3 scl = glm::vec3(_scl[0] * 0.001, _scl[1] * 0.001, _scl[2] * 0.001);
 		glm::vec3 rot = glm::vec3(_rot[0] * 0.001, _rot[1] * 0.001, _rot[2] * 0.001);
-		glm::vec3 pos = glm::vec3(_pos[0] * 0.001, _pos[1] * 0.001, _pos[2]* 0.001);
+		glm::vec3 pos = glm::vec3(_pos[0] * 0.001, _pos[1] * 0.001, _pos[2] * 0.001);
 
 		auto transform = glm::scale(glm::mat4(1.0f), scl);
 		transform = glm::rotate(transform, glm::radians(90.0f), rot);
 		transform = glm::translate(transform, pos);
-		auto _transform = child_node->EvaluateGlobalTransform();
-;
+		//auto _transform = child_node->EvaluateGlobalTransform();
+		;
 
-		std::cout << "name:"<< child_node->GetName() << std::endl;
+		std::cout << "name:" << child_node->GetName() << std::endl;
 		std::cout << "node type: " << node_attrib_type << std::endl;
 		std::cout << "scale:" << _scl.Buffer() << std::endl;
 		std::cout << "rotation:" << _rot.Buffer() << std::endl;
 		std::cout << "translation:" << _pos.Buffer() << std::endl;
-		std::cout << "transform:" << _transform.Buffer() << std::endl;
+		//std::cout << "transform:" << _transform.Buffer() << std::endl;
 
 		FbxLight* light = nullptr;
+		FbxMesh* mesh = nullptr;
+		FbxSkeleton* skeleton = nullptr;
 		switch (node_attrib_type)
 		{
-			case FbxNodeAttribute::EType::eCamera:
-				break;
+		case FbxNodeAttribute::EType::eCamera:
+			numCameras++;
+			break;
 
-			case FbxNodeAttribute::EType::eLight:
-				light = reinterpret_cast<FbxLight*>(child_node->GetLight());
-				break;
+		case FbxNodeAttribute::EType::eLight:
+			numLights++;
+			light = reinterpret_cast<FbxLight*>(child_node->GetLight());
+			break;
 
-			case FbxNodeAttribute::EType::eMesh:
-				auto mesh = reinterpret_cast<FbxMesh*>(child_node->GetGeometry());
-				auto m_v = ConstructMesh(mesh);
-				m_MeshData.push_back(Mesh(m_v, transform));
-				break;
+		case FbxNodeAttribute::EType::eMesh:
+			numMeshes++;
+			mesh = reinterpret_cast<FbxMesh*>(child_node->GetGeometry());
+			m_DynamicGeometry.push_back(Mesh(ConstructMesh(mesh), transform));
+			break;
+		case FbxNodeAttribute::EType::eSkeleton:
+			numSkeleton++;
+			skeleton = reinterpret_cast<FbxSkeleton*>(child_node->GetSkeleton());
+			break;
 		}
 	}
 	pFbxImporter->Destroy();
+
+}
+
+void Scene::LoadMeshData(const char* path, int buffer)
+{
+	Mesh new_mesh;
+
+	if (std::string(path) == "Grid")
+	{		
+		Grid d = Grid(250,250);
+		d.OnInit();
+		new_mesh = Mesh(d);
+		new_mesh.SetTransform(glm::mat4(1.0f));
+	}
+	switch (buffer)
+	{
+	case 1: // DYANAMIC GEOMETRY
+		//LoadDynamicGeometry(new_mesh);
+		LoadFbxScene(path);
+		break;
+	default:
+		new_mesh = Mesh(path);
+		new_mesh.OnInit();
+		new_mesh.SetTransform(glm::mat4(1.0f));
+		LoadStaticGeometry(new_mesh);
+	}
+
+}
+
+void Scene::LoadDynamicGeometry(Mesh& other)
+{
+	m_DynamicGeometry.push_back(other);
+	NumMeshes++;
+}
+
+void Scene::BatchStaticGeometry()
+{
+	Mesh BatchedMesh = Mesh::Batch(m_StaticGeometry);
+	m_StaticGeometry.clear();
+	m_StaticGeometry.push_back(BatchedMesh);
 }
 
 void Scene::LoadStaticGeometry(Mesh& other)

@@ -5,5 +5,5 @@ class Square : public Mesh
 {
 public:
     void OnInit() override;
-    void OnUpdate(float ts) override;
+    void OnUpdate(TimeStep ts) override;
 };

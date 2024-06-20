@@ -44,13 +44,13 @@ void NGLFWwindow::mouse_button_callback(GLFWwindow* window, int button, int acti
         switch (button)
         {
         case GLFW_MOUSE_BUTTON_LEFT:
-            m_SceneEventQueue.Push(new MouseButtonDown(m_MouseX, m_MouseY, MouseButton::LEFT));
+            m_SceneEventQueue.Push(new MouseButtonDown(static_cast<uint64_t>(m_MouseX), static_cast<uint64_t>(m_MouseY), MouseButton::LEFT));
             break;
         case GLFW_MOUSE_BUTTON_MIDDLE:
-            m_SceneEventQueue.Push(new MouseButtonDown(m_MouseX, m_MouseY, MouseButton::MIDDLE));
+            m_SceneEventQueue.Push(new MouseButtonDown(static_cast<uint64_t>(m_MouseX), static_cast<uint64_t>(m_MouseY), MouseButton::MIDDLE));
             break;
         case GLFW_MOUSE_BUTTON_RIGHT:
-            m_SceneEventQueue.Push(new MouseButtonDown(m_MouseX, m_MouseY, MouseButton::RIGHT));
+            m_SceneEventQueue.Push(new MouseButtonDown(static_cast<uint64_t>(m_MouseX), static_cast<uint64_t>(m_MouseY), MouseButton::RIGHT));
             break;
         }
     }
@@ -75,14 +75,14 @@ void NGLFWwindow::cursor_position_callback(GLFWwindow* window, double x, double 
     glfwGetCursorPos(window, &x, &y);
     m_MouseX = x;
     m_MouseY = y;
-    m_SceneEventQueue.Push(new MouseMove(m_MouseX, m_MouseY));
+    m_SceneEventQueue.Push(new MouseMove(static_cast<uint64_t>(m_MouseX), static_cast<uint64_t>(m_MouseY)));
 }
 
 void NGLFWwindow::cursor_scroll_callback(GLFWwindow* window, double x_scroll, double y_scroll)
 {
     m_MouseScrollX = x_scroll;
     m_MouseScrollY = y_scroll;
-    m_SceneEventQueue.Push(new MouseWheel(m_MouseScrollY));
+    m_SceneEventQueue.Push(new MouseWheel(static_cast<int64_t>(m_MouseScrollY)));
 }
 
 void NGLFWwindow::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)

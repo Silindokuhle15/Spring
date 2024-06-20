@@ -19,8 +19,6 @@
 // FBX ADOPTION
 
 #include <fbxsdk.h>
-#include "../Common/Common.h"
-
 typedef enum
 {
 	LOADING, RUNNING, PAUSED, STOPPED, END
@@ -68,16 +66,23 @@ public:
 	std::vector<Mesh> m_DynamicGeometry;
 
 	int m_ActiveMaterial;
+	uint32_t m_SelectedMesh, m_SelectedBuffer;
+	PrimitiveMode m_CurrentRenderMode;
 	TimeStep ts;
 
-	std::shared_ptr<Camera> m_ActiveCamera = nullptr;
+	Camera m_ActiveCamera;
+	std::shared_ptr<Camera> m_pActiveCamera;
+	std::shared_ptr<glm::mat4> m_pActiveTransform;
 
-	void AttachCamera(std::shared_ptr<Camera> cam);
+	template<typename U>
+	void AddNewItem(U item);
+	//void AddNewMesh(Mesh mesh);
+	void AddNewMesh(Mesh& mesh);
 
 	void OnCreateSceneObjects();
 	void OnInit();
 
-	void OnUpdate(float ts);
+	void OnUpdate(TimeStep ts);
 	void Run();
 	void OnEnd();
 	void OnPause();
@@ -86,6 +91,7 @@ public:
 	void Process();
 
 	// Re Write and Re structuring this whole class
+	void LoadFbxScene(const std::string& path);
 	void LoadMeshData(const char* path, int buffer);
 	void LoadDynamicGeometry(Mesh& other);
 	void LoadStaticGeometry(Mesh& other);
@@ -94,8 +100,20 @@ public:
 
 	Scene() = default;
 
-	Scene(std::string path);
+	Scene(std::string path)
+		:
+		m_Title{ path },
+		m_State{ SceneState::LOADING },
+		NumMeshes{ 0 },
+		m_ActiveMaterial{ 0 },
+		m_MeshData{},
+		m_DynamicGeometry{},
+		m_StaticGeometry{},
+		m_pManager{ nullptr },
+		m_pScene{ nullptr }
+	{
 
+	}
 	~Scene()
 	{
 		m_Materials.clear();
@@ -142,3 +160,13 @@ private:
 		int TriangleCount;
 	};
 };
+
+template<typename U>
+inline void Scene::AddNewItem(U item)
+{
+	if (std::is_same<U, Mesh>::value)
+	{
+		AddNewMesh(item);
+	}
+	return;
+}

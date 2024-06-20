@@ -103,10 +103,10 @@ public:
 	~Win32Window();
 
 	void StartTimer() override {
-		m_StartTime = milliseconds_now();
+		m_StartTime = static_cast<float>(milliseconds_now());
 	}
 	void EndTimer() override {
-		m_EndTime = milliseconds_now();
+		m_EndTime = static_cast<float>(milliseconds_now());
 	}
 
 

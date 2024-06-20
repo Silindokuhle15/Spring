@@ -1,6 +1,6 @@
 #version 450 core
 layout(binding = 0) uniform sampler2D u_Tex;
-layout(binding = 1) uniform sampler2D u_PlayButton;
+layout(binding = 1) uniform image2D u_Tex1;
 
 uniform int EnableLighting;
 uniform vec3 LightColor;
@@ -30,7 +30,9 @@ in VS_OUT
 void main()
 {
 
-	vec4 play_col = texture(u_PlayButton, ps_in.TexCoord);
+	vec4 object_id = normalize(vec4(ps_in.ID, 0.0f, 0.0f, 0.0f, 1.0f));
+	ivec2 p = ivec2(gl_FragCoord.xy);
+	imageStore(u_Tex1, p, object_id);
 
 	vec4 tnorm = NormalMatrix * vec4(ps_in.Normal, 1.0f);
 	vec3 tnorm_3 = vec3( tnorm.x,tnorm.y, tnorm.z);

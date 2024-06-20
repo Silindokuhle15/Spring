@@ -8,14 +8,9 @@ void Grid::OnInit()
 
     float z = 0;
 
-    auto ConstructTriangles = [](std::vector<glm::vec3> pos, std::vector<glm::vec2> tex, std::vector<glm::vec3> norm, uint32_t index)
-        {
-            return Vertex{ pos[index], tex[index], index + 10, norm[index] };
-        };
-
-    for (int j = 0; j < m_Columns; j++)
+    for (int j = 0; j < static_cast<int>(m_Columns); j++)
     {
-        for (int i = 0; i < m_Rows; i++)
+        for (int i = 0; i < static_cast<int>(m_Rows); i++)
         {
             uint32_t id = i + j * i;
             std::vector<Vertex> v1 = {
@@ -66,8 +61,8 @@ void Grid::OnInit()
 
         }
 
-        NumIndices = m_VertexIndices.size();
-        NumVertices = m_Positions.size();
+        NumIndices = static_cast<uint32_t>(m_VertexIndices.size());
+        NumVertices = static_cast<int32_t>(m_Positions.size());
     }
 
 }

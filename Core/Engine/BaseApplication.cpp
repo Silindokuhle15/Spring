@@ -1,8 +1,8 @@
 #include "BaseApplication.h"
 
-std::unique_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
+std::shared_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 template<class T>
-std::unique_ptr<UILayer<T>> BaseApplication::m_pUILayer = nullptr;
+std::shared_ptr<UILayer<T>> BaseApplication::m_pUILayer = nullptr;
 std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
 
 template<class T>
@@ -22,42 +22,32 @@ void BaseApplication::Run()
 
     m_Window<WINDOW_BASE>->SetUpForRendering();
 
-    //scripting::ScriptingEngine LuaEngine;
-    //m_LuaEngine = &LuaEngine;
+    //TestFonts();
 
-    TestFonts();
-
-    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/cat_rigged.fbx");
+    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua");
     std::shared_ptr<Scene> pscene = std::make_shared<Scene>(square_scn);
-    square_scn.OnInit();
-
+    pscene->OnInit();
     
     UILayer<WINDOW_BASE> ImGui_Layer(AppWindow);
-    ImGui_Layer.LoadScene(pscene);
-    BaseApplication::m_pUILayer<WINDOW_BASE> = std::make_unique<UILayer<WINDOW_BASE>>(ImGui_Layer);
+    BaseApplication::m_pUILayer<WINDOW_BASE> = std::shared_ptr<UILayer<WINDOW_BASE>>(&ImGui_Layer);
     BaseApplication::m_pUILayer<WINDOW_BASE>->OnInit();
     
-    
+    BaseApplication::m_Scene = pscene;
     Renderer OpenGLrenderer;
-
     std::shared_ptr<Renderer> pOpenGLRenderer = std::shared_ptr<Renderer>(&OpenGLrenderer);
     BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
-    BaseApplication::m_Scene = std::make_shared<Scene>(square_scn);
-    BaseApplication::m_pActiveRenderer->BindScene(m_Scene);
-    
-    BaseApplication::m_pActiveRenderer->SetUpForRendering(); 
+    BaseApplication::m_pActiveRenderer->BindScene(pscene);
+    BaseApplication::m_pActiveRenderer->SetUpForRendering();
 
     ImGui_Layer.BindRenderer(pOpenGLRenderer);
-    
-    BaseApplication::m_pUILayer<WINDOW_BASE>->BindRenderer(pOpenGLRenderer);
-    BaseApplication::m_pUILayer<WINDOW_BASE>->LoadScene(BaseApplication::m_Scene);
+    ImGui_Layer.LoadScene(pscene);
+    //BaseApplication::m_pUILayer<WINDOW_BASE>->BindRenderer(pOpenGLRenderer);
+    //BaseApplication::m_pUILayer<WINDOW_BASE>->LoadScene(BaseApplication::m_Scene);
+
 
     while (!BaseApplication::ExitWindow)
     {
-        //glfwGetFramebufferSize(BaseApplication::m_pWindow, &m_Width, &m_Height);
-        //BaseApplication::m_LuaEngine->Run();
         m_Window<WINDOW_BASE>->StartTimer();
-
         BaseApplication::m_pUILayer<WINDOW_BASE>->BeginFrame();
 
         BaseApplication::m_pActiveRenderer->BeginFrame();
@@ -131,7 +121,7 @@ void BaseApplication::OnUpdate()
     for (auto v : m_Window<T>->m_SceneEventQueue.m_Queue)
     {
         MouseWheel* m = nullptr;
-        int delta = 0;
+        int64_t delta = 0;
         switch (v->m_ID)
         {
         case EventID::None:
@@ -150,31 +140,31 @@ void BaseApplication::OnUpdate()
             delta = m->m_WheelDelta;
             if (delta > 0) 
             {
-               m_Scene->m_ActiveCamera->MoveForward();
+               m_Scene->m_ActiveCamera.MoveForward();
             }
             else
             {
-                m_Scene->m_ActiveCamera->MoveBackward();
+                m_Scene->m_ActiveCamera.MoveBackward();
             }
             break;
         // KEYBOARD
         case EventID::A:
-            m_Scene->m_ActiveCamera->MoveLeft();
+            m_Scene->m_ActiveCamera.MoveLeft();
             break;
         case EventID::D:
-            m_Scene->m_ActiveCamera->MoveRight();
+            m_Scene->m_ActiveCamera.MoveRight();
             break;
         case EventID::Q:
-            m_Scene->m_ActiveCamera->MoveForward();
+            m_Scene->m_ActiveCamera.MoveForward();
             break;
         case EventID::S:
-            m_Scene->m_ActiveCamera->MoveDown();
+            m_Scene->m_ActiveCamera.MoveDown();
             break;
         case EventID::W:
-            m_Scene->m_ActiveCamera->MoveUp();
+            m_Scene->m_ActiveCamera.MoveUp();
             break;
         case EventID::Z:
-            m_Scene->m_ActiveCamera->MoveBackward();
+            m_Scene->m_ActiveCamera.MoveBackward();
         }
         v->Resolve();
     }

@@ -65,48 +65,45 @@ void Renderer::SetUpForRendering()
         glUseProgram(mat.m_MaterialID);
         m_VAO.CreateVertexArrayLayout(mat.m_MaterialID, attribs);
 
+        m_ModelLocation = glGetUniformLocation(mat.m_MaterialID, "Model");
         m_VPlocation = glGetUniformLocation(mat.m_MaterialID, "VP");
         m_DeltaLocation = glGetUniformLocation(mat.m_MaterialID, "delta");
+
     }
     m_ActiveScene->Process();
 }
 
 void Renderer::UploadToOpenGL()
 {
-    auto UploadBuffer3v = [](std::vector<Mesh> buffer, GLenum render_mode, uint32_t vao, uint32_t vbo, uint32_t ibo)
+    auto UploadBuffer3v = [&](std::vector<Mesh> buffer, GLenum render_mode, uint32_t vao, uint32_t vbo, uint32_t ibo, int model_location)
         {
-            for (auto& i : buffer)
+            GLuint vBufferOffset = 0;                                                      // POSITIONS OFFSET INTO VERTEX ARRAY BUFFER
+            GLuint iBufferOffset = 0;
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            for (size_t bIndex = 0; bIndex < buffer.size(); bIndex++)
             {
-                int index = &i - &buffer[0];
+                glNamedBufferSubData(vbo, vBufferOffset, sizeof(Vertex) * buffer[bIndex].NumIndices, (void*)buffer[bIndex].m_V.data());
+                vBufferOffset += sizeof(Vertex) * buffer[bIndex].NumIndices;
 
-                //glBindVertexArray(vao);
-
-                GLuint size1 = sizeof(Vertex) * i.NumIndices;
-                static GLuint offset1 = 0;                                                      // POSITIONS OFFSET INTO VERTEX ARRAY BUFFER
-                offset1 += index <= 0 ? 0 : sizeof(Vertex) * buffer[index - 1].NumIndices;
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                //glBufferSubData(GL_ARRAY_BUFFER, offset1, size1, (Vertex*)i.m_V.data());
-
-                glNamedBufferSubData(vbo, offset1, size1, (Vertex*)i.m_V.data());
-                GLuint size2 = sizeof(unsigned int) * i.NumIndices;                             // INDICES TO BE SENT TO OPENGL
-                static GLuint offset2 = 0;
-                offset2 += index <= 0 ? 0 : sizeof(unsigned int) * buffer[index - 1].NumIndices;
-
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-                //glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset2, size2, (void*)i.m_VertexIndices.data());
-                glNamedBufferSubData(ibo, offset2, size2, (void*)i.m_VertexIndices.data());
-
-                //glDrawElements(render_mode, i.NumIndices, GL_UNSIGNED_INT, nullptr);
-                uint32_t index_offset = offset2 / sizeof(uint32_t);
-                glDrawArrays(render_mode, index_offset, i.NumIndices);
-
-                //glBindBuffer(GL_ARRAY_BUFFER, 0);
-                //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(buffer[bIndex].m_Transform));
+                glDrawArrays(render_mode, iBufferOffset, buffer[bIndex].NumIndices);
+                iBufferOffset += buffer[bIndex].NumIndices;
             }
         };
 
-    //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
-    UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
+    
+    switch (m_ActiveScene->m_CurrentRenderMode)
+    {
+    case PrimitiveMode::WIRE_FRAME:
+        render_mode = GL_LINE_LOOP;
+        break;
+    default:
+        render_mode = GL_TRIANGLES;
+    }
+    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
+    //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
+    //UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
 
 void Renderer::OnRender()
@@ -127,17 +124,18 @@ void Renderer::BindScene(std::shared_ptr<Scene> scene)
     m_ActiveScene = scene;
 }
 
-void Renderer::OnUpdate(float ts)
+void Renderer::OnUpdate(TimeStep ts)
 {
-    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetVP()));
+    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera.GetVP()));
     //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetV()));
-    glUniform1f(m_DeltaLocation, ts);
+    glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
     m_ActiveScene->OnUpdate(ts);
 }
 
 void Renderer::CreateImage()
 {
-    glClearColor(0.02, 0.019, 0.092, 1.0f);
+    GLclampf r = 0.02f, g = 0.019f, b = 0.092f, a = 1.0f;
+    glClearColor(r, g, b, a);
     glDrawBuffer(GL_COLOR_ATTACHMENT1);
     //glDrawBuffer(GL_DEPTH_ATTACHMENT);
 }
@@ -174,7 +172,7 @@ void Renderer::BeginFrame()
             m_VAO.EnableAttribute(mat.m_MaterialID, vao_attrib.c_str());
         }
     }
-    m_ActiveScene->m_ActiveCamera->Present();
+    m_ActiveScene->m_ActiveCamera.Present();
 }
 
 void Renderer::EndFrame()

@@ -63,7 +63,7 @@ enum class MouseButton
 class MouseButtonDown : public Event
 {
 public:
-	MouseButtonDown(int32_t x, int32_t y, MouseButton button) : m_X{ x }, m_Y{ y }, m_Button{ button } 
+	MouseButtonDown(int64_t x, int64_t y, MouseButton button) : m_X{ x }, m_Y{ y }, m_Button{ button } 
 	{
 		switch (button)
 		{
@@ -83,26 +83,26 @@ public:
 
 	bool Resolve() override;
 private:
-	int32_t m_X, m_Y;
+	int64_t m_X, m_Y;
 	MouseButton m_Button;
 };
 
 class MouseMove : public Event
 {
 public:
-	MouseMove(int32_t x, int32_t y) :m_X{ x }, m_Y{ y } {}
+	MouseMove(int64_t x, int64_t y) :m_X{ x }, m_Y{ y } {}
 	bool Resolve() override;
 private:
-	int32_t m_X, m_Y;
+	int64_t m_X, m_Y;
 };
 
 class MouseWheel : public Event
 {
 public:
-	MouseWheel(int delta = 0 ) : m_WheelDelta{ delta } 
+	MouseWheel(int64_t delta = 0 ) : m_WheelDelta{ delta } 
 	{ 
 		m_ID = EventID::MOUSEWHEEL;
 	}
 	bool Resolve() override;
-	int32_t m_WheelDelta;
+	int64_t m_WheelDelta;
 };

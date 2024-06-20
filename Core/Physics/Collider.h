@@ -22,7 +22,7 @@ struct SphereCollider : Mesh
 	glm::vec3 m_Pos;
 
 	void OnInit() override {}
-	void OnUpdate(float ts) override {}
+	void OnUpdate(TimeStep ts) override {}
 };
 
 struct GenericCollider : Mesh
@@ -46,7 +46,7 @@ struct GenericCollider : Mesh
 	double proj_z;
 
 	void OnInit() override {}
-	void OnUpdate(float ts) override {}
+	void OnUpdate(TimeStep ts) override {}
 
 	void FindMinMax() 
 	{

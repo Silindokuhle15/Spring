@@ -17,11 +17,11 @@ public:
 
     void StartTimer() override
     {
-        m_StartTime = glfwGetTime();
+        m_StartTime = static_cast<double>(glfwGetTime());
     }
     void EndTimer() override
     {
-        m_EndTime = glfwGetTime();
+        m_EndTime = static_cast<double>(glfwGetTime());
     }
     void SwapBuffer() override;
 
@@ -40,7 +40,7 @@ public:
     {
 
     }
-    NGLFWwindow(uint32_t width, uint32_t height, const char* name, bool show = true)
+    NGLFWwindow(int64_t width, int64_t height, const char* name, bool show = true)
 	{
         if (!glfwInit())
             exit(EXIT_FAILURE);
@@ -62,7 +62,7 @@ public:
         //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-        m_pWindow = glfwCreateWindow(width, height, name, NULL, NULL);
+        m_pWindow = glfwCreateWindow(static_cast<int>(width), static_cast<int>(height), name, NULL, NULL);
         if (!m_pWindow)
         {
             glfwTerminate();

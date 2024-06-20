@@ -149,6 +149,7 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     default:
         return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
     }
+    return 0;
 }
 
 Win32Window::Win32Window()
@@ -252,7 +253,7 @@ void Win32Window::SetUpForRendering()
 
 void Win32Window::SwapBuffer()
 {
-    wglSwapIntervalEXT(1.0f);
+    wglSwapIntervalEXT(1);
     SwapBuffers(m_Hdc);
 }
 

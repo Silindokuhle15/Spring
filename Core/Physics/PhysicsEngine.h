@@ -23,6 +23,6 @@ namespace physics
 
 		void ImpulseResolveCollision();
 		void OnInit();
-		void OnUpdate(float ts);
+		void OnUpdate(TimeStep ts);
 	};
 }

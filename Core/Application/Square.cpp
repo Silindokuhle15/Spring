@@ -12,12 +12,12 @@ void Square::OnInit()
     m_Positions.shrink_to_fit();
     m_VertexIndices.shrink_to_fit();
  
-    NumVertices = m_Positions.size();
-    NumIndices = m_VertexIndices.size();
+    NumVertices = static_cast<uint32_t>(m_Positions.size());
+    NumIndices = static_cast<uint32_t>(m_VertexIndices.size());
 
-    for (int i = 0; i < NumIndices; i++)
+    for (uint64_t i = 0; i < NumIndices; i++)
     {
-        uint32_t temp_index = m_VertexIndices[i];
+        uint64_t temp_index = m_VertexIndices[i];
         m_V.push_back(Vertex{
             m_Positions[temp_index],
             m_TexCoords[temp_index],
@@ -28,7 +28,7 @@ void Square::OnInit()
  }
 
 
-void Square::OnUpdate(float ts)
+void Square::OnUpdate(TimeStep ts)
 {
     // Update the model transform 
     //m_Transform = glm::mat4(glm::translate(m_Transform, glm::vec3(0.0, 0.0, -0.10))); // Not the best solution, still needs to be updated,, all in due time

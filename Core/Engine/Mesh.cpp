@@ -4,8 +4,8 @@ void Mesh::OnInit()
 {
     ObjectLoader ob;
     ob.LoadObjectFromFile(m_OBJFilePath.c_str());
-    NumVertices = ob.m_Positions.size();
-    NumIndices = ob.m_VertexIndices.size();
+    NumVertices = static_cast<uint32_t>(ob.m_Positions.size());
+    NumIndices = static_cast<uint32_t>(ob.m_VertexIndices.size());
     
     for (auto& i : ob.m_Positions)
     {
@@ -49,10 +49,10 @@ void Mesh::OnInit()
     //m_VertexIDs.shrink_to_fit();
     //m_Normals.shrink_to_fit();
 
-    NumVertices = m_Positions.size();
-    NumIndices  = m_VertexIndices.size();
+    NumVertices = static_cast<uint32_t>(m_Positions.size());
+    NumIndices  = static_cast<uint32_t>(m_VertexIndices.size());
     
-    for (int i = 0; i < NumIndices; i++)
+    for (uint32_t i = 0; i < NumIndices; i++)
     {
         glm::vec3 pos = m_Positions[m_VertexIndices[i]];
         glm::vec2 tex = m_TexCoords[m_TextureIndices[i]];
@@ -62,10 +62,10 @@ void Mesh::OnInit()
         m_V.push_back({ pos, tex, ID, norm });
     }
 
-    NumIndices = m_V.size();
+    NumIndices = static_cast<uint32_t>(m_V.size());
 }
 
-void Mesh::OnUpdate(float ts)
+void Mesh::OnUpdate(TimeStep ts)
 {
     // Update the model transform 
     //m_Transform = glm::mat4(glm::translate(m_Transform, glm::vec3(0.0, 0.0, -0.10))); // Not the best solution, still needs to be updated,, all in due time
@@ -108,8 +108,8 @@ Mesh Mesh::Batch(std::vector<Mesh>& meshes)
         padd_value += i.NumVertices;
     }
 
-    batchedMesh.NumVertices = batchedMesh.m_Positions.size();
-    batchedMesh.NumIndices = batchedMesh.m_VertexIndices.size();
+    batchedMesh.NumVertices = static_cast<uint32_t>(batchedMesh.m_Positions.size());
+    batchedMesh.NumIndices = static_cast<uint32_t>(batchedMesh.m_VertexIndices.size());
     batchedMesh.SetTransform(glm::translate(glm::mat4(1.0f), glm::vec3(+0.0f, 0.0, 0.0)));
     return batchedMesh;
 }

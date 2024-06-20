@@ -23,7 +23,7 @@ out VS_OUT
 void main()
 {
 	vec3 light_direction = normalize(LightPosition - Position);
-	gl_Position = Model * VP * vec4(Position, 1.0f) * delta;
+	gl_Position = Model * VP * vec4(Position, 1.0f) ;
 	vs_out.TexCoord = TexCoord;
 	vs_out.ID = ID;
 	vs_out.Normal = Normal;

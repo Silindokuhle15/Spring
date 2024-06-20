@@ -1,11 +1,11 @@
 #include "Mouse.h"
 
-int Mouse::CheckForRawMotionSupport()
+int64_t Mouse::CheckForRawMotionSupport()
 {
     return CheckForRawInputSupport();
 }
 
-int Mouse::CheckForRawInputSupport()
+int64_t Mouse::CheckForRawInputSupport()
 {
     return 0;
 }

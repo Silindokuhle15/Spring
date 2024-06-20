@@ -10,15 +10,14 @@ Project::Project(std::string file_path)
 bool Project::Open()
 {
 	auto path = std::filesystem::path(m_CmakeFilepath);
-	if (std::filesystem::is_regular_file(path))
-	{
-		m_CmakeFile = std::fstream(m_CmakeFilepath, open_flags);
-	}
-	else
+	if (!(std::filesystem::is_regular_file(path)))
 	{
 		LogError("Failed to Open", "Project:Open()", m_CmakeFilepath);
 		return false;
 	}
+	m_CmakeFile = std::fstream(m_CmakeFilepath, open_flags);
+
+	return true;
 }
 
 bool Project::Close()

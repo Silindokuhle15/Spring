@@ -4,11 +4,6 @@
 #include "VertexArray.h"
 #include "Mesh.h"
 
-typedef enum
-{
-    TRIANGLE_STRIP, WIRE_FRAME
-} PrimitiveMode;
-
 class Renderer
 {
 public:
@@ -23,6 +18,7 @@ public:
     VertexArray m_VAO;
 
     // Uniforms
+    int m_ModelLocation;
     int m_VPlocation;
     int m_Vlocation;
     int m_DeltaLocation;
@@ -58,7 +54,7 @@ public:
     void EnableTesselation();
 
     void OnRender();
-    void OnUpdate(float delta);
+    void OnUpdate(TimeStep delta);
 
     void EndFrame();
 

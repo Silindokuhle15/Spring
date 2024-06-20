@@ -2,13 +2,13 @@
 class TimeStep
 {
 private:
-	float m_CurrentTime;
+	double m_CurrentTime;
 
 public:
 	TimeStep() : m_CurrentTime{0} {}
-	operator float()  { return m_CurrentTime; }
+	operator double()  { return m_CurrentTime; }
 
-	float& operator=(const float& val) {
+	double& operator=(const double& val) {
 		this->m_CurrentTime = val;
 		return this->m_CurrentTime;
 	}

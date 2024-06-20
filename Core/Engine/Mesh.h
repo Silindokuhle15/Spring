@@ -18,11 +18,11 @@ public:
         m_Color{ glm::vec3(1.0f, 1.0f, 1.0f) }
     {
         this->m_V = m_points;
-        this->NumIndices = m_points.size();
-        this->NumVertices = m_points.size();
+        this->NumIndices = static_cast<uint32_t>(m_points.size());
+        this->NumVertices = static_cast<uint32_t>(m_points.size());
     }
     virtual void OnInit();
-    virtual void OnUpdate(float ts);
+    virtual void OnUpdate(TimeStep ts);
 
     static Mesh Batch(std::vector<Mesh>& meshes);
 
@@ -48,10 +48,6 @@ public:
     TimeStep m_Ts;
     virtual void SetTransform(const glm::mat4& transform) noexcept
     {
-        for (auto& pos : m_Positions)
-        {
-            pos = glm::vec3(transform * glm::vec4(pos, 1.0f));
-        }
         m_Transform = transform;
     }
 

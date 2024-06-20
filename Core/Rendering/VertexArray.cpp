@@ -9,10 +9,10 @@ void VertexArray::CreateVertexArrayLayout(uint32_t program, std::vector<VertexAt
 {
 	for (auto attribute : attribs)
 	{
-		uint32_t offset = 0;
-		uint32_t size = 3;
+		uint64_t offset = 0;
+		GLint size = 3;
 		std::string attribute_name = "";
-		uint32_t stride = sizeof(Vertex);
+		GLsizei stride = sizeof(Vertex);
 
 		switch (attribute)
 		{
@@ -36,8 +36,8 @@ void VertexArray::CreateVertexArrayLayout(uint32_t program, std::vector<VertexAt
 			break;
 		}
 
-		int32_t m_LayoutLocation = glGetAttribLocation(program, attribute_name.c_str());
-		glVertexAttribPointer(m_LayoutLocation, size, GL_FLOAT, GL_FALSE, stride, (void*)(offset));
+		GLuint m_LayoutLocation = glGetAttribLocation(program, attribute_name.c_str());
+		glVertexAttribPointer(m_LayoutLocation, size, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(offset));
 	}
 }
 

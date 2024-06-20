@@ -13,6 +13,10 @@
 #include "msdfgen.h"
 #include "msdfgen-ext.h"
 #include "msdf-atlas-gen.h"
+
+// PhysX
+//#include <PxPhysicsAPI.h>
+
 class Renderer;
 
 class BaseApplication
@@ -24,9 +28,9 @@ public:
 	template<class T>
 	static T* m_Window;
 
-	static std::unique_ptr<Renderer> m_pActiveRenderer;
+	static std::shared_ptr<Renderer> m_pActiveRenderer;
 	template<class T>
-	static std::unique_ptr<UILayer<T>> m_pUILayer;
+	static std::shared_ptr<UILayer<T>> m_pUILayer;
 	static std::shared_ptr<Scene> m_Scene;
 
 	static void AttachRenderer(std::unique_ptr<Renderer> Ren);

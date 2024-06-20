@@ -40,9 +40,10 @@ public:
 	virtual void OnInit() = 0;
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
-	virtual void OnUpdate(float ts) = 0;
+	virtual void OnUpdate(TimeStep ts) = 0;
 
-	virtual std::string GetFileName() = 0;
+	virtual std::shared_ptr<Camera>& GetLayerCamera() = 0;
+	virtual std::string GetFileName(const char* filter) = 0;
 };
 
 class Panel
@@ -121,7 +122,7 @@ public:
 	float m_PointLightPosition[3] = { 0.0, 0.0, 0.0 };
 
 	// OBJECT POINTERS
-	std::shared_ptr<Camera> m_EditorCamera;
+	std::shared_ptr<Camera> m_pEditorCamera;
 	std::shared_ptr<glm::mat4> m_ActiveTransform;
 
 	void EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition);
@@ -131,9 +132,13 @@ public:
 	ComponentPanel():
 		m_PanelName{"Components Panel"}
 	{
-
 	}
-
+	ComponentPanel(Layer* parent)
+		:
+		m_PanelName{ "Components Panel" }
+	{
+		m_pEditorCamera = parent->GetLayerCamera();
+	}
 	~ComponentPanel()
 	{
 
@@ -338,7 +343,7 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 	//ImGuizmo::DrawCubes(cameraView, cameraProjection, (float*)glm::value_ptr(*m_ActiveTransform), gizmoCount);
 	ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, matrix, NULL, useSnap ? &snap[0] : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL);
 
-	glm::vec3 displacement = m_EditorCamera->GetPosition() - glm::vec3(0);
+	glm::vec3 displacement = m_pEditorCamera->GetPosition() - glm::vec3(0);
 	float distance = glm::dot(displacement, displacement);
 	distance = glm::sqrt(distance);
 
@@ -365,24 +370,21 @@ inline void ComponentPanel<T>::Run()
 	ImGui::Separator();
 
 	ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
-	//ImGui::SliderFloat3("Camera Position", m_CameraPosition, -50.0, 50.0);
 	float cam_pos[3] = {
-		m_EditorCamera->GetPosition()[0],
-		m_EditorCamera->GetPosition()[1],
-		m_EditorCamera->GetPosition()[2]
+		m_pEditorCamera->GetPosition()[0],
+		m_pEditorCamera->GetPosition()[1],
+		m_pEditorCamera->GetPosition()[2]
 	};
 	ImGui::SliderFloat3("Camera Position", cam_pos, -50.0, 50.0);
-	ImGui::SliderFloat("Camera Speed", (float*)&m_EditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
+	ImGui::SliderFloat("Camera Speed", (float*)&m_pEditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
 	ImGui::Separator();
-	m_EditorCamera->SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
+	m_pEditorCamera->SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
 
 	ImGui::Text("Lights and Shadow");
 
 	int enable_lighting_locatin = glGetUniformLocation(m_ActiveMaterial, "EnableLighting");
 	PointLight pointLight = m_ActiveScene->m_Lights[0];
 
-	float sky_color[3];
-	float ground_color[3];
 	static bool enable_lighting = false;
 	ImGui::Checkbox("Enable Lighting", &enable_lighting);
 
@@ -400,43 +402,12 @@ inline void ComponentPanel<T>::Run()
 	ImGui::SliderFloat3("Sky Color", m_SkyColor, 0.0, 1.0);
 	ImGui::SliderFloat3("Grounr Color", m_GroundColor, 0.0, 1.0);
 
-	/*
-	m_ActiveScene->m_SkyColor[0] = m_SkyColor[0];
-	m_ActiveScene->m_SkyColor[1] = m_SkyColor[1];
-	m_ActiveScene->m_SkyColor[2] = m_SkyColor[2];
-	m_ActiveScene->m_GroundColor[0] = m_GroundColor[0];
-	m_ActiveScene->m_GroundColor[1] = m_GroundColor[1];
-	m_ActiveScene->m_GroundColor[2] = m_GroundColor[2];
-	*/
-	m_ActiveScene->m_SkyLights[0] = glm::vec3(m_SkyColor[0], m_SkyColor[1], m_SkyColor[2]);
-	m_ActiveScene->m_GroundLights[0] = glm::vec3(m_GroundColor[0], m_GroundColor[1], m_GroundColor[2]);
-
 	int light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
 	int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
 	int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
 	int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
 	int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
 
-	
-	/*
-	glProgramUniform3fv(m_ActiveMaterial, light_location, 1, glm::value_ptr(pointLight.m_Position));
-	glProgramUniform3fv(m_ActiveMaterial, light_color_location, 1, glm::value_ptr(pointLight.m_Color));
-	glProgramUniform3fv(m_ActiveMaterial, sky_color_location, 1, m_ActiveScene->m_SkyColor);
-	glProgramUniform3fv(m_ActiveMaterial, ground_color_location, 1, m_ActiveScene->m_GroundColor);
-	glProgramUniform3fv(m_ActiveMaterial, factor_location, 1, &m_Factor);
-	*/
-	float current_light_pos[] = { pointLight.m_Position.x, pointLight.m_Position.y , pointLight.m_Position.z };
-	float current_light_col[] = { pointLight.m_Color.x, pointLight.m_Color.y , pointLight.m_Color.z };
-
-	ImGui::SliderFloat3("Light Position", current_light_pos, -100.0, 100.0);
-	ImGui::SliderFloat3("Light Color", current_light_col, 0.0f, 1.0f);
-	ImGui::SliderFloat("Factor [a]", &m_Factor, 0.0, 1.0);
-	ImGui::Separator();
-
-	// RESET THE LIGHT POSITION
-
-	m_ActiveScene->m_Lights[0].SetPosition(current_light_pos);
-	m_ActiveScene->m_Lights[0].SetColor(current_light_col);
 
 	ImGui::Text("Materials");
 	ImGui::Separator();
@@ -470,7 +441,7 @@ inline void ComponentPanel<T>::Run()
 	ImGui::Separator();
 	ImGui::Text("Edit Transform Component");
 
-	EditTransform((float*)glm::value_ptr(m_EditorCamera->GetV()), (float*)glm::value_ptr(m_EditorCamera->GetP()), (float*)glm::value_ptr(*m_ActiveTransform), true);
+	EditTransform((float*)glm::value_ptr(m_pEditorCamera->GetV()), (float*)glm::value_ptr(m_pEditorCamera->GetP()), (float*)glm::value_ptr(*m_ActiveTransform), true);
 
 
 	const char* attr[] = { "Mesh", "Grid"};
@@ -522,8 +493,8 @@ inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathT
 	float x = current_window_rect.GetWidth();
 	float y = current_window_rect.GetHeight();
 
-	float a = 0.4;
-	float b = 0.9;
+	float a = 0.4f;
+	float b = 0.9f;
 
 	current_path = pathToShow;
 
@@ -568,7 +539,7 @@ inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathT
 
 	ImGui::SameLine();
 
-	if (ImGui::BeginChild("Second Window", ImVec2((x * (1 - 1.09 * a )), b * y), true))
+	if (ImGui::BeginChild("Second Window", ImVec2((x * (1 - 1.09f * a )), b * y), true))
 	{
 		ImGui::Text(current_path.string().c_str());
 
@@ -634,9 +605,8 @@ template<class T>
 inline void RenderPanel<T>::Run()
 {
 	ImGui::Begin(m_PanelName.c_str());
-
-	int width = m_ActiveScene->m_ActiveCamera->GetWidth();
-	int height = m_ActiveScene->m_ActiveCamera->GetHeight();
+	int width = 1920;
+	int height = 1080;
 	
 	//glReadPixels(0, 0, width, height, GL_RGB, GL_FLOAT, pixels);
 	
@@ -726,11 +696,12 @@ inline void MenuBar<T>::Run()
 			}
 			if (ImGui::MenuItem("Open", "..."))
 			{
+				const char* filter = ".lua";
 				parent->m_ActiveScene.reset();
-				std::string file_name = parent->GetFileName();
-				parent->m_ActiveScene = std::shared_ptr<Scene>(new Scene(file_name));
-				parent->m_ActiveRenderer->BindScene(parent->m_ActiveScene);
-				parent->LoadScene(parent->m_ActiveScene);
+				std::string file_name = parent->GetFileName(filter);
+				//parent->m_ActiveScene = std::shared_ptr<Scene>(new Scene(file_name));
+				//parent->m_ActiveRenderer->BindScene(parent->m_ActiveScene);
+				//parent->LoadScene(parent->m_ActiveScene);
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Close", "..."))
@@ -752,6 +723,31 @@ inline void MenuBar<T>::Run()
 			}
 			if (ImGui::MenuItem("Recent Projects", "..."))
 			{
+			}
+			ImGui::Separator();
+			if (ImGui::BeginMenu("Import"))
+			{
+				if (ImGui::MenuItem("Wavefront (.obj)"))
+				{
+					//if (ImGui::IsItemClicked())
+					{
+						const char* filter = ".obj";
+						std::string obj_path = parent->GetFileName(filter);
+						parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(obj_path));
+
+					}
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Filmbox (.fbx)"))
+				{
+					//if (ImGui::IsItemClicked())
+					{
+						const char* filter = ".fbx";
+						std::string fbx_path = parent->GetFileName(filter);
+						parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(fbx_path));
+					}
+				}
+				ImGui::EndMenu();
 			}
 			ImGui::Separator();
 			ImGui::EndMenu();

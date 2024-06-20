@@ -81,6 +81,6 @@ void physics::PhysicsEngine::OnInit()
 {
 }
 
-void physics::PhysicsEngine::OnUpdate(float ts)
+void physics::PhysicsEngine::OnUpdate(TimeStep ts)
 {
 }

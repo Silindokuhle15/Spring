@@ -17,6 +17,9 @@ public:
     // Vertex Arrays
     VertexArray m_VAO;
 
+    std::vector<unsigned int> m_ModelLocations;
+    std::vector<unsigned int> m_NormalMatrixLocations;
+
     // Uniforms
     int m_ModelLocation;
     int m_VPlocation;
@@ -37,6 +40,7 @@ public:
     std::shared_ptr<Scene> m_ActiveScene;
 
     int m_Samples;
+    std::vector<GLuint> m_GLSamplers;
 
     //Material m_Material;
 
@@ -66,7 +70,8 @@ public:
 
 private:
 
-    std::vector<Texture> m_Textures;
+
+    std::vector<TextureBase<GL_Texture>> m_Textures;
     //std::map<const char*, int> m_ActiveUniforms;
     std::vector<glm::mat4> m_ActiveTransforms;
     std::vector<Shader> m_ActiveShaders;

@@ -70,7 +70,50 @@ void Renderer::SetUpForRendering()
         m_DeltaLocation = glGetUniformLocation(mat.m_MaterialID, "delta");
 
     }
-    m_ActiveScene->Process();
+
+    auto func = [this](std::vector<Mesh> buffer)
+        {
+            for (int i = 0; i < buffer.size(); i++)
+            {
+                auto m_ActiveMaterial = m_ActiveScene->m_ActiveMaterial;
+                glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
+                uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
+                uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
+
+                uint32_t light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
+                //int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
+                //int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
+                //int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
+                //int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
+
+                m_ModelLocations.push_back(model_location);
+                m_NormalMatrixLocations.push_back(normal_matrix_location);
+            }
+        };
+
+    func(m_ActiveScene->m_StaticGeometry);
+    func(m_ActiveScene->m_DynamicGeometry);
+    func(m_ActiveScene->m_MeshData);
+    //m_ActiveScene->Process();
+
+
+    for (size_t index=0; index < m_GLSamplers.size(); index++)
+    {
+        GLuint sampler_index = static_cast<GLuint>(index);
+        glGenSamplers(1, &m_GLSamplers[sampler_index]);
+        glBindSampler(sampler_index, m_GLSamplers[sampler_index]);
+
+
+        glSamplerParameteri(m_GLSamplers[sampler_index], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glSamplerParameteri(m_GLSamplers[sampler_index], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    //
+    m_Textures.push_back(TextureBase<GL_Texture>("C:/dev/Silindokuhle15/Spring/Assets/Textures/retro-texture-pack-v9/retro-texture-pack.png", 3));
+    m_Textures[0].OnInit();
+
+    //glBindTextureUnit(3, m_Textures[0].m_Texture.m_Texture);
+
+    glBindImageTexture(2, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB32F);
 }
 
 void Renderer::UploadToOpenGL()
@@ -129,7 +172,43 @@ void Renderer::OnUpdate(TimeStep ts)
     glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera.GetVP()));
     //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetV()));
     glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
+
     m_ActiveScene->OnUpdate(ts);
+
+    auto func = [this, ts](std::vector<Mesh> buffer)
+        {
+            //m_ActiveCamera.OnUpdate(ts);
+            auto m_ActiveCamera = m_ActiveScene->m_ActiveCamera;
+            for (int i = 0; i < buffer.size(); i++)
+            {
+                buffer[i].OnUpdate(ts);
+                unsigned int model_location = m_ModelLocations[i];
+                unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
+
+                glm::mat4 transform = buffer[i].m_Transform;
+                glm::mat4 model_view = transform * m_ActiveCamera.GetV();
+
+                glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
+
+                glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
+                glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+            }
+
+            // UPDATE THE MATERIALS
+
+            for (auto& mtl : m_ActiveScene->m_Materials)
+            {
+                mtl.OnUpdate();
+            }
+        };
+
+    func(m_ActiveScene->m_StaticGeometry);
+    //func(m_ActiveScene->m_DynamicGeometry);
+    //func(m_ActiveScene->m_MeshData);
+    for (auto& tex : m_Textures)
+    {
+        tex.OnUpdate();
+    }
 }
 
 void Renderer::CreateImage()

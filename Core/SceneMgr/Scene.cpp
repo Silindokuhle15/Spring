@@ -1,15 +1,8 @@
 #include "Scene.h"
-/*
-void Scene::AddNewMesh(Mesh mesh)
-{
-	mesh.OnInit();
-	m_MeshData.push_back(mesh);
-}
-*/
+
 void Scene::AddNewMesh(Mesh& mesh)
 {
 	mesh.OnInit();
-	//m_StaticGeometry.insert(m_StaticGeometry.end(), mesh);
 	m_StaticGeometry.push_back(mesh);
 }
 
@@ -244,31 +237,7 @@ void Scene::OnInit()
 
 void Scene::OnUpdate(TimeStep ts)
 {
-	auto func = [this, ts](std::vector<Mesh> buffer)
-	{
-		m_ActiveCamera.OnUpdate(ts);
-		for (int i = 0; i < buffer.size(); i++)
-		{
-			buffer[i].OnUpdate(ts);
-			unsigned int model_location = m_ModelLocations[i];
-			unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
 
-			glm::mat4 transform = buffer[i].m_Transform;
-			glm::mat4 model_view = transform * m_ActiveCamera.GetV();
-
-			glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
-
-			glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
-			glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
-		}
-
-		// UPDATE THE MATERIALS
-
-		for (auto& mtl : m_Materials)
-		{
-			mtl.OnUpdate();
-		}
-	};
 
 	auto new_transform = *(m_pActiveTransform.get());
 	switch (m_SelectedBuffer)
@@ -292,9 +261,7 @@ void Scene::OnUpdate(TimeStep ts)
 
 	case SceneState::RUNNING:
 
-		func(m_StaticGeometry);
-		func(m_DynamicGeometry);
-		func(m_MeshData);
+
 		m_PhysicsEngine.OnUpdate(ts);
 		break;
 
@@ -337,28 +304,7 @@ void Scene::OnReload()
 
 void Scene::Process()
 {	
-	auto func = [this](std::vector<Mesh> buffer)
-	{
-		for (int i = 0; i < buffer.size(); i++)
-		{
-			glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
-			uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
-			uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
 
-			uint32_t light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
-			//int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
-			//int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
-			//int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
-			//int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
-
-			m_ModelLocations.push_back(model_location);
-			m_NormalMatrixLocations.push_back(normal_matrix_location);
-		}
-	};
-
-	func(m_StaticGeometry);
-	func(m_DynamicGeometry);
-	func(m_MeshData);
 }
 
 void Scene::LoadFbxScene(const std::string& path)

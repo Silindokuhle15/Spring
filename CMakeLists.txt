@@ -21,6 +21,7 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory("Dependencies/GLFW/")
 add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake )
+add_compile_definitions(-D__LEAN_AND_MEAN__)
 add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_compile_definitions(-DFBXSDK_SHARED)
 
@@ -171,10 +172,10 @@ Set(SOURCE_FILES
 	# VIEWING
 	"Core/Viewing/Camera.h"
 	"Core/Viewing/Camera.cpp"
-	"Core/Viewing/OrthographicCamera.h"
-	"Core/Viewing/OrthographicCamera.cpp"
-	"Core/Viewing/PerspectiveCamera.h"
-	"Core/Viewing/PerspectiveCamera.cpp"
+	
+	
+	
+	
 
 	# APPLICATIONS
 	"Core/Application/Grid.h"
@@ -190,7 +191,7 @@ Set(SOURCE_FILES
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
 
-)
+ "Core/Materials/TextureBase.h" "Core/Materials/TextureBase.cpp")
 
 ## BUILD LUA
 set(LIB_NAME

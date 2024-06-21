@@ -1,9 +1,5 @@
 #pragma once
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
 #include "Layer.h"
-#include "PerspectiveCamera.h"
-#include "OrthographicCamera.h"
 #include "Window.h"
 #include "NGLFWwindow.h"
 #include <typeinfo>

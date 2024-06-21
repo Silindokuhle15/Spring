@@ -52,13 +52,13 @@ void main()
 			u_amb[2] = u_color[2];
 	}
 
-	color = vec4(u_amb, 1.0f);
+	color = texture(u_Tex, ps_in.TexCoord );
 	vec3 scattered_light = u_amb + LightColor * diffuse;
 	vec3 final_color = mix(scattered_light, color_3, factor);
 
 	//color = vec4(final_color, 1.0f);
 	
 	//color = vec4(ps_in.Normal, 1.0f);
-	color = vec4(ps_in.TexCoord, 1/ps_in.ID, 1.0f);
+	//color = vec4(ps_in.TexCoord, 1/ps_in.ID, 1.0f);
 	
 }

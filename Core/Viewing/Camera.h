@@ -12,11 +12,7 @@ public:
 	glm::vec3 m_eye;
 	glm::vec3 m_center;
 	glm::vec3 m_up;
-
-	//glm::mat4 V;
-	//glm::mat4 VP;
 	glm::mat4 m_View;
-	//glm::mat4 m_Proj;
 
 	int m_Width;
 	int m_Height;
@@ -27,11 +23,8 @@ public:
 
 	virtual glm::vec3 GetPosition() { return m_eye; }
 	virtual void SetPosition(glm::vec3 new_pos) { m_eye = new_pos; }
-	//virtual glm::mat4 GetV() { return m_View; }
 	virtual glm::mat4 GetV() { return m_View; }
-	//
-	//virtual glm::mat4 GetVP() { return m_Projection->m_ProjectionMatrix * m_View; }
-
+	
 	virtual void SetWidth(int width) { m_Width = width; }
 	virtual void SetHeight(int height) { m_Height = height; }
 	virtual int GetWidth() const { return m_Width; }
@@ -103,8 +96,6 @@ public:
 			break;
 		}
 		m_View = glm::lookAt(m_eye, m_center, m_up);
-		//V = m_View;
-		//VP = m_ProjectionMatrix * m_View;
 	}
 	Camera() {}
 	Camera(int width, int height, float zFar, float zNear)

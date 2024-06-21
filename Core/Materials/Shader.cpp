@@ -18,7 +18,6 @@ void Shader::OnInit(unsigned int mat_id)
             std::istreambuf_iterator<char>());
 
         const char* file_data_text = file_data.c_str();
-        //file_data.clear();
 
         GLenum shader_type = m_Info[i].ShaderType;
         m_Shader[i] = glCreateShader(shader_type);

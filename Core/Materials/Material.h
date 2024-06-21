@@ -21,7 +21,7 @@ public:
 	int KsLocation;
 
 	Shader m_Shader;
-	Texture m_Texture;
+	TextureBase<GL_Texture> m_Texture;
 	unsigned int m_MaterialID;
 
 	void OnInit();

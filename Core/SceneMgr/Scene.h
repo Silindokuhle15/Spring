@@ -2,8 +2,6 @@
 #include "Common.h"
 #include "LightAndShadow/PointLight.h"
 #include "Camera.h"
-#include "PerspectiveCamera.h"
-#include "OrthographicCamera.h"
 #include "Material.h"
 #include "TimeStep.h"
 //#include "entt.hpp"
@@ -54,8 +52,7 @@ public:
 	std::vector<Camera> m_Cameras;
 
 	std::vector<unsigned int> m_IndexData;
-	std::vector<unsigned int> m_ModelLocations;
-	std::vector<unsigned int> m_NormalMatrixLocations;
+
 
 	std::vector<unsigned int> m_IDs;
 	std::vector<Mesh>  m_MeshData;
@@ -119,8 +116,8 @@ public:
 		m_Materials.clear();
 		m_Cameras.clear();
 		m_IndexData.clear();
-		m_ModelLocations.clear();
-		m_NormalMatrixLocations.clear();
+		//m_ModelLocations.clear();
+		//m_NormalMatrixLocations.clear();
 		//m_LuaEngine.~ScriptingEngine();
 	}
 

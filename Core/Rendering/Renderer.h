@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "VertexArray.h"
 #include "Mesh.h"
+#include <typeinfo>
 
 class Renderer
 {
@@ -41,15 +42,7 @@ public:
 
     int m_Samples;
     std::vector<GLuint> m_GLSamplers;
-
-    //Material m_Material;
-
-    std::vector<glm::vec3> pos;
-    std::vector<glm::vec2> tex;
-    std::vector<unsigned int> ids;
-    std::vector<glm::vec3> nom;
-    std::vector<unsigned int> ind;
-    
+    void* m_pTextureBuffer = nullptr;
     void BeginFrame();
 
     void BindScene(std::shared_ptr<Scene> scene);
@@ -64,6 +57,9 @@ public:
 
     void SetUpForRendering();
     void UploadToOpenGL();
+    void CreateOpenGLTexture(_TextureView& view, _TextureDescription & desc, GL_Texture & tex);
+    template<typename PLATFORM>
+    void CreateTexture(TextureBase<PLATFORM>& tex_base);
 
     Renderer() {}
     ~Renderer() {}
@@ -72,9 +68,35 @@ private:
 
 
     std::vector<TextureBase<GL_Texture>> m_Textures;
-    //std::map<const char*, int> m_ActiveUniforms;
     std::vector<glm::mat4> m_ActiveTransforms;
     std::vector<Shader> m_ActiveShaders;
 };
 
+template<typename PLATFORM>
+inline void Renderer::CreateTexture(TextureBase<PLATFORM>& tex_base)
+{
+    const std::type_info& info = typeid(tex_base);
+    std::string type_name = info.name();
+    if(type_name.compare("class GL_Texture") == 0)
+    { 
+        CreateTexture<GL_Texture>(tex_base);
+    }
+}
+template<>
+inline void Renderer::CreateTexture(TextureBase<GL_Texture>& tex_base)
+{
+    glCreateTextures(GL_TEXTURE_2D, 1, reinterpret_cast<GLuint*>(&tex_base.m_Texture));
+    auto& tex = tex_base.m_Texture;
 
+    GLenum format = GL_RGB8;
+
+    auto& tex_data = tex_base.m_TextureData;
+    GLuint width = static_cast<GLuint>(tex_base.m_Width);
+    GLuint height = static_cast<GLuint>(tex_base.m_Height);
+    auto data = tex_data.c_str();
+    glTextureStorage2D(tex, 1, format, width, height);
+
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)(data));
+}

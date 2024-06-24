@@ -24,26 +24,30 @@ void BaseApplication::Run()
 
     //TestFonts();
 
-    Scene square_scn("C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua");
+    std::string path = "C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua";
+    Scene square_scn(path);
     std::shared_ptr<Scene> pscene = std::make_shared<Scene>(square_scn);
-    pscene->OnInit();
     
     UILayer<WINDOW_BASE> ImGui_Layer(AppWindow);
+
+    ImGui_Layer.LoadSceneFromFile(path);
+    pscene->OnInit();
+    ImGui_Layer.LoadScene(pscene);
+    ImGui_Layer.CreateSceneObjects();
+
     BaseApplication::m_pUILayer<WINDOW_BASE> = std::shared_ptr<UILayer<WINDOW_BASE>>(&ImGui_Layer);
     BaseApplication::m_pUILayer<WINDOW_BASE>->OnInit();
     
     BaseApplication::m_Scene = pscene;
     Renderer OpenGLrenderer;
     std::shared_ptr<Renderer> pOpenGLRenderer = std::shared_ptr<Renderer>(&OpenGLrenderer);
-    BaseApplication::m_pActiveRenderer = std::make_unique<Renderer>(OpenGLrenderer);
+    BaseApplication::m_pActiveRenderer = pOpenGLRenderer;
     BaseApplication::m_pActiveRenderer->BindScene(pscene);
-    BaseApplication::m_pActiveRenderer->SetUpForRendering();
 
     ImGui_Layer.BindRenderer(pOpenGLRenderer);
-    ImGui_Layer.LoadScene(pscene);
     //BaseApplication::m_pUILayer<WINDOW_BASE>->BindRenderer(pOpenGLRenderer);
     //BaseApplication::m_pUILayer<WINDOW_BASE>->LoadScene(BaseApplication::m_Scene);
-
+    BaseApplication::m_pActiveRenderer->SetUpForRendering();
 
     while (!BaseApplication::ExitWindow)
     {
@@ -140,37 +144,32 @@ void BaseApplication::OnUpdate()
             delta = m->m_WheelDelta;
             if (delta > 0) 
             {
-               m_Scene->m_ActiveCamera.MoveForward();
+                m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveForward();
             }
             else
             {
-                m_Scene->m_ActiveCamera.MoveBackward();
+                m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveBackward();
             }
             break;
         // KEYBOARD
         case EventID::A:
-            m_Scene->m_ActiveCamera.MoveLeft();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveLeft();
             break;
         case EventID::D:
-            m_Scene->m_ActiveCamera.MoveRight();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveRight();
             break;
         case EventID::Q:
-            m_Scene->m_ActiveCamera.MoveForward();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveForward();
             break;
         case EventID::S:
-            m_Scene->m_ActiveCamera.MoveDown();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveDown();
             break;
         case EventID::W:
-            m_Scene->m_ActiveCamera.MoveUp();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveUp();
             break;
         case EventID::Z:
-            m_Scene->m_ActiveCamera.MoveBackward();
+            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveBackward();
         }
         v->Resolve();
     }
-}
-
-void BaseApplication::AttachRenderer(std::unique_ptr<Renderer> Ren)
-{
-    BaseApplication::m_pActiveRenderer = std::move(Ren);
 }

@@ -147,7 +147,8 @@ void Scene::OnCreateSceneObjects()
 		}
 
 	}
-	
+
+	/*	
 	std::vector<ShaderInfo> m_shaderInfo;
 	for (size_t index = 0; index < shader_paths.size(); index += 4)
 	{
@@ -184,7 +185,6 @@ void Scene::OnCreateSceneObjects()
 		LoadMeshData(d_mesh.c_str(), 1);
 	}
 
-	//m_ActiveCamera.OnInit();
 	m_SelectedMesh = 0;
 	m_SelectedBuffer = (m_StaticGeometry.size() > 0 ? 0 : (m_DynamicGeometry.size() > 0 ? 1 : 2));
 	switch (m_SelectedBuffer)
@@ -199,6 +199,7 @@ void Scene::OnCreateSceneObjects()
 		m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_MeshData[m_SelectedMesh].m_Transform));
 		break;
 	}
+	*/
 
 	m_pActiveCamera = std::shared_ptr<Camera>(&m_ActiveCamera);
 	m_pActiveCamera->OnInit();
@@ -207,6 +208,7 @@ void Scene::OnCreateSceneObjects()
 void Scene::OnInit()
 {
 	m_State = SceneState::LOADING;
+	/*
 	m_LuaEngine.SetScriptPath(m_Title);
 
 	m_LuaEngine.SetKeys(
@@ -229,6 +231,7 @@ void Scene::OnInit()
 	);
 	m_LuaEngine.Run();
 	OnCreateSceneObjects();
+	*/
 
 	m_PhysicsEngine.OnInit();
 
@@ -238,7 +241,7 @@ void Scene::OnInit()
 void Scene::OnUpdate(TimeStep ts)
 {
 
-
+	/*
 	auto new_transform = *(m_pActiveTransform.get());
 	switch (m_SelectedBuffer)
 	{
@@ -252,7 +255,7 @@ void Scene::OnUpdate(TimeStep ts)
 		m_MeshData[m_SelectedMesh].SetTransform(new_transform);
 		break;
 	}
-
+	*/
 	switch (m_State)
 	{
 	case SceneState::LOADING:
@@ -311,9 +314,9 @@ void Scene::LoadFbxScene(const std::string& path)
 {
 	//GLuint mVBONames[VBO_COUNT];
 	FbxArray<SubMesh*> mSubMeshes;
-	bool mHasNormal;
-	bool mHasUV;
-	bool mAllByControlPoint; // Save data in VBO by control point or by polygon vertex.
+	bool mHasNormal{ false };
+	bool mHasUV{ false };
+	bool mAllByControlPoint{ false }; // Save data in VBO by control point or by polygon vertex.
 	m_pManager = FbxManager::Create();
 
 	FbxIOSettings* ios = FbxIOSettings::Create(m_pManager, IOSROOT);

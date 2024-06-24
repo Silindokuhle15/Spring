@@ -15,23 +15,16 @@ class Shader
 {
 public:
 	std::vector<ShaderInfo> m_Info;
-
-private:
+	std::vector<std::string> m_ShaderSource;
 
 	// Shader Programs
-	unsigned int m_Shader[2];
+	std::vector<uint64_t> m_Shader;
 
-	// Separable Pipelines
-	unsigned int m_ProgramPipeLine;
-	
 public:
 	Shader(const std::vector<ShaderInfo> info) : m_Info{info} {}
-	~Shader() { glDeleteShader(m_Shader[0]);   glDeleteShader(m_Shader[1]); } //glDeleteProgram(m_ShaderProgram); }
+	~Shader() { /*glDeleteShader(m_Shader[0]);   glDeleteShader(m_Shader[1]); */} //glDeleteProgram(m_ShaderProgram); }
 	
 	void OnInit(unsigned int mat_id);
 	void Bind();
-
-	//unsigned int GetShaderProgram() const { return m_ShaderProgram; }
-
 };
 

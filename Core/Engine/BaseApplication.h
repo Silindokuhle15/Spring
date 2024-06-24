@@ -33,7 +33,6 @@ public:
 	static std::shared_ptr<UILayer<T>> m_pUILayer;
 	static std::shared_ptr<Scene> m_Scene;
 
-	static void AttachRenderer(std::unique_ptr<Renderer> Ren);
 	static void Run();
 	static void ShutDown();
 

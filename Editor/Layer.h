@@ -1,6 +1,6 @@
 #pragma once
 #include "GL/glew.h"
-#define GLFW_INCLUDE_NONE
+//#define GLFW_INCLUDE_NONE
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ImGuizmo.h"
@@ -13,6 +13,8 @@
 #include "Scene.h"
 #include "Project.h"
 #include "TimeStep.h"
+#include "ScriptingEngine.h"
+
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
@@ -25,14 +27,25 @@ class Layer
 {
 
 public:
+	std::vector<std::string> OBJ_paths;
+	std::vector<std::string> shader_paths;
+	std::vector<std::string> static_mesh_paths;
+	std::vector<std::string> dynamic_mesh_paths;
+
+	uint32_t m_SelectedMesh, m_SelectedBuffer;
 	TimeStep m_Delta;
+	Camera m_ActiveCamera;
+	glm::mat4 m_ActiveTransform;
+	std::shared_ptr<Camera> m_pActiveCamera;
+	std::shared_ptr<glm::mat4> m_pActiveTransform;
+	scripting::ScriptingEngine m_LuaEngine;
 	uint32_t m_LayerWidth, m_LayerHeight;
-	Layer(uint32_t width, uint32_t height) : m_LayerWidth{ width }, m_LayerHeight{ height }
+	Layer(uint32_t width=1920, uint32_t height=1080) : m_LayerWidth{ width }, m_LayerHeight{ height }
 	{
 
 	}
 
-	Layer() : m_LayerWidth{ 1920 }, m_LayerHeight{ 1080 } {}
+	//Layer() : m_LayerWidth{ 1920 }, m_LayerHeight{ 1080 } {}
 
 	~Layer() = default;
 
@@ -42,6 +55,9 @@ public:
 	virtual void EndFrame() = 0;
 	virtual void OnUpdate(TimeStep ts) = 0;
 
+	virtual void LoadImageFromFile(std::string& path, _TextureView& image_data);
+	virtual void LoadSceneFromFile(std::string& path);
+	virtual void CreateSceneObjects();
 	virtual std::shared_ptr<Camera>& GetLayerCamera() = 0;
 	virtual std::string GetFileName(const char* filter) = 0;
 };
@@ -137,6 +153,7 @@ public:
 		:
 		m_PanelName{ "Components Panel" }
 	{
+		OnInit(parent);
 		m_pEditorCamera = parent->GetLayerCamera();
 	}
 	~ComponentPanel()
@@ -164,7 +181,11 @@ public:
 	{
 
 	}
-
+	ContentBrowser(Layer* parent_layer) :
+		m_PanelName{ "Content Browser"}
+	{
+		OnInit(parent_layer);
+	}
 	~ContentBrowser()
 	{
 
@@ -199,6 +220,11 @@ public:
 		m_Pixels = new uint8_t[1080 * 1920 * 4];
 	}
 
+	RenderPanel(Layer* parent_layer):
+		m_PanelName{"Render Panel"}
+	{
+		OnInit(parent_layer);
+	}
 	~RenderPanel()
 	{
 		delete[] m_Pixels;
@@ -219,8 +245,8 @@ public:
 	unsigned int m_NumPrimitives;
 	unsigned int m_NumIndices;
 
-	int selected_mode;
-	int selected_attr;
+	int selected_mode=0;
+	int selected_attr=0;
 
 	// Queries
 	unsigned int m_Query;
@@ -233,6 +259,11 @@ public:
 		selected_mode{0},
 		selected_attr{0}
 	{
+	}
+	StatsPanel(Layer* parent_layer):
+		m_PanelName{"Stats Panel"}
+	{
+		OnInit(parent_layer);
 	}
 
 	~StatsPanel()
@@ -247,6 +278,7 @@ private:
 template<class T>
 inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition)
 {
+	auto parent_layer = reinterpret_cast<T*>(*(m_ParentLayer.get()));
 	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::LOCAL);
 	static bool useSnap = false;
 	static float snap[3] = { 1.f, 1.f, 1.f };
@@ -343,7 +375,7 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 	//ImGuizmo::DrawCubes(cameraView, cameraProjection, (float*)glm::value_ptr(*m_ActiveTransform), gizmoCount);
 	ImGuizmo::Manipulate(cameraView, cameraProjection, mCurrentGizmoOperation, mCurrentGizmoMode, matrix, NULL, useSnap ? &snap[0] : NULL, boundSizing ? bounds : NULL, boundSizingSnap ? boundsSnap : NULL);
 
-	glm::vec3 displacement = m_pEditorCamera->GetPosition() - glm::vec3(0);
+	glm::vec3 displacement = parent_layer->m_ActiveCamera.GetPosition() - glm::vec3(0);
 	float distance = glm::dot(displacement, displacement);
 	distance = glm::sqrt(distance);
 
@@ -359,6 +391,9 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 template<class T>
 inline void ComponentPanel<T>::Run()
 {
+
+	auto parent_layer = reinterpret_cast<T*>(*(m_ParentLayer.get()));
+
 	glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
 	glGetProgramiv(m_ActiveMaterial, GL_ACTIVE_UNIFORMS, &m_ActiveUniforms);
 
@@ -371,19 +406,19 @@ inline void ComponentPanel<T>::Run()
 
 	ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
 	float cam_pos[3] = {
-		m_pEditorCamera->GetPosition()[0],
-		m_pEditorCamera->GetPosition()[1],
-		m_pEditorCamera->GetPosition()[2]
+		parent_layer->m_ActiveCamera.GetPosition()[0],
+		parent_layer->m_ActiveCamera.GetPosition()[1],
+		parent_layer->m_ActiveCamera.GetPosition()[2],
+		//m_pEditorCamera->GetPosition()[0],
+		//m_pEditorCamera->GetPosition()[1],
+		//m_pEditorCamera->GetPosition()[2]
 	};
 	ImGui::SliderFloat3("Camera Position", cam_pos, -50.0, 50.0);
-	ImGui::SliderFloat("Camera Speed", (float*)&m_pEditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
+	ImGui::SliderFloat("Camera Speed", (float*)&parent_layer->m_ActiveCamera.m_Speed, 0.0, 1.0f, "%.2f", 0);
 	ImGui::Separator();
-	m_pEditorCamera->SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
+	parent_layer->m_ActiveCamera.SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
 
-	ImGui::Text("Lights and Shadow");
-
-	int enable_lighting_locatin = glGetUniformLocation(m_ActiveMaterial, "EnableLighting");
-	PointLight pointLight = m_ActiveScene->m_Lights[0];
+	
 
 	static bool enable_lighting = false;
 	ImGui::Checkbox("Enable Lighting", &enable_lighting);
@@ -396,7 +431,7 @@ inline void ComponentPanel<T>::Run()
 	default:
 		m_EnableLighting = int(enable_lighting);
 	}	
-	glProgramUniform1i(m_ActiveMaterial, enable_lighting_locatin, m_EnableLighting);
+	//glProgramUniform1i(m_ActiveMaterial, enable_lighting_locatin, m_EnableLighting);
 
 	ImGui::Text("HemiSphere Lighting Model");
 	ImGui::SliderFloat3("Sky Color", m_SkyColor, 0.0, 1.0);
@@ -441,8 +476,11 @@ inline void ComponentPanel<T>::Run()
 	ImGui::Separator();
 	ImGui::Text("Edit Transform Component");
 
-	EditTransform((float*)glm::value_ptr(m_pEditorCamera->GetV()), (float*)glm::value_ptr(m_pEditorCamera->GetP()), (float*)glm::value_ptr(*m_ActiveTransform), true);
+	EditTransform((float*)glm::value_ptr(parent_layer->m_pActiveCamera->GetV()), 
+		(float*)glm::value_ptr(parent_layer->m_pActiveCamera->GetP()),
+		(float*)glm::value_ptr(*parent_layer->m_pActiveTransform), true);
 
+	parent_layer->m_ActiveScene->m_StaticGeometry[parent_layer->m_SelectedMesh].SetTransform(*parent_layer->m_pActiveTransform);
 
 	const char* attr[] = { "Mesh", "Grid"};
 
@@ -612,11 +650,9 @@ inline void RenderPanel<T>::Run()
 	
 	if (m_Pixels)
 	{
-		//glDrawBuffer(GL_COLOR_ATTACHMENT0);
 		glDrawBuffer(GL_COLOR_ATTACHMENT1);
 
-		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t*)m_Pixels);
-
+		//glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t*)m_Pixels);
 	}
 
 	//delete[] m_Pixels;
@@ -727,6 +763,14 @@ inline void MenuBar<T>::Run()
 			ImGui::Separator();
 			if (ImGui::BeginMenu("Import"))
 			{
+				if (ImGui::MenuItem("Image (.png)"))
+				{
+					const char* filter = ".png";
+					std::string path = parent->GetFileName(filter);
+					//parent->LoadImageFromFile(path, parent->m_ActiveRenderer->m_pTextureBuffer);
+					//parent->m_ActiveRenderer->CreateOpenGLTexture(_TextureView & view, _TextureDescription & desc, GL_Texture & tex)
+
+				}
 				if (ImGui::MenuItem("Wavefront (.obj)"))
 				{
 					//if (ImGui::IsItemClicked())

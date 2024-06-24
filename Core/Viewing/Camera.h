@@ -69,6 +69,12 @@ public:
 	{
 		m_Delta = delta_time;
 	}
+
+	CameraView() :
+		m_View{glm::mat4(1.0f)}
+	{
+
+	}
 };
 
 class _Projection
@@ -95,7 +101,7 @@ public:
 			m_ProjectionMatrix = glm::perspective(glm::radians(60.f * 2), m_AspectRatio, 0.010f, 100.0f);
 			break;
 		}
-		m_View = glm::lookAt(m_eye, m_center, m_up);
+		CameraView::m_View = glm::lookAt(m_eye, m_center, m_up);
 	}
 	Camera() {}
 	Camera(int width, int height, float zFar, float zNear)

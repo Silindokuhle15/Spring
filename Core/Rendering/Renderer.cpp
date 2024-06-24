@@ -59,9 +59,36 @@ void Renderer::SetUpForRendering()
     m_VAO.OnInit();
     m_VAO.Bind();
 
+    // CREATE THE MATERIALS
+    for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
+    {
+        m_ActiveScene->m_Materials[index].m_MaterialID = glCreateProgram();
+        m_ActiveScene->m_Materials[index].OnInit();
+        m_GLSamplers.push_back(static_cast<GLuint>(index));
+
+        for (size_t k = 0; k < m_ActiveScene->m_Materials[index].m_Shader.m_Info.size(); k++)
+        {
+
+            GLenum shader_type = m_ActiveScene->m_Materials[index].m_Shader.m_Info[k].ShaderType;
+            auto shader = glCreateShader(shader_type);
+            m_ActiveScene->m_Materials[index].m_Shader.m_Shader.push_back(shader);
+
+            auto shader_source = m_ActiveScene->m_Materials[index].m_Shader.m_ShaderSource[k].c_str();
+            glShaderSource(m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k], 1, &shader_source, NULL);
+            glCompileShader(m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k]);
+
+            glAttachShader(m_ActiveScene->m_Materials[index].m_MaterialID, m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k]);
+        }
+
+
+        glProgramParameteri(m_ActiveScene->m_Materials[index].m_MaterialID, GL_PROGRAM_SEPARABLE, GL_TRUE);
+        glLinkProgram(m_ActiveScene->m_Materials[index].m_MaterialID);
+
+        CreateTexture<GL_Texture>(m_ActiveScene->m_Materials[index].m_Texture);
+    }
+
     for (auto& mat : m_ActiveScene->m_Materials)
     {
-        //mat.Bind();
         glUseProgram(mat.m_MaterialID);
         m_VAO.CreateVertexArrayLayout(mat.m_MaterialID, attribs);
 
@@ -92,12 +119,13 @@ void Renderer::SetUpForRendering()
         };
 
     func(m_ActiveScene->m_StaticGeometry);
-    func(m_ActiveScene->m_DynamicGeometry);
-    func(m_ActiveScene->m_MeshData);
-    //m_ActiveScene->Process();
+    //func(m_ActiveScene->m_DynamicGeometry);
+    //func(m_ActiveScene->m_MeshData);
+    m_ActiveScene->Process();
 
 
-    for (size_t index=0; index < m_GLSamplers.size(); index++)
+    // CREATE OPENGL TEXTURE SAMPLERS
+    for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
     {
         GLuint sampler_index = static_cast<GLuint>(index);
         glGenSamplers(1, &m_GLSamplers[sampler_index]);
@@ -108,12 +136,57 @@ void Renderer::SetUpForRendering()
         glSamplerParameteri(m_GLSamplers[sampler_index], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
     //
-    m_Textures.push_back(TextureBase<GL_Texture>("C:/dev/Silindokuhle15/Spring/Assets/Textures/retro-texture-pack-v9/retro-texture-pack.png", 3));
+
+    const char* data =
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
+        ;
+    _TextureView view{};
+    view.m_Height = 10;
+    view.m_Width = 10;
+    view.m_TextureData = std::string(data);
+    _TextureDescription desc{};
+
+    desc.m_TextureFormat = _TextureFormat::RGB8;
+    desc.m_TextureSource = _TextureSource::GL_ATTACHMENT;
+    desc.m_TextureTarget = _TextureTarget::TEXTURE_2D;
+
+    
+    m_Textures.push_back(TextureBase<GL_Texture>(desc, view));
+
+    const char * new_data = 
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
+        ;
+    m_Textures.push_back(TextureBase<GL_Texture>(desc, view));
+    //m_Textures.push_back(TextureBase<GL_Texture>());
+
+    CreateTexture<GL_Texture>(m_Textures[0]);
+    CreateTexture<GL_Texture>(m_Textures[1]);
+    //CreateOpenGLTexture(view, desc, m_Textures[0].m_Texture);
     m_Textures[0].OnInit();
+    m_Textures[1].OnInit();
 
     //glBindTextureUnit(3, m_Textures[0].m_Texture.m_Texture);
 
-    glBindImageTexture(2, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB32F);
+    glBindImageTexture(1, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, m_Textures[1].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 }
 
 void Renderer::UploadToOpenGL()
@@ -149,6 +222,24 @@ void Renderer::UploadToOpenGL()
     //UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
 
+void Renderer::CreateOpenGLTexture(_TextureView& view, _TextureDescription& desc, GL_Texture& tex)
+{    
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex.m_Texture);
+
+    GLenum format = GL_RGB8;
+
+    GLuint width = 10, height = 10;
+    void* data = nullptr;
+  
+    glTextureStorage2D(tex.m_Texture, 1, format, width, height);
+
+    glTextureParameteri(tex.m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(tex.m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTextureSubImage2D(tex.m_Texture, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+}
+
 void Renderer::OnRender()
 {
     // REDESIGN THE ENTIRE RENDER LOOP
@@ -164,21 +255,19 @@ void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
     if (m_ActiveScene)
         m_ActiveScene.reset();
-    m_ActiveScene = scene;
+    m_ActiveScene = std::make_shared<Scene>(*scene.get());
 }
 
 void Renderer::OnUpdate(TimeStep ts)
 {
-    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera.GetVP()));
-    //glUniformMatrix4fv(m_Vlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_ActiveCamera->GetV()));
-    glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
+    glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_pActiveCamera->GetVP()));
+    //glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
+    glUniform1f(m_DeltaLocation, 1.0f/6.0f);
 
     m_ActiveScene->OnUpdate(ts);
 
     auto func = [this, ts](std::vector<Mesh> buffer)
         {
-            //m_ActiveCamera.OnUpdate(ts);
-            auto m_ActiveCamera = m_ActiveScene->m_ActiveCamera;
             for (int i = 0; i < buffer.size(); i++)
             {
                 buffer[i].OnUpdate(ts);
@@ -186,7 +275,7 @@ void Renderer::OnUpdate(TimeStep ts)
                 unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
 
                 glm::mat4 transform = buffer[i].m_Transform;
-                glm::mat4 model_view = transform * m_ActiveCamera.GetV();
+                glm::mat4 model_view = transform * m_ActiveScene->m_pActiveCamera->GetV();
 
                 glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
 
@@ -199,6 +288,22 @@ void Renderer::OnUpdate(TimeStep ts)
             for (auto& mtl : m_ActiveScene->m_Materials)
             {
                 mtl.OnUpdate();
+                GLuint KaLocation = glGetUniformLocation(mtl.m_MaterialID, "AmbientColor");
+                GLuint KdLocation = glGetUniformLocation(mtl.m_MaterialID, "DiffuseColor");
+                GLuint KsLocation = glGetUniformLocation(mtl.m_MaterialID, "SpecularColor");
+
+                glProgramUniform3fv(mtl.m_MaterialID, KdLocation, 1, glm::value_ptr(mtl.m_Kd));
+                glProgramUniform3fv(mtl.m_MaterialID, KaLocation, 1, glm::value_ptr(mtl.m_Ka));
+                glProgramUniform3fv(mtl.m_MaterialID, KsLocation, 1, glm::value_ptr(mtl.m_Ks));
+
+            }
+
+            // UPDATE OPENGL SAMPLER UNIFORMS
+            for (size_t index=0; index  < m_GLSamplers.size(); index++)
+            {
+                GLuint sampler_unit = static_cast<GLuint>(index);
+                GLuint sampler = static_cast<GLuint>(m_GLSamplers[sampler_unit]);
+                glUniform1i(sampler, sampler_unit);
             }
         };
 
@@ -243,15 +348,21 @@ void Renderer::BeginFrame()
     "Normal"
     };
 
-    for (auto& mat : m_ActiveScene->m_Materials)
+    for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
     {
-        mat.Bind();
+        GLuint texture_slot = static_cast<GLuint>(index);
+        glUseProgram(m_ActiveScene->m_Materials[index].m_MaterialID);
+        GLuint KaLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "AmbientColor");
+        GLuint KdLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "DiffuseColor");
+        GLuint KsLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "SpecularColor");
+        glBindTextureUnit(texture_slot, m_ActiveScene->m_Materials[index].m_Texture.m_Texture.m_Texture);
+
         for (auto& vao_attrib : m_keys)
         {
-            m_VAO.EnableAttribute(mat.m_MaterialID, vao_attrib.c_str());
+            m_VAO.EnableAttribute(m_ActiveScene->m_Materials[index].m_MaterialID, vao_attrib.c_str());
+
         }
     }
-    m_ActiveScene->m_ActiveCamera.Present();
 }
 
 void Renderer::EndFrame()

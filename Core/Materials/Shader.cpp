@@ -17,24 +17,10 @@ void Shader::OnInit(unsigned int mat_id)
         file_data.assign(std::istreambuf_iterator<char>(is),
             std::istreambuf_iterator<char>());
 
-        const char* file_data_text = file_data.c_str();
-
-        GLenum shader_type = m_Info[i].ShaderType;
-        m_Shader[i] = glCreateShader(shader_type);
-        glShaderSource(m_Shader[i], 1, &file_data_text, NULL);
-        glCompileShader(m_Shader[i]);
-
-        glAttachShader(mat_id, m_Shader[i]);
-        //glDeleteShader(m_Shaders[i]);
-        //glDeleteProgram(m_ShaderPrograms[i]);
+        m_ShaderSource.push_back(file_data);
     }
-
-    //glProgramParameteri(m_ShaderProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
-    //glLinkProgram(m_ShaderProgram);
 }
-
 
 void Shader::Bind()
 {
-    //glUseProgram(m_ShaderProgram);
 }

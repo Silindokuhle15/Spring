@@ -2,35 +2,20 @@
 
 void Material::OnInit()
 {
-	m_MaterialID = glCreateProgram();
 	m_Shader.OnInit(m_MaterialID);
     LoadMTLFile(mtl_path);
 	m_Texture.OnInit();
-
-	glProgramParameteri(m_MaterialID, GL_PROGRAM_SEPARABLE, GL_TRUE);
-	glLinkProgram(m_MaterialID);
-    //glUseProgram(m_MaterialID);
 }
 
 void Material::Bind()
 {
-	glUseProgram(m_MaterialID);
-
-    KaLocation = glGetUniformLocation(m_MaterialID, "AmbientColor");
-    KdLocation = glGetUniformLocation(m_MaterialID, "DiffuseColor");
-    KsLocation = glGetUniformLocation(m_MaterialID, "SpecularColor");
-
 	//m_Shader.Bind();
 	m_Texture.Bind();
 }
 
 void Material::OnUpdate()
 {
-    glProgramUniform3fv(m_MaterialID, KaLocation, 1, glm::value_ptr(m_Ka));
-    glProgramUniform3fv(m_MaterialID, KdLocation, 1, glm::value_ptr(m_Kd));
-    glProgramUniform3fv(m_MaterialID, KsLocation, 1, glm::value_ptr(m_Ks));
 
-	m_Texture.OnUpdate();	
 }
 
 void Material::LoadMTLFile(std::string path)

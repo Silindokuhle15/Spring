@@ -24,6 +24,8 @@ add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/v
 add_compile_definitions(-D__LEAN_AND_MEAN__)
 add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_compile_definitions(-DFBXSDK_SHARED)
+#add_compile_definitions(-DSTB_IMAGE_IMPLEMENTATION)
+add_compile_definitions(-DGLFW_INCLUDE_NONE)
 
 include_directories(
 	"E:/FBX/include/"
@@ -101,6 +103,7 @@ Set(SOURCE_FILES
 	
 	# COMMON
 	"Core/Common/Common.h"
+	"Core/Common/Common.cpp"
 	# ENGINE INCLUDES
 	"Core/Engine/BaseApplication.h"
 	"Core/Engine/BaseApplication.cpp"
@@ -128,6 +131,8 @@ Set(SOURCE_FILES
 	"Core/Rendering/LightAndShadow/PointLight.cpp"
 
 	# Materials
+	"Core/Materials/TextureBase.h"
+	"Core/Materials/TextureBase.cpp"
 	"Core/Materials/Material.h"
 	"Core/Materials/Material.cpp"
 	"Core/Materials/Shader.h"
@@ -191,7 +196,7 @@ Set(SOURCE_FILES
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
 
- "Core/Materials/TextureBase.h" "Core/Materials/TextureBase.cpp")
+  )
 
 ## BUILD LUA
 set(LIB_NAME

@@ -31,8 +31,6 @@ public:
     int m_ResultAvailable;
 
     // OBJECT POINTERS
-    std::shared_ptr<Camera> m_pEditorCamera;
-    std::shared_ptr<glm::mat4> m_pActiveTransform;
 
     // DISPLAY PANELS
     ComponentPanel<UILayer> m_ComponentPanel;
@@ -58,17 +56,93 @@ public:
         }
     }
 
+    void LoadSceneFromFile(std::string& path) override
+    {
+        Layer::LoadSceneFromFile(path);
+    }
+
+    void CreateSceneObjects() override
+    {
+        Layer::m_pActiveCamera = std::shared_ptr<Camera>(&m_ActiveCamera);
+        m_pActiveCamera->OnInit();
+        m_ActiveScene->m_pActiveCamera = Layer::m_pActiveCamera;
+        std::string texture_data = "";
+
+        std::vector<ShaderInfo> m_shaderInfo;
+        for (size_t index = 0; index < shader_paths.size(); index += 4)
+        {
+            m_shaderInfo = { ShaderInfo{ shader_paths[index], GL_VERTEX_SHADER },
+                ShaderInfo{ shader_paths[index + 1], GL_FRAGMENT_SHADER } };
+            Shader temp_shader(m_shaderInfo);
+
+            std::string& texture_path = shader_paths[index + 2];
+
+            _TextureView view{};
+            Layer::LoadImageFromFile(texture_path, view);
+
+            _TextureDescription desc{};
+            desc.m_TextureSource = _TextureSource::FILE;
+            desc.m_TextureFormat = _TextureFormat::RGB8;
+            desc.m_TextureTarget = _TextureTarget::TEXTURE_2D;
+
+            TextureBase<GL_Texture> base_tex{desc, view };
+
+            std::string& mtl_path = shader_paths[index + 3];
+            m_ActiveScene->m_Materials.push_back(Material(base_tex, mtl_path, m_shaderInfo));
+
+            m_shaderInfo.clear();
+
+        }
+
+        for (auto& mat : m_ActiveScene->m_Materials)
+        {
+            mat.OnInit();
+        }
+        auto dummy_pos = glm::vec3(1.0f);
+        auto dummy_color = glm::vec3(1.0f);
+        m_ActiveScene->m_Lights.push_back(
+            PointLight(
+                glm::vec3(dummy_pos.x, dummy_pos.y, dummy_pos.z),
+                glm::vec3(dummy_color.x, dummy_color.y, dummy_color.z)
+            )
+        );
+
+        for (auto& s_mesh : static_mesh_paths)
+        {
+            m_ActiveScene->LoadMeshData(s_mesh.c_str(), 0);
+        }
+
+        for (auto& d_mesh : dynamic_mesh_paths)
+        {
+            m_ActiveScene->LoadMeshData(d_mesh.c_str(), 1);
+        }
+
+        m_SelectedMesh = 0;
+        //m_SelectedBuffer = (m_ActiveScene->m_StaticGeometry.size() > 0 ? 0 : (m_ActiveScene->m_DynamicGeometry.size() > 0 ? 1 : 2));
+        m_SelectedBuffer = 0;
+        switch (m_SelectedBuffer)
+        {
+        case 0:
+            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_StaticGeometry[m_SelectedMesh].m_Transform));
+            break;
+        case 1:
+            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_DynamicGeometry[m_SelectedMesh].m_Transform));
+            break;
+        case 2:
+            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_MeshData[m_SelectedMesh].m_Transform));
+            break;
+        }
+    }
+
     void BindRenderer(std::shared_ptr<Renderer> renderer)
     {
         m_ActiveRenderer = renderer;
     }
     void LoadScene(std::shared_ptr<Scene> scene)
     {
-        m_ActiveScene = std::shared_ptr<Scene>(scene);
-        m_pEditorCamera = scene->m_pActiveCamera;
-        m_pActiveTransform = scene->m_pActiveTransform;
+        m_ActiveScene = scene;
 
-        m_ComponentPanel.m_pEditorCamera = m_pEditorCamera;
+        m_ComponentPanel.m_pEditorCamera = m_pActiveCamera;
         if (m_ComponentPanel.m_ActiveTransform)
             m_ComponentPanel.m_ActiveTransform.reset();
         m_ComponentPanel.m_ActiveTransform = m_pActiveTransform;
@@ -123,13 +197,14 @@ public:
     {
         m_Delta = ts;
         //Update the Editor camera delta right here
-        m_pEditorCamera->OnUpdate(m_Delta);
+        m_ActiveCamera.Present();
+        m_ActiveCamera.OnUpdate(m_Delta);
         
     }
 
     virtual std::shared_ptr<Camera>& GetLayerCamera() override
     {
-        return m_pEditorCamera;
+        return m_pActiveCamera;
     }
     virtual std::string GetFileName(const char* filter) override
     {
@@ -176,9 +251,9 @@ public:
     UILayer(WindowBase window) :
         m_ParentWindow{std::make_shared<WindowBase>(window)},
         m_ComponentPanel{this},
-        m_ContentBrowser{},
-        m_RenderPanel{},
-        m_StatsPanel{},
+        m_ContentBrowser{this},
+        m_RenderPanel{this},
+        m_StatsPanel{this},
         m_FileMenuBar{this}
     {
         //start the Imgui code here

@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
+#include <iostream>
 
 class Material
 {
@@ -30,9 +31,9 @@ public:
 	void OnUpdate();
 	void LoadMTLFile(std::string path);
 
-	Material(std::string tex_path, std::string mat_path, Shader shader) :
+	Material(TextureBase<GL_Texture>& tex_base, std::string mat_path, Shader shader) :
 		m_MaterialID{0},
-		m_Texture{tex_path},
+		m_Texture{tex_base},
 		mtl_path{ mat_path },
 		m_Shader{shader}
 	{

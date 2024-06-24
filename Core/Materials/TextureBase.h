@@ -1,4 +1,5 @@
 #pragma
+#include "GL/glew.h"
 #include <stdint.h>
 #include <string>
 
@@ -26,6 +27,7 @@ public:
 	uint64_t m_Height;
 	uint64_t m_NumMipMaps;
 	uint64_t m_MipMapLevel;
+	std::string m_TextureData;
 };
 
 class _TextureDescription
@@ -51,19 +53,31 @@ public:
 	}
 	virtual void Bind()
 	{
-		m_Texture.Bind(0);
+		m_Texture.Bind();
 	}
 	virtual void OnUpdate()
 	{
 		m_Texture.OnUpdate();
 	}
-
-	TextureBase(std::string path="", uint64_t id = 0xFFFFFFFF) :
-		m_Source{ path },
-		m_ID{id},
-		m_Texture{path}
+	TextureBase(const PLATFORM& other) : m_Texture{ other.m_Texure }, m_ID{ other.m_ID }, m_Source{ other.m_Source }
 	{
 
 	}
 
+	TextureBase(const _TextureDescription& desc, const _TextureView& view, uint64_t id= 0xFFFFFFFF) :
+		_TextureDescription{ desc },
+		_TextureView{ view },
+		m_ID{id},
+		m_Texture{static_cast<GLuint>(id)}
+	{
+
+	}
+
+	TextureBase(std::string texture_data="", uint64_t id = 0xFFFFFFFF) :
+		m_Source{ texture_data },
+		m_ID{id},
+		m_Texture{ static_cast<GLuint>(id) }
+	{
+
+	}
 };

@@ -45,9 +45,7 @@ void BaseApplication::Run()
     BaseApplication::m_pActiveRenderer->BindScene(pscene);
 
     ImGui_Layer.BindRenderer(pOpenGLRenderer);
-    //BaseApplication::m_pUILayer<WINDOW_BASE>->BindRenderer(pOpenGLRenderer);
-    //BaseApplication::m_pUILayer<WINDOW_BASE>->LoadScene(BaseApplication::m_Scene);
-    BaseApplication::m_pActiveRenderer->SetUpForRendering();
+    ImGui_Layer.m_ActiveRenderer->SetUpForRendering();
 
     while (!BaseApplication::ExitWindow)
     {
@@ -62,6 +60,7 @@ void BaseApplication::Run()
         m_Window<WINDOW_BASE>->EndTimer();
         m_Window<WINDOW_BASE>->OnUpdate();
 
+        m_Window<WINDOW_BASE>->ts = 10.f / 60.0f;
         ts = m_Window<WINDOW_BASE>->ts;
  
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);

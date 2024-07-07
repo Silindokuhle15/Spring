@@ -26,9 +26,6 @@ public:
 
     static Mesh Batch(std::vector<Mesh>& meshes);
 
-    // ALL THE MEMBERS COPIED FROM APPLICATION
-
-
     unsigned int NumVertices;
     unsigned int NumIndices;
     volatile float m_Speed = 1.0;
@@ -44,7 +41,8 @@ public:
     std::vector<unsigned int> m_TextureIndices;
     std::vector<unsigned int> m_NormalIndices;
 
-    // Fields don't necessarily need to be saved in the .scn file
+    std::vector<Mesh> m_SubMeshes;
+
     TimeStep m_Ts;
     virtual void SetTransform(const glm::mat4& transform) noexcept
     {

@@ -7,7 +7,6 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
-// Wanna create this component to read .obj/ 3D files dyanamically
 struct PerVertex
 {
 	glm::vec3 Position;
@@ -27,6 +26,7 @@ public:
 	std::vector<unsigned int> m_TextureIndices;
 	std::vector<unsigned int> m_NormalIndices;
 
+	std::vector<std::string> getWords(std::string s, const char * delim);
 	int LoadObjectFromFile(const char* file_path);
 public:
 	void LoadObject(const char* file_path);

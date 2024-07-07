@@ -13,8 +13,8 @@ void Layer::LoadImageFromFile(std::string& path, _TextureView& image_data)
 	if (fopen(file_path, "r"))
 	{
 		stbi_uc* data = stbi_load(file_path, &width, &height, &channels, 0);
-		std::string s(reinterpret_cast<char const*>(data), width * height);
-		image_data.m_TextureData = s;
+		image_data.m_TextureData.push_back(new unsigned char[width*height+ 1]);
+		memcpy(image_data.m_TextureData.back(), data, sizeof(unsigned char) * width * height);
 		image_data.m_Width = static_cast<uint64_t>(width);
 		image_data.m_Height = static_cast<uint64_t>(height);
 		stbi_image_free(data);

@@ -20,6 +20,9 @@ void Renderer::SetUpForRendering()
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
+    //glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_STENCIL_TEST);
+    //glEnable(GL_SCISSOR_TEST);
     //glEnable(GL_CULL_FACE);
     //glCullFace(GL_BACK);
     //glCullFace(GL_FRONT);
@@ -92,6 +95,8 @@ void Renderer::SetUpForRendering()
         glUseProgram(mat.m_MaterialID);
         m_VAO.CreateVertexArrayLayout(mat.m_MaterialID, attribs);
 
+        m_LightLocation = glGetUniformLocation(mat.m_MaterialID, "LightPosition");
+        m_CameraEyeLocation = glGetUniformLocation(mat.m_MaterialID, "CameraEye");
         m_ModelLocation = glGetUniformLocation(mat.m_MaterialID, "Model");
         m_VPlocation = glGetUniformLocation(mat.m_MaterialID, "VP");
         m_DeltaLocation = glGetUniformLocation(mat.m_MaterialID, "delta");
@@ -107,7 +112,6 @@ void Renderer::SetUpForRendering()
                 uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
                 uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
 
-                uint32_t light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
                 //int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
                 //int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
                 //int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
@@ -118,8 +122,8 @@ void Renderer::SetUpForRendering()
             }
         };
 
-    func(m_ActiveScene->m_StaticGeometry);
-    //func(m_ActiveScene->m_DynamicGeometry);
+    //func(m_ActiveScene->m_StaticGeometry);
+    func(m_ActiveScene->m_DynamicGeometry);
     //func(m_ActiveScene->m_MeshData);
     m_ActiveScene->Process();
 
@@ -137,7 +141,7 @@ void Renderer::SetUpForRendering()
     }
     //
 
-    const char* data =
+    const char*  data =
         "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
         "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
         "0xc0" "0xc0""0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0" "0xc0"
@@ -152,7 +156,7 @@ void Renderer::SetUpForRendering()
     _TextureView view{};
     view.m_Height = 10;
     view.m_Width = 10;
-    view.m_TextureData = std::string(data);
+    view.m_TextureData.push_back((unsigned char*)(data));
     _TextureDescription desc{};
 
     desc.m_TextureFormat = _TextureFormat::RGB8;
@@ -175,15 +179,12 @@ void Renderer::SetUpForRendering()
         "0xE0" "0xE""0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0" "0xE0"
         ;
     m_Textures.push_back(TextureBase<GL_Texture>(desc, view));
-    //m_Textures.push_back(TextureBase<GL_Texture>());
 
     CreateTexture<GL_Texture>(m_Textures[0]);
     CreateTexture<GL_Texture>(m_Textures[1]);
-    //CreateOpenGLTexture(view, desc, m_Textures[0].m_Texture);
     m_Textures[0].OnInit();
     m_Textures[1].OnInit();
 
-    //glBindTextureUnit(3, m_Textures[0].m_Texture.m_Texture);
 
     glBindImageTexture(1, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glBindImageTexture(2, m_Textures[1].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
@@ -247,7 +248,8 @@ void Renderer::OnRender()
     UploadToOpenGL();
 
     GLbitfield flags = GL_COLOR_BUFFER_BIT |GL_DEPTH_BUFFER_BIT;
-    glBlitFramebuffer(0, 0, 1920, 1080, 0, 0, 1920, 1080, flags, GL_NEAREST);
+    //glBlitFramebuffer(0, 0, 1920, 1080, 0, 0, 1920, 1080, flags, GL_NEAREST);
+
     glEndQuery(GL_SAMPLES_PASSED);
 
 }
@@ -261,8 +263,17 @@ void Renderer::BindScene(std::shared_ptr<Scene> scene)
 void Renderer::OnUpdate(TimeStep ts)
 {
     glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_pActiveCamera->GetVP()));
-    //glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
-    glUniform1f(m_DeltaLocation, 1.0f/6.0f);
+
+    auto pos = m_ActiveScene->m_pActiveCamera->GetPosition();
+    GLfloat pos_3fv[] = { pos.x, pos.y, pos.z };
+    glUniform3fv(m_CameraEyeLocation, 3, pos_3fv);
+
+    auto light_pos = m_ActiveScene->m_Lights[0].GetPosition();
+    //float light_3fv[] = { light_pos.x, light_pos.y, light_pos.z };
+    GLfloat light_3fv[] = { 0.0f, 10.5f,  0.0f};
+    glUniform3fv(m_LightLocation, 3, light_3fv);
+
+    glUniform1f(m_DeltaLocation, static_cast<GLclampf>(ts));
 
     m_ActiveScene->OnUpdate(ts);
 
@@ -320,8 +331,12 @@ void Renderer::CreateImage()
 {
     GLclampf r = 0.02f, g = 0.019f, b = 0.092f, a = 1.0f;
     glClearColor(r, g, b, a);
-    glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    //glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    //glDrawBuffer(GL_COLOR_ATTACHMENT1);
+    //glDrawBuffer(GL_COLOR_ATTACHMENT2);
     //glDrawBuffer(GL_DEPTH_ATTACHMENT);
+    //glDrawBuffer(GL_FRONT);
+    glReadBuffer(GL_COLOR_ATTACHMENT1);
 }
 
 void Renderer::EnableTesselation()

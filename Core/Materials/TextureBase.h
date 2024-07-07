@@ -1,6 +1,7 @@
 #pragma
 #include "GL/glew.h"
 #include <stdint.h>
+#include <vector>
 #include <string>
 
 enum class _TextureFormat
@@ -27,7 +28,7 @@ public:
 	uint64_t m_Height;
 	uint64_t m_NumMipMaps;
 	uint64_t m_MipMapLevel;
-	std::string m_TextureData;
+	std::vector<unsigned char*> m_TextureData;
 };
 
 class _TextureDescription

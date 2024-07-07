@@ -1,6 +1,5 @@
 #pragma once
 #include "TextureBase.h"
-#include "GL/glew.h"
 
 class GL_Texture
 {

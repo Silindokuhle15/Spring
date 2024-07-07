@@ -18,7 +18,6 @@ void Mesh::OnInit()
         if (index < NumIndices)
         {
             glm::vec3 pos = ob.m_Positions[index];
-            //m_Positions.push_back(pos);
             m_VertexIDs.push_back(index);
             m_VertexIndices.push_back(index);
         }
@@ -44,15 +43,11 @@ void Mesh::OnInit()
             m_NormalIndices.push_back(index);
         }
     }
-    //m_Positions.shrink_to_fit();
-    //m_TexCoords.shrink_to_fit();
-    //m_VertexIDs.shrink_to_fit();
-    //m_Normals.shrink_to_fit();
 
     NumVertices = static_cast<uint32_t>(m_Positions.size());
     NumIndices  = static_cast<uint32_t>(m_VertexIndices.size());
     
-    for (uint32_t i = 0; i < NumIndices; i++)
+    for (uint32_t i = 0; i < ob.m_VertexIndices.size(); i++)
     {
         glm::vec3 pos = m_Positions[m_VertexIndices[i]];
         glm::vec2 tex = m_TexCoords[m_TextureIndices[i]];

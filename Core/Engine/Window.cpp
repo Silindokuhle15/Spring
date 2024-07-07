@@ -266,7 +266,7 @@ void Win32Window::OnUpdate()
         DispatchMessage(&msg);
     }
     m_SceneEventQueue.OnUpdate();
-    ts = m_EndTime - m_StartTime;
+    ts = (m_EndTime - m_StartTime)/1000.0f;
 }
 
 long long Win32Window::milliseconds_now() {

@@ -22,6 +22,8 @@ public:
     std::vector<unsigned int> m_NormalMatrixLocations;
 
     // Uniforms
+    int m_LightLocation;
+    int m_CameraEyeLocation;
     int m_ModelLocation;
     int m_VPlocation;
     int m_Vlocation;
@@ -90,13 +92,14 @@ inline void Renderer::CreateTexture(TextureBase<GL_Texture>& tex_base)
 
     GLenum format = GL_RGB8;
 
-    auto& tex_data = tex_base.m_TextureData;
     GLuint width = static_cast<GLuint>(tex_base.m_Width);
     GLuint height = static_cast<GLuint>(tex_base.m_Height);
-    auto data = tex_data.c_str();
+
     glTextureStorage2D(tex, 1, format, width, height);
 
     glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)(data));
+
+    auto tex_data = tex_base.m_TextureData.data();
+    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)(tex_data));
 }

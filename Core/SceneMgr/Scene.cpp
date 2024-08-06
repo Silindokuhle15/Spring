@@ -263,8 +263,6 @@ void Scene::OnUpdate(TimeStep ts)
 		break;
 
 	case SceneState::RUNNING:
-
-
 		m_PhysicsEngine.OnUpdate(ts);
 		break;
 

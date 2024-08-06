@@ -26,6 +26,8 @@ public:
 	std::vector<unsigned int> m_TextureIndices;
 	std::vector<unsigned int> m_NormalIndices;
 
+	std::vector<std::string> m_ObjectNames;
+	std::vector<std::string> m_Surfaces;
 	std::vector<std::string> getWords(std::string s, const char * delim);
 	int LoadObjectFromFile(const char* file_path);
 public:

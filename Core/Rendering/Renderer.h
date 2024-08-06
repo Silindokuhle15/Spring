@@ -3,6 +3,7 @@
 #include "Scene.h"
 #include "VertexArray.h"
 #include "Mesh.h"
+#include "Ray.h"
 #include <typeinfo>
 
 class Renderer

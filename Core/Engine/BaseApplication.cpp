@@ -22,7 +22,7 @@ void BaseApplication::Run()
 
     m_Window<WINDOW_BASE>->SetUpForRendering();
 
-    //TestFonts();
+    TestFonts();
 
     std::string path = "C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua";
     Scene square_scn(path);

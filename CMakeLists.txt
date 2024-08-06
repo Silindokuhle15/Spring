@@ -196,7 +196,7 @@ Set(SOURCE_FILES
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
 
-  )
+   "Core/Physics/Ray.h" "Core/Physics/Ray.cpp" "Core/Physics/PhysicsState.h" "Core/Physics/PhysicsState.cpp")
 
 ## BUILD LUA
 set(LIB_NAME

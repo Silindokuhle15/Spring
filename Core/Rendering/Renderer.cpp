@@ -188,6 +188,10 @@ void Renderer::SetUpForRendering()
 
     glBindImageTexture(1, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glBindImageTexture(2, m_Textures[1].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
+
+    auto eye = m_ActiveScene->m_ActiveCamera.GetPosition();
+    glm::vec3 end = glm::vec3(0.0, 0.0, 0.0);
+    Ray test_ray(eye, end);
 }
 
 void Renderer::UploadToOpenGL()
@@ -216,7 +220,7 @@ void Renderer::UploadToOpenGL()
         render_mode = GL_LINE_LOOP;
         break;
     default:
-        render_mode = GL_TRIANGLES;
+        render_mode = GL_TRIANGLE_STRIP;
     }
     UploadBuffer3v(m_ActiveScene->m_StaticGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
     //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
@@ -375,7 +379,6 @@ void Renderer::BeginFrame()
         for (auto& vao_attrib : m_keys)
         {
             m_VAO.EnableAttribute(m_ActiveScene->m_Materials[index].m_MaterialID, vao_attrib.c_str());
-
         }
     }
 }

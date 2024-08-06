@@ -8,6 +8,7 @@ enum class EventID
 	L_MOUSEDOWN,
 	M_MOUSEDOWN,
 	R_MOUSEDOWN,
+	MOUSEMOVE,
 	MOUSEWHEEL,
 
 	// KEYBOARD EVENTS
@@ -90,7 +91,12 @@ private:
 class MouseMove : public Event
 {
 public:
-	MouseMove(int64_t x, int64_t y) :m_X{ x }, m_Y{ y } {}
+	const int64_t GetX() const;
+	const int64_t GetY() const;
+	MouseMove(int64_t x, int64_t y) :m_X{ x }, m_Y{ y }
+	{
+		m_ID = EventID::MOUSEMOVE;
+	}
 	bool Resolve() override;
 private:
 	int64_t m_X, m_Y;

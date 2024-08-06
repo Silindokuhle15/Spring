@@ -41,7 +41,7 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
     float x, y, z;
     float u, v;
 
-    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#", "o"};
+    std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#", "o", "s"};
 
     for (std::string str=""; std::getline(is, str);)
     {
@@ -58,6 +58,13 @@ int ObjectLoader::LoadObjectFromFile(const char* file_path)
             //m_TextureIndices.clear();
             //m_NormalIndices.clear();
             //is.clear();
+            auto words = getWords(str, " ");
+            m_ObjectNames.push_back(words[1]);
+        }
+        else if (CheckDescription(description, "s"))
+        {
+            auto words = getWords(str, " ");
+            m_Surfaces.push_back(words[1]);
         }
         else if (CheckDescription(description, "v"))
         {
@@ -117,7 +124,7 @@ void ObjectLoader::ExtractDump(std::string dump)
         m_TextureIndices.push_back(--tindex);
     }
     else {
-        m_TextureIndices.push_back(0xffffffff);
+        m_TextureIndices.push_back(0x00000000);
     }
     iss.read(&delim, 1);
    
@@ -134,11 +141,13 @@ void ObjectLoader::ExtractDump(std::string dump)
         auto digits = getWords(word_temp, "/");
         switch (digits.size())
         {
+            /*
         case 2:
             m_VertexIndices.push_back((strtoul(digits[0].c_str(), &endptr, 10)) - 1);
             m_TextureIndices.push_back(0xFFFFFFFF);
             m_NormalIndices.push_back((strtoul(digits[1].c_str(), &endptr, 10)) - 1);
             break;
+            */
         case 3:
             m_VertexIndices.push_back((strtoul(digits[0].c_str(), &endptr, 10)) - 1);
             m_TextureIndices.push_back((strtoul(digits[1].c_str(), &endptr, 10)) - 1);

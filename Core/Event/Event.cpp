@@ -13,6 +13,16 @@ bool MouseButtonDown::Resolve()
 	return m_Resolved;
 }
 
+const int64_t MouseMove::GetX() const
+{
+	return m_X;
+}
+
+const int64_t MouseMove::GetY() const
+{
+	return m_Y;
+}
+
 bool MouseMove::Resolve()
 { 
 	m_Resolved = true;

@@ -39,8 +39,8 @@ public:
 	std::shared_ptr<Camera> m_pActiveCamera;
 	std::shared_ptr<glm::mat4> m_pActiveTransform;
 	scripting::ScriptingEngine m_LuaEngine;
-	uint32_t m_LayerWidth, m_LayerHeight;
-	Layer(uint32_t width=1920, uint32_t height=1080) : m_LayerWidth{ width }, m_LayerHeight{ height }
+	uint64_t m_LayerWidth, m_LayerHeight;
+	Layer(uint64_t width=1920, uint64_t height=1080) : m_LayerWidth{ width }, m_LayerHeight{ height }
 	{
 
 	}
@@ -66,9 +66,9 @@ class Panel
 {
 public:
 	std::shared_ptr<Layer*> m_ParentLayer;
-	uint32_t m_Width, m_Height;
+	uint64_t m_Width, m_Height;
 	Panel() : m_Width{ 1920 }, m_Height{ 1080 } {}
-	Panel(uint32_t width, uint32_t height) : m_Width{ width }, m_Height{ height }
+	Panel(uint64_t width, uint64_t height) : m_Width{ width }, m_Height{ height }
 	{
 
 	}
@@ -160,7 +160,6 @@ public:
 	{
 
 	}
-
 private:
 	std::string m_PanelName;
 };
@@ -169,7 +168,6 @@ template<class T>
 class ContentBrowser : public Panel
 {
 public:
-
 	void ReadDirTree(const std::filesystem::path& pathToShow, int level);
 
 	void DisplayDirTree(const std::filesystem::path& pathToShow, int level);
@@ -239,7 +237,6 @@ template<class T>
 class StatsPanel : public Panel
 {
 public:
-
 	// hmm?
 	bool m_RenderMode;
 	unsigned int m_NumPrimitives;
@@ -286,7 +283,6 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 	static float boundsSnap[] = { 0.1f, 0.1f, 0.1f };
 	static bool boundSizing = false;
 	static bool boundSizingSnap = false;
-
 
 		if (ImGui::IsKeyPressed(ImGuiKey_T))
 			mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -391,7 +387,6 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 template<class T>
 inline void ComponentPanel<T>::Run()
 {
-
 	auto parent_layer = reinterpret_cast<T*>(*(m_ParentLayer.get()));
 
 	glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
@@ -417,8 +412,6 @@ inline void ComponentPanel<T>::Run()
 	ImGui::SliderFloat("Camera Speed", (float*)&parent_layer->m_ActiveCamera.m_Speed, 0.0, 1.0f, "%.2f", 0);
 	ImGui::Separator();
 	parent_layer->m_ActiveCamera.SetPosition(glm::vec3(cam_pos[0], cam_pos[1], cam_pos[2]));
-
-	
 
 	static bool enable_lighting = false;
 	ImGui::Checkbox("Enable Lighting", &enable_lighting);
@@ -580,8 +573,6 @@ inline void ContentBrowser<T>::DisplayDirTree(const std::filesystem::path& pathT
 	if (ImGui::BeginChild("Second Window", ImVec2((x * (1 - 1.09f * a )), b * y), true))
 	{
 		ImGui::Text(current_path.string().c_str());
-
-
 		for (auto& i : m_DirContent)
 		{
 			ImGui::Text(i.c_str());

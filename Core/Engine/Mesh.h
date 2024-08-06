@@ -11,7 +11,7 @@ public:
         m_Color{glm::vec3(1.0f, 1.0f, 1.0f)},
         m_Transform{glm::mat4(1.0f)}
     {
-
+        OnInit();
     }
     Mesh(std::vector<Vertex> m_points, glm::mat4 transform=glm::mat4(1.0f)):
         m_Transform{ transform},

@@ -48,6 +48,7 @@ public:
 	std::vector<SkyLight> m_SkyLights;
 	std::vector<GroundLight> m_GroundLights;
 	std::vector<Material> m_Materials;
+	std::vector<Shader> m_Shaders;
 	std::vector<PointLight> m_Lights;
 	std::vector<Camera> m_Cameras;
 
@@ -70,6 +71,8 @@ public:
 	Camera m_ActiveCamera;
 	std::shared_ptr<Camera> m_pActiveCamera;
 	std::shared_ptr<glm::mat4> m_pActiveTransform;
+	physics::PhysicsEngine m_PhysicsEngine;
+
 
 	template<typename U>
 	void AddNewItem(U item);
@@ -95,6 +98,8 @@ public:
 	void BatchStaticGeometry();
 
 
+
+	std::string GetTitle() const { return m_Title; }
 	Scene() = default;
 
 	Scene(std::string path)
@@ -125,7 +130,6 @@ public:
 private:
 	SceneState m_State;
 	scripting::ScriptingEngine m_LuaEngine;
-	physics::PhysicsEngine m_PhysicsEngine;
 
 	FbxManager* m_pManager;
 	FbxScene* m_pScene;

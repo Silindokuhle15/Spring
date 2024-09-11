@@ -35,13 +35,10 @@ void Layer::LoadSceneFromFile(std::string& path)
 			"HEIGHT",
 			"dynamic_geometry",
 			"static_geometry",
-			//LIGHTS
-			"light_position",
-			"light_color",
 			//CAMERA
 			"scene_camera",
 			// TEXTUTES
-			"material"
+			"shader"
 			}
 		)
 	);
@@ -75,8 +72,11 @@ void Layer::LoadSceneFromFile(std::string& path)
 
 			if (var == "static_geometry")
 			{
-				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
+				//if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
+				auto n = luaL_len(m_LuaEngine.m_pLuaState, -1);
+				for (auto i = 1; i <= n; i++)
 				{
+					auto index = lua_geti(m_LuaEngine.m_pLuaState, -1, i);
 					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
 					static_mesh_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
@@ -85,15 +85,18 @@ void Layer::LoadSceneFromFile(std::string& path)
 			}
 			else if (var == "dynamic_geometry")
 			{
-				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
+				//if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "OBJ_path"))
+				auto n = luaL_len(m_LuaEngine.m_pLuaState, -1);
+				for (auto i = 1; i <= n; i++)
 				{
+					auto index = lua_geti(m_LuaEngine.m_pLuaState, -1, i);
 					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
 					dynamic_mesh_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
 				break;
 			}
-			else if (var == "material")
+			else if (var == "shader")
 			{
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "VShaderPath"))
 				{
@@ -107,6 +110,7 @@ void Layer::LoadSceneFromFile(std::string& path)
 					shader_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
+				/*
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "material_texture"))
 				{
 					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
@@ -119,6 +123,7 @@ void Layer::LoadSceneFromFile(std::string& path)
 					shader_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
+				*/
 				break;
 			}
 			else if (var == "scene_camera")

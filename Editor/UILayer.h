@@ -22,6 +22,7 @@ public:
     std::shared_ptr<WindowBase> m_ParentWindow;
     std::shared_ptr<Scene> m_ActiveScene;
     std::shared_ptr<Renderer> m_ActiveRenderer;
+    std::shared_ptr<glm::mat4> m_pActiveTransform;
 
     // EDITOR CAMERA VARIABLES
 
@@ -69,26 +70,28 @@ public:
         std::string texture_data = "";
 
         std::vector<ShaderInfo> m_shaderInfo;
-        for (size_t index = 0; index < shader_paths.size(); index += 4)
+        for (size_t index = 0; index < shader_paths.size(); index += 2)
         {
             m_shaderInfo = { ShaderInfo{ shader_paths[index], GL_VERTEX_SHADER },
                 ShaderInfo{ shader_paths[index + 1], GL_FRAGMENT_SHADER } };
             Shader temp_shader(m_shaderInfo);
+            //temp_shader.OnInit();
+            m_ActiveScene->m_Shaders.push_back(temp_shader);
 
-            std::string& texture_path = shader_paths[index + 2];
+            //std::string& texture_path = shader_paths[index + 2];
 
-            _TextureView view{};
-            Layer::LoadImageFromFile(texture_path, view);
+            //_TextureView view{};
+            //Layer::LoadImageFromFile(texture_path, view);
 
-            _TextureDescription desc{};
-            desc.m_TextureSource = _TextureSource::FILE;
-            desc.m_TextureFormat = _TextureFormat::RGB8;
-            desc.m_TextureTarget = _TextureTarget::TEXTURE_2D;
+            //_TextureDescription desc{};
+            //desc.m_TextureSource = _TextureSource::FILE;
+            //desc.m_TextureFormat = _TextureFormat::RGB8;
+            //desc.m_TextureTarget = _TextureTarget::TEXTURE_2D;
 
-            TextureBase<GL_Texture> base_tex{desc, view };
+            //TextureBase<GL_Texture> base_tex{desc, view };
 
-            std::string& mtl_path = shader_paths[index + 3];
-            m_ActiveScene->m_Materials.push_back(Material(base_tex, mtl_path, m_shaderInfo));
+            //std::string& mtl_path = shader_paths[index + 3];
+            //m_ActiveScene->m_Materials.push_back(Material(base_tex, mtl_path, m_shaderInfo));
 
             m_shaderInfo.clear();
 
@@ -120,6 +123,7 @@ public:
         m_SelectedMesh = 0;
         //m_SelectedBuffer = (m_ActiveScene->m_StaticGeometry.size() > 0 ? 0 : (m_ActiveScene->m_DynamicGeometry.size() > 0 ? 1 : 2));
         m_SelectedBuffer = 0;
+        /*
         switch (m_SelectedBuffer)
         {
         case 0:
@@ -132,6 +136,7 @@ public:
             m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_MeshData[m_SelectedMesh].m_Transform));
             break;
         }
+        */
     }
 
     void BindRenderer(std::shared_ptr<Renderer> renderer)

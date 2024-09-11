@@ -16,15 +16,11 @@ class Shader
 public:
 	std::vector<ShaderInfo> m_Info;
 	std::vector<std::string> m_ShaderSource;
-
-	// Shader Programs
-	std::vector<uint64_t> m_Shader;
-
 public:
-	Shader(const std::vector<ShaderInfo> info) : m_Info{info} {}
-	~Shader() { /*glDeleteShader(m_Shader[0]);   glDeleteShader(m_Shader[1]); */} //glDeleteProgram(m_ShaderProgram); }
+	Shader(const std::vector<ShaderInfo> info= {}) : m_Info{info} {}
+	~Shader() {} 
 	
-	void OnInit(unsigned int mat_id);
+	void OnInit();
 	void Bind();
 };
 

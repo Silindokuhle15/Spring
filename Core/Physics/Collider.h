@@ -27,8 +27,10 @@ struct SphereCollider
 	//void OnUpdate(TimeStep ts) override {}
 };
 
-struct GenericCollider
+struct GenericCollider : public Mesh
 {
+public:
+
 	std::vector<double> m_xAxis;
 	std::vector<double> m_yAxis;
 	std::vector<double> m_zAxis;
@@ -46,6 +48,48 @@ struct GenericCollider
 	double proj_x;
 	double proj_y;
 	double proj_z;
+
+	GenericCollider(Mesh& source):
+		::Mesh(source)
+	{
+		if (m_SubMeshes.size() > 0)
+		{
+			for (auto& sub_mesh : m_SubMeshes)
+			{
+				for (auto& v : sub_mesh.m_V)
+				{
+					glm::vec3 pos_new = v.pos;
+					m_xAxis.push_back(glm::dot(pos_new, glm::vec3(1.0, 0.0, 0.0)));
+					m_yAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 1.0, 0.0)));
+					m_zAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 0.0, 1.0)));
+				}
+			}
+		}
+		for (auto& v : m_V)
+		{
+			// PROJECT THE POINT ALONG THE AXIS
+			glm::vec3 pos_new = v.pos;
+			m_xAxis.push_back(glm::dot(pos_new, glm::vec3(1.0, 0.0, 0.0)));
+			m_yAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 1.0, 0.0)));
+			m_zAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 0.0, 1.0)));
+		}
+
+		std::sort(m_xAxis.begin(), m_xAxis.end());
+		std::sort(m_yAxis.begin(), m_yAxis.end());
+		std::sort(m_zAxis.begin(), m_zAxis.end());
+
+		min_x = m_xAxis.at(1);
+		min_y = m_yAxis.at(1);
+		min_z = m_zAxis.at(1);
+
+		max_x = m_xAxis.at(m_xAxis.size() - 1);
+		max_y = m_yAxis.at(m_yAxis.size() - 1);
+		max_z = m_zAxis.at(m_zAxis.size() - 1);
+
+		proj_x = max_x - min_x;
+		proj_y = max_y - min_y;
+		proj_z = max_z - min_z;
+	}
 
 	//void OnInit() override {}
 	//void OnUpdate(TimeStep ts) override {}
@@ -76,69 +120,47 @@ public:
 };
 
 template<>
-class Collider<GenericCollider> : public GenericCollider, public Mesh
+class Collider<GenericCollider> : public GenericCollider
 {
 public:
-
-	physics::PhysicsState m_PhysicsState;
 	template<typename T>
 	bool Intersect(Collider<T>& other);
 	Collider(Mesh& source):
-		::Mesh{source}
-	{
-		m_Positions = source.m_Positions;
-		double a = m_Transform[3][0];
-		double b = m_Transform[3][1];
-		double c = m_Transform[3][2];
-		//m_Pos = glm::vec3(a, b, c);
-		//m_PhysicsState.position = 
-		//m_Transform[15];
-
-	}
-	Collider(physics::PhysicsState& physics_state, Mesh& source) :
-		::Mesh{ source },
-		m_PhysicsState{ physics_state }
+		::GenericCollider{source}
 	{
 		m_Positions = source.m_Positions;
 	}
-	Collider(physics::PhysicsState& physics_state , std::vector<glm::vec3>& vec):
-		m_PhysicsState{physics_state}
-		//m_Positions{}
+
+	void FindMinMax(physics::PhysicsState& state)
 	{
-		//m_Pos = pos;
-		m_Positions = vec;
-	}
+		double a = state.position.x;
+		double b = state.position.y;
+		double c = state.position.z;
 
-	void FindMinMax()
-	{
-		m_xAxis.clear();
-		m_yAxis.clear();
-		m_zAxis.clear();
+		auto min_vec = state.position + glm::vec3(m_xAxis.at(1), m_yAxis.at(1), m_zAxis.at(1));
+		auto max_vec = state.position + glm::vec3(m_xAxis.at(m_xAxis.size() - 1), m_yAxis.at(m_yAxis.size() - 1), m_zAxis.at(m_zAxis.size() - 1));
 
-		for (auto& pos : m_Positions)
-		{
-			// PROJECT THE POINT ALONG THE AXIS
-			glm::vec3 pos_new = pos + m_PhysicsState.position;
-			m_xAxis.push_back(glm::dot(pos_new, glm::vec3(1.0, 0.0, 0.0)));
-			m_yAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 1.0, 0.0)));
-			m_zAxis.push_back(glm::dot(pos_new, glm::vec3(0.0, 0.0, 1.0)));
-		}
+		min_x = glm::dot(min_vec, glm::vec3(1.0f, 0.0f, 0.0f));
+		min_y = glm::dot(min_vec, glm::vec3(0.0f, 1.0f, 0.0f));
+		min_z = glm::dot(min_vec, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		std::sort(m_xAxis.begin(), m_xAxis.end());
-		std::sort(m_yAxis.begin(), m_yAxis.end());
-		std::sort(m_zAxis.begin(), m_zAxis.end());
+		//min_x = m_xAxis.at(1) + a;
+		//min_y = m_yAxis.at(1) + b;
+		//min_z = m_zAxis.at(1) + c;
 
-		min_x = m_xAxis.at(1);
-		min_y = m_yAxis.at(1);
-		min_z = m_zAxis.at(1);
 
-		max_x = m_xAxis.at(m_xAxis.size() - 1);
-		max_y = m_yAxis.at(m_yAxis.size() - 1);
-		max_z = m_zAxis.at(m_zAxis.size() - 1);
+		max_x = glm::dot(max_vec, glm::vec3(1.0f, 0.0f, 0.0f));
+		max_y = glm::dot(max_vec, glm::vec3(0.0f, 1.0f, 0.0f));
+		max_z = glm::dot(max_vec, glm::vec3(0.0f, 0.0f, 1.0f));
+
+		//max_x = m_xAxis.at(m_xAxis.size() - 1) + a;
+		//max_y = m_yAxis.at(m_yAxis.size() - 1) + b;
+		//max_z = m_zAxis.at(m_zAxis.size() - 1) + c;
 
 		proj_x = max_x - min_x;
 		proj_y = max_y - min_y;
 		proj_z = max_z - min_z;
+		
 	}
 };
 
@@ -153,23 +175,7 @@ inline bool Collider<SphereCollider>::Intersect(const Collider<T>& other)
 template<>
 inline bool Collider<GenericCollider>::Intersect(Collider<GenericCollider>& other)
 {
-	// SEPARATE THE AXIS
-	FindMinMax();
-	other.FindMinMax();
-	// COMPARE THE VALUES
-	double proj_sum_x = (proj_x + other.proj_x); 
-	double proj_sum_y = (proj_y + other.proj_y); 
-	double proj_sum_z = (proj_z + other.proj_z); 
-
-	double max_sum_x = (max_x - other.min_x) >= (other.max_x - min_x) ? (max_x - other.min_x) : (other.max_x - min_x);
-	double max_sum_y = (max_y - other.min_y) >= (other.max_y - min_y) ? (max_y - other.min_y) : (other.max_y - min_y);
-	double max_sum_z = (max_z - other.min_z) >= (other.max_z - min_z) ? (max_z - other.min_z) : (other.max_z - min_z);
-
-	bool intersect_x = (proj_sum_x >= max_sum_x ) ? true : false;
-	bool intersect_y = (proj_sum_y >= max_sum_y ) ? true : false;
-	bool intersect_z = (proj_sum_z >= max_sum_z ) ? true : false;
-
-	return (intersect_x && intersect_y && intersect_z);
+	return false;
  }
 
 template<> 

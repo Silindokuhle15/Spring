@@ -17,10 +17,15 @@ void Ray::SetDirection(const glm::vec3& dir)
 	m_Direction = dir;
 }
 
+void Ray::SetStart(const glm::vec3& start)
+{
+	m_Start = start;
+}
+
 Ray::Ray(const glm::vec3& start, const glm::vec3& direction, const double& len):
 	m_Start{start},
 	m_Direction{direction},
-	m_Length{0.0}
+	m_Length{len}
 {
 }
 

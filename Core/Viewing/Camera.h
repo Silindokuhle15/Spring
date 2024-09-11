@@ -21,8 +21,10 @@ public:
 	float m_Speed = 1.0f;
 	TimeStep m_Delta;
 
-	virtual glm::vec3 GetPosition() { return m_eye; }
-	virtual void SetPosition(glm::vec3 new_pos) { m_eye = new_pos; }
+	virtual glm::vec3 GetCenter() const { return m_center; }
+	virtual glm::vec3 GetEye() const { return m_eye; }
+	virtual void SetCenter(glm::vec3 new_pos) { m_center = new_pos; }
+	virtual void SetEye(glm::vec3 new_dir) { m_eye = new_dir; }
 	virtual glm::mat4 GetV() { return m_View; }
 	
 	virtual void SetWidth(int width) { m_Width = width; }
@@ -39,11 +41,11 @@ public:
 
 	virtual void MoveForward() 
 	{
-		m_eye -= glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
+		m_eye += glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveBackward() 
 	{
-		m_eye += glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
+		m_eye -= glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
 	}
 	virtual void MoveRight() 
 	{

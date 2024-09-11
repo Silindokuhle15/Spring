@@ -15,7 +15,7 @@ typedef struct
 {
 	glm::vec3 pos;
 	glm::vec2 tex;
-	uint32_t  ID;
+	float  ID;
 	glm::vec3 norm;
 } Vertex;
 
@@ -26,4 +26,12 @@ typedef enum
 enum class VertexAttrib
 {
 	Position, TexCoord, ID, Normal
+};
+
+enum class GameState
+{
+	LOADING = 0,
+	RUNNING = 1,
+	PAUSED = 2,
+	EXIT = 3
 };

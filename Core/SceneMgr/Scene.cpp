@@ -57,7 +57,7 @@ void Scene::OnCreateSceneObjects()
 				}
 				break;
 			}
-			else if (var == "material")
+			else if (var == "shader")
 			{
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "VShaderPath"))
 				{
@@ -71,6 +71,7 @@ void Scene::OnCreateSceneObjects()
 					shader_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
+				/*
 				if (lua_getfield(m_LuaEngine.m_pLuaState, -1, "material_texture"))
 				{
 					str = lua_tostring(m_LuaEngine.m_pLuaState, -1);
@@ -83,6 +84,7 @@ void Scene::OnCreateSceneObjects()
 					shader_paths.push_back(str);
 					lua_pop(m_LuaEngine.m_pLuaState, 1);
 				}
+				*/
 				break;
 			}
 			else if (var == "scene_camera")
@@ -263,7 +265,7 @@ void Scene::OnUpdate(TimeStep ts)
 		break;
 
 	case SceneState::RUNNING:
-		m_PhysicsEngine.OnUpdate(ts);
+		//m_PhysicsEngine.OnUpdate(ts);
 		break;
 
 	case SceneState::PAUSED:
@@ -348,7 +350,7 @@ void Scene::LoadFbxScene(const std::string& path)
 
 			std::vector<glm::vec3> pos;
 			std::vector<glm::vec2> tex;
-			std::vector<uint32_t> id;
+			std::vector<float> id;
 			std::vector<glm::vec3> norm;
 
 			const int lPolygonCount = pMesh->GetPolygonCount();
@@ -659,10 +661,10 @@ void Scene::LoadFbxScene(const std::string& path)
 		glm::vec3 pos = glm::vec3(_pos[0] * 0.001, _pos[1] * 0.001, _pos[2] * 0.001);
 
 		auto transform = glm::scale(glm::mat4(1.0f), scl);
-		transform = glm::rotate(transform, glm::radians(90.0f), rot);
+		//transform = glm::rotate(transform, glm::radians(90.0f), rot);
 		transform = glm::translate(transform, pos);
+
 		//auto _transform = child_node->EvaluateGlobalTransform();
-		;
 
 		std::cout << "name:" << child_node->GetName() << std::endl;
 		std::cout << "node type: " << node_attrib_type << std::endl;
@@ -688,7 +690,7 @@ void Scene::LoadFbxScene(const std::string& path)
 		case FbxNodeAttribute::EType::eMesh:
 			numMeshes++;
 			mesh = reinterpret_cast<FbxMesh*>(child_node->GetGeometry());
-			m_DynamicGeometry.push_back(Mesh(ConstructMesh(mesh), transform));
+			m_MeshData.push_back(Mesh(ConstructMesh(mesh), transform));
 			break;
 		case FbxNodeAttribute::EType::eSkeleton:
 			numSkeleton++;
@@ -719,8 +721,8 @@ void Scene::LoadMeshData(const char* path, int buffer)
 		break;
 	default:
 		new_mesh = Mesh(path);
-		new_mesh.OnInit();
-		new_mesh.SetTransform(glm::mat4(1.0f));
+		//new_mesh.OnInit();
+		//new_mesh.SetTransform(glm::mat4(1.0f));
 		LoadStaticGeometry(new_mesh);
 	}
 
@@ -741,6 +743,6 @@ void Scene::BatchStaticGeometry()
 
 void Scene::LoadStaticGeometry(Mesh& other)
 {
-	m_StaticGeometry.push_back(other);
+	m_MeshData.push_back(other);
 	NumMeshes++;
 }

@@ -6,7 +6,8 @@
 
 enum class _TextureFormat
 {
-	RGB8
+	RGB8,
+	RGBA32F
 };
 enum class _TextureSource
 {

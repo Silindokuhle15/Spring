@@ -12,7 +12,7 @@ void Grid::OnInit()
     {
         for (int i = 0; i < static_cast<int>(m_Rows); i++)
         {
-            uint32_t id = i + j * i;
+            float id = i + j * i;
             std::vector<Vertex> v1 = {
                 {{i - x_offset, j + y_offset, z + z_offset}, {i / m_Columns, j / m_Rows}, id, {0,0,1}},
                 {{i + 1 - x_offset, j + y_offset, z + z_offset}, {(i + 1) / m_Columns, j / m_Rows}, id, {0, 0, 1} },

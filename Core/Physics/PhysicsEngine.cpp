@@ -77,28 +77,41 @@ void physics::PhysicsEngine::OnInit()
 
 void physics::PhysicsEngine::OnUpdate(TimeStep ts)
 {
+	/*
 	for (size_t index = 0; index < m_PhysicsObjects.size(); index++)
 	{
-		auto new_x = 0.5*m_PhysicsObjects[index].acceleration.x * ts*ts;
-		auto new_y = 0.5*m_PhysicsObjects[index].acceleration.y * ts*ts;
-		auto new_z = 0.5*m_PhysicsObjects[index].acceleration.z * ts*ts;
-		m_PhysicsObjects[index].position = m_PhysicsObjects[index].position + glm::vec3(new_x, new_y, new_z);
+		auto& physics_state = m_PhysicsObjects[index].second;
+		auto new_x = 0.5*physics_state.linear_acceleration.x * ts*ts;
+		auto new_y = 0.5*physics_state.linear_acceleration.y * ts*ts;
+		auto new_z = 0.5*physics_state.linear_acceleration.z * ts*ts;
+		physics_state.position = physics_state.position + glm::vec3(new_x, new_y, new_z);
+
+		float rotation_rate = ts * 1.0f;
+		//physics_state.orientation = physics_state.orientation + glm::rotate(physics_state.orientation, glm::radians(rotation_rate), physics_state.angular_acceleration);
+		
 	}
-	for (size_t u_index = 0; u_index < m_CollerObjects.size(); u_index++)
+	*/
+	m_Collisions.clear();
+
+	for (size_t u_index = 0; u_index < m_PhysicsObjects.size(); u_index++)
 	{
-		for (size_t v_index = m_CollerObjects.size() - 1; v_index > 0; v_index--)
+		for (size_t v_index = m_PhysicsObjects.size() - 1; v_index > 0; v_index--)
 		{
 			if (!(u_index == v_index))
 			{
-				auto& u_collider = m_CollerObjects[u_index];
-				auto& v_collider = m_CollerObjects[v_index];
+				auto& u = m_PhysicsObjects[u_index];
+				auto& v = m_PhysicsObjects[v_index];
 
-				auto u_intersection = u_collider.Intersect(v_collider);
-				auto v_intersection = v_collider.Intersect(u_collider);
+				auto intersection = Intersect(u, v);
 
-				if (u_intersection && v_intersection)
+				if (intersection)
 				{
 					// DON'T KNOW WHAT TO DO HERE RIGHT NOW
+					auto var = m_Collisions.find(std::make_pair(v_index, u_index));
+					if (var == m_Collisions.end())
+					{
+						m_Collisions.insert(std::make_pair(u_index, v_index));
+					}
 				}
 			}
 		}

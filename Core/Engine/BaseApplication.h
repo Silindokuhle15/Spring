@@ -13,7 +13,7 @@
 #include "msdfgen.h"
 #include "msdfgen-ext.h"
 #include "msdf-atlas-gen.h"
-
+#include "AtlasGenerator.h"
 // PhysX
 //#include <PxPhysicsAPI.h>
 

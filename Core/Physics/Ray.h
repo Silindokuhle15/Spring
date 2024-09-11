@@ -8,6 +8,7 @@ public:
 	const glm::vec3& GetStart() const;
 	const glm::vec3& GetEnd() const;
 	void SetDirection(const glm::vec3& dir);
+	void SetStart(const glm::vec3& start);
 	Ray() :
 		m_Start{ glm::vec3(0.0) },
 		m_Direction{ glm::vec3(0,0,1) },

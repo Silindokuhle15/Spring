@@ -5,7 +5,10 @@
 class Mesh
 {
 public:
-    Mesh() {}
+    Mesh() :
+        m_Color{ glm::vec3(1.0f, 1.0f, 1.0f) },
+        m_Transform{ glm::mat4(1.0f) }
+    {}
     Mesh(std::string file_path) :
         m_OBJFilePath{ file_path },
         m_Color{glm::vec3(1.0f, 1.0f, 1.0f)},
@@ -37,9 +40,10 @@ public:
     std::vector<glm::vec3 > m_Normals;
     std::vector<Vertex> m_V;
     std::vector<unsigned int> m_VertexIndices;
-    std::vector<unsigned int> m_VertexIDs;
+    std::vector<float> m_VertexIDs;
     std::vector<unsigned int> m_TextureIndices;
     std::vector<unsigned int> m_NormalIndices;
+    std::vector<Material> m_Materials;
 
     std::vector<Mesh> m_SubMeshes;
 

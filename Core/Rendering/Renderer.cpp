@@ -63,43 +63,45 @@ void Renderer::SetUpForRendering()
     m_VAO.Bind();
 
     // CREATE THE MATERIALS
-    for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
+    for (size_t index = 0; index < m_ActiveScene->m_Shaders.size(); index++)
     {
-        m_ActiveScene->m_Materials[index].m_MaterialID = glCreateProgram();
-        m_ActiveScene->m_Materials[index].OnInit();
-        m_GLSamplers.push_back(static_cast<GLuint>(index));
+        GLuint program = glCreateProgram();
+        //m_ActiveScene->m_Materials[index].m_MaterialID = glCreateProgram();
+        //m_ActiveScene->m_Materials[index].OnInit();
+        //m_GLSamplers.push_back(static_cast<GLuint>(index));
 
-        for (size_t k = 0; k < m_ActiveScene->m_Materials[index].m_Shader.m_Info.size(); k++)
+        for (size_t k = 0; k < m_ActiveScene->m_Shaders[index].m_Info.size(); k++)
         {
 
-            GLenum shader_type = m_ActiveScene->m_Materials[index].m_Shader.m_Info[k].ShaderType;
+            GLenum shader_type = m_ActiveScene->m_Shaders[index].m_Info[k].ShaderType;
             auto shader = glCreateShader(shader_type);
-            m_ActiveScene->m_Materials[index].m_Shader.m_Shader.push_back(shader);
+            m_ActiveScene->m_Shaders[index].OnInit();
 
-            auto shader_source = m_ActiveScene->m_Materials[index].m_Shader.m_ShaderSource[k].c_str();
-            glShaderSource(m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k], 1, &shader_source, NULL);
-            glCompileShader(m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k]);
+            auto shader_source = m_ActiveScene->m_Shaders[index].m_ShaderSource[k].c_str();
+            glShaderSource(shader, 1, &shader_source, NULL);
+            glCompileShader(shader);
 
-            glAttachShader(m_ActiveScene->m_Materials[index].m_MaterialID, m_ActiveScene->m_Materials[index].m_Shader.m_Shader[k]);
+            glAttachShader(program, shader);
         }
 
 
-        glProgramParameteri(m_ActiveScene->m_Materials[index].m_MaterialID, GL_PROGRAM_SEPARABLE, GL_TRUE);
-        glLinkProgram(m_ActiveScene->m_Materials[index].m_MaterialID);
+        glProgramParameteri(program, GL_PROGRAM_SEPARABLE, GL_TRUE);
+        glLinkProgram(program);
+        m_RenderPrograms.push_back(program);
 
-        CreateTexture<GL_Texture>(m_ActiveScene->m_Materials[index].m_Texture);
+        //CreateTexture<GL_Texture>(m_ActiveScene->m_Materials[index].m_Texture);
     }
 
-    for (auto& mat : m_ActiveScene->m_Materials)
+    for (auto& program : m_RenderPrograms)
     {
-        glUseProgram(mat.m_MaterialID);
-        m_VAO.CreateVertexArrayLayout(mat.m_MaterialID, attribs);
+        glUseProgram(program);
+        m_VAO.CreateVertexArrayLayout(program, attribs);
 
-        m_LightLocation = glGetUniformLocation(mat.m_MaterialID, "LightPosition");
-        m_CameraEyeLocation = glGetUniformLocation(mat.m_MaterialID, "CameraEye");
-        m_ModelLocation = glGetUniformLocation(mat.m_MaterialID, "Model");
-        m_VPlocation = glGetUniformLocation(mat.m_MaterialID, "VP");
-        m_DeltaLocation = glGetUniformLocation(mat.m_MaterialID, "delta");
+        m_LightLocation = glGetUniformLocation(program, "LightPosition");
+        m_CameraEyeLocation = glGetUniformLocation(program, "CameraEye");
+        m_ModelLocation = glGetUniformLocation(program, "Model");
+        m_VPlocation = glGetUniformLocation(program, "VP");
+        m_DeltaLocation = glGetUniformLocation(program, "delta");
 
     }
 
@@ -107,7 +109,7 @@ void Renderer::SetUpForRendering()
         {
             for (int i = 0; i < buffer.size(); i++)
             {
-                auto m_ActiveMaterial = m_ActiveScene->m_ActiveMaterial;
+                int m_ActiveMaterial = 0;
                 glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
                 uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
                 uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
@@ -189,7 +191,7 @@ void Renderer::SetUpForRendering()
     glBindImageTexture(1, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     glBindImageTexture(2, m_Textures[1].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 
-    auto eye = m_ActiveScene->m_ActiveCamera.GetPosition();
+    auto eye = m_ActiveScene->m_ActiveCamera.GetEye();
     glm::vec3 end = glm::vec3(0.0, 0.0, 0.0);
     Ray test_ray(eye, end);
 }
@@ -204,12 +206,26 @@ void Renderer::UploadToOpenGL()
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             for (size_t bIndex = 0; bIndex < buffer.size(); bIndex++)
             {
-                glNamedBufferSubData(vbo, vBufferOffset, sizeof(Vertex) * buffer[bIndex].NumIndices, (void*)buffer[bIndex].m_V.data());
-                vBufferOffset += sizeof(Vertex) * buffer[bIndex].NumIndices;
 
-                glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(buffer[bIndex].m_Transform));
-                glDrawArrays(render_mode, iBufferOffset, buffer[bIndex].NumIndices);
-                iBufferOffset += buffer[bIndex].NumIndices;
+                if (buffer[bIndex].m_SubMeshes.size() > 0)
+                {
+                    for (auto& sub_mesh : buffer[bIndex].m_SubMeshes)
+                    {
+                        glNamedBufferSubData(vbo, vBufferOffset, sizeof(Vertex) * sub_mesh.NumIndices, (void*)sub_mesh.m_V.data());
+                        vBufferOffset += sizeof(Vertex) * sub_mesh.NumIndices;
+
+                        glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(sub_mesh.m_Transform));
+                        glDrawArrays(render_mode, iBufferOffset, sub_mesh.NumIndices);
+                        iBufferOffset += sub_mesh.NumIndices;
+                    }
+                }
+                    glNamedBufferSubData(vbo, vBufferOffset, sizeof(Vertex) * buffer[bIndex].NumIndices, (void*)buffer[bIndex].m_V.data());
+                    vBufferOffset += sizeof(Vertex) * buffer[bIndex].NumIndices;
+
+                    glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(buffer[bIndex].m_Transform));
+                    glDrawArrays(render_mode, iBufferOffset, buffer[bIndex].NumIndices);
+                    iBufferOffset += buffer[bIndex].NumIndices;
+
             }
         };
 
@@ -222,7 +238,8 @@ void Renderer::UploadToOpenGL()
     default:
         render_mode = GL_TRIANGLE_STRIP;
     }
-    UploadBuffer3v(m_ActiveScene->m_StaticGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
+    UploadBuffer3v(m_ActiveScene->m_MeshData, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
+
     //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
     //UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
 }
@@ -268,7 +285,7 @@ void Renderer::OnUpdate(TimeStep ts)
 {
     glUniformMatrix4fv(m_VPlocation, 1, GL_FALSE, glm::value_ptr(m_ActiveScene->m_pActiveCamera->GetVP()));
 
-    auto pos = m_ActiveScene->m_pActiveCamera->GetPosition();
+    auto pos = m_ActiveScene->m_pActiveCamera->GetEye();
     GLfloat pos_3fv[] = { pos.x, pos.y, pos.z };
     glUniform3fv(m_CameraEyeLocation, 3, pos_3fv);
 
@@ -300,16 +317,16 @@ void Renderer::OnUpdate(TimeStep ts)
 
             // UPDATE THE MATERIALS
 
-            for (auto& mtl : m_ActiveScene->m_Materials)
+            for (auto& program : m_RenderPrograms)
             {
-                mtl.OnUpdate();
-                GLuint KaLocation = glGetUniformLocation(mtl.m_MaterialID, "AmbientColor");
-                GLuint KdLocation = glGetUniformLocation(mtl.m_MaterialID, "DiffuseColor");
-                GLuint KsLocation = glGetUniformLocation(mtl.m_MaterialID, "SpecularColor");
+                //mtl.OnUpdate();
+                GLuint KaLocation = glGetUniformLocation(program, "AmbientColor");
+                GLuint KdLocation = glGetUniformLocation(program, "DiffuseColor");
+                GLuint KsLocation = glGetUniformLocation(program, "SpecularColor");
 
-                glProgramUniform3fv(mtl.m_MaterialID, KdLocation, 1, glm::value_ptr(mtl.m_Kd));
-                glProgramUniform3fv(mtl.m_MaterialID, KaLocation, 1, glm::value_ptr(mtl.m_Ka));
-                glProgramUniform3fv(mtl.m_MaterialID, KsLocation, 1, glm::value_ptr(mtl.m_Ks));
+                //glProgramUniform3fv(mtl.m_MaterialID, KdLocation, 1, glm::value_ptr(mtl.m_Kd));
+                //glProgramUniform3fv(mtl.m_MaterialID, KaLocation, 1, glm::value_ptr(mtl.m_Ka));
+                //glProgramUniform3fv(mtl.m_MaterialID, KsLocation, 1, glm::value_ptr(mtl.m_Ks));
 
             }
 
@@ -367,18 +384,18 @@ void Renderer::BeginFrame()
     "Normal"
     };
 
-    for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
+    for (size_t index = 0; index < m_RenderPrograms.size(); index++)
     {
         GLuint texture_slot = static_cast<GLuint>(index);
-        glUseProgram(m_ActiveScene->m_Materials[index].m_MaterialID);
-        GLuint KaLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "AmbientColor");
-        GLuint KdLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "DiffuseColor");
-        GLuint KsLocation = glGetUniformLocation(m_ActiveScene->m_Materials[index].m_MaterialID, "SpecularColor");
-        glBindTextureUnit(texture_slot, m_ActiveScene->m_Materials[index].m_Texture.m_Texture.m_Texture);
+        glUseProgram(m_RenderPrograms[index]);
+        GLuint KaLocation = glGetUniformLocation(m_RenderPrograms[index], "AmbientColor");
+        GLuint KdLocation = glGetUniformLocation(m_RenderPrograms[index], "DiffuseColor");
+        GLuint KsLocation = glGetUniformLocation(m_RenderPrograms[index], "SpecularColor");
+        //glBindTextureUnit(texture_slot, m_ActiveScene->m_Materials[index].m_Texture.m_Texture.m_Texture);
 
         for (auto& vao_attrib : m_keys)
         {
-            m_VAO.EnableAttribute(m_ActiveScene->m_Materials[index].m_MaterialID, vao_attrib.c_str());
+            m_VAO.EnableAttribute(m_RenderPrograms[index], vao_attrib.c_str());
         }
     }
 }

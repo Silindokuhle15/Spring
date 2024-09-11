@@ -21,6 +21,7 @@ public:
 
     std::vector<unsigned int> m_ModelLocations;
     std::vector<unsigned int> m_NormalMatrixLocations;
+    std::vector<GLuint> m_RenderPrograms;
 
     // Uniforms
     int m_LightLocation;

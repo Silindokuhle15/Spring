@@ -18,10 +18,11 @@ void Square::OnInit()
     for (uint64_t i = 0; i < NumIndices; i++)
     {
         uint64_t temp_index = m_VertexIndices[i];
+        float id = (float)m_VertexIndices[i];
         m_V.push_back(Vertex{
             m_Positions[temp_index],
             m_TexCoords[temp_index],
-            m_VertexIDs[temp_index], 
+            m_VertexIDs[id], 
             m_Normals[temp_index]
         });
     }

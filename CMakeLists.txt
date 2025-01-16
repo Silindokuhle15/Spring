@@ -43,11 +43,11 @@ include_directories(
 	"Dependencies/MSDF/msdfgen/core/"
 	"Dependencies/MSDF/msdfgen/ext/"
 	"Dependencies/MSDF/msdf-atlas-gen/"
-	"Dependencies/tiny/"
 	"Core/Application/"
 	"Core/Common/"
 	"Core/Engine/"
 	"Core/Event"
+	"Core/FontMgr/"
 	"Core/Input/"
 	"Core/Materials/"
 	"Core/Physics/"
@@ -64,8 +64,8 @@ file(GLOB MSDF_CR_INC "Dependencies/MSDF/msdfgen/core/*.h")
 file(GLOB MSDF_CR_SRC "Dependencies/MSDF/msdfgen/core/*.cpp")
 file(GLOB MSDF_XT_INC "Dependencies/MSDF/msdfgen/ext/*.h")
 file(GLOB MSDF_XT_SRC "Dependencies/MSDF/msdfgen/ext/*.cpp")
-file(GLOB MSDG_ATGN_INC "Dependencies/MSDF/msdfgen-atlas-gen/*.h")
-file(GLOB MSDG_ATGN_SRC "Dependencies/MSDF/msdfgen-atlas-gen/*.cpp")
+file(GLOB MSDG_ATGN_INC "Dependencies/MSDF/msdf-atlas-gen/*.h")
+file(GLOB MSDG_ATGN_SRC "Dependencies/MSDF/msdf-atlas-gen/*.cpp")
 
 Set(SOURCE_FILES 
 	"SpringEditor.cpp"
@@ -114,6 +114,10 @@ Set(SOURCE_FILES
 	"Core/Engine/Window.cpp"
 	"Core/Engine/NGLFWwindow.h"
 	"Core/Engine/NGLFWwindow.cpp"
+	"Core/Engine/Component.h"
+	"Core/Engine/Component.cpp"
+	"Core/Engine/Character.h"
+	"Core/Engine/Character.cpp"
 	
 	# EVENTS
 	"Core/Event/Event.h" 
@@ -141,18 +145,20 @@ Set(SOURCE_FILES
 	"Core/Materials/Texture.cpp"
 
 	# PHYSICS SIMULATION
-	 "Core/Physics/Collider.h" 
-	 "Core/Physics/Collider.cpp"
-	 "Core/Physics/PhysicsEngine.h" 
-	 "Core/Physics/PhysicsEngine.cpp"
+	"Core/Physics/Collider.h" 
+	"Core/Physics/Collider.cpp"
+	"Core/Physics/PhysicsEngine.h" 
+	"Core/Physics/PhysicsEngine.cpp"
+	"Core/Physics/Ray.h"
+	"Core/Physics/Ray.cpp"
+	"Core/Physics/PhysicsState.h"
+	"Core/Physics/PhysicsState.cpp"
 
 	# PROJECTS
 	"Core/Project/Project.h" 
 	"Core/Project/Project.cpp"
 
 	# RENDERING
-	"Core/Rendering/OpenGLFrameBuffer.h"
-	"Core/Rendering/OpenGLFrameBuffer.cpp"
 	"Core/Rendering/Renderer.h"
 	"Core/Rendering/Renderer.cpp"
 	"Core/Rendering/VertexArray.h"
@@ -165,8 +171,12 @@ Set(SOURCE_FILES
 	"Core/SceneMgr/SceneEvent.cpp" 
 
 	# SCRIPTING
-	"Core/Scripting/ScriptingEngine.h"
-	"Core/Scripting/ScriptingEngine.cpp"
+	"Core/Scripting/ScriptBase.h"
+	"Core/Scripting/ScriptBase.cpp"
+	"Core/Scripting/ScriptMgr.h" 
+	"Core/Scripting/ScriptMgr.cpp"
+	"Core/Scripting/Script.h" 
+	"Core/Scripting/Script.cpp"
 
 	# UTILITIES
 	"Editor/Utility/ObjectLoader.h"
@@ -177,9 +187,6 @@ Set(SOURCE_FILES
 	# VIEWING
 	"Core/Viewing/Camera.h"
 	"Core/Viewing/Camera.cpp"
-	
-	
-	
 	
 
 	# APPLICATIONS
@@ -195,8 +202,7 @@ Set(SOURCE_FILES
 	"Editor/Layer.cpp"
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
-
-   "Core/Physics/Ray.h" "Core/Physics/Ray.cpp" "Core/Physics/PhysicsState.h" "Core/Physics/PhysicsState.cpp")
+ "Core/FontMgr/FontMgr.h" "Core/FontMgr/FontMgr.cpp" "Core/Engine/TextField.h" "Core/Engine/TextField.cpp")
 
 ## BUILD LUA
 set(LIB_NAME
@@ -210,7 +216,7 @@ SET(FBX_LIB_DIR
 	"E:/FBX/lib/x64/debug/libfbxsdk.lib"
 )
 
-SET(FT_LIB_DIR
+Set(FT_LIB_DIR
 	"${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib"
 )
 

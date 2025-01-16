@@ -3,8 +3,8 @@
 
 #ifndef MSDF_ATLAS_NO_ARTERY_FONT
 
-#include <artery-font/std-artery-font.h>
-#include <artery-font/stdio-serialization.h>
+//#include <artery-font/std-artery-font.h>
+//#include <artery-font/stdio-serialization.h>
 #include "GlyphGeometry.h"
 #include "image-encode.h"
 

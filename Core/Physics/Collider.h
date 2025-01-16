@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "PhysicsState.h"
 template <typename T>
-class Collider
+class Collider : public Component
 {
 public:
 	//glm::vec3 m_Position;

@@ -1,12 +1,13 @@
 #pragma once
-#include "Common.h"
+#include "glm/glm.hpp"
 
 class Ray
 {
 public:
 
-	const glm::vec3& GetStart() const;
-	const glm::vec3& GetEnd() const;
+	const glm::vec3 GetStart() const;
+	const glm::vec3 GetEnd() const;
+	const glm::vec3 GetDirection() const;
 	void SetDirection(const glm::vec3& dir);
 	void SetStart(const glm::vec3& start);
 	Ray() :

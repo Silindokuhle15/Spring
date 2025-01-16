@@ -1,6 +1,5 @@
 #pragma once
 #include "GL/glew.h"
-//#define GLFW_INCLUDE_NONE
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ImGuizmo.h"
@@ -13,19 +12,12 @@
 #include "Scene.h"
 #include "Project.h"
 #include "TimeStep.h"
-#include "ScriptingEngine.h"
-
+#include "Script.h"
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
-typedef struct
-{
-	float x, y, z, a;
-}Pixel;
-
 class Layer
 {
-
 public:
 	std::vector<std::string> OBJ_paths;
 	std::vector<std::string> shader_paths;
@@ -35,32 +27,18 @@ public:
 	uint32_t m_SelectedMesh, m_SelectedBuffer;
 	TimeStep m_Delta;
 	Camera m_ActiveCamera;
-	//glm::mat4 m_ActiveTransform;
 	std::shared_ptr<Camera> m_pActiveCamera;
-	//std::shared_ptr<glm::mat4> m_pActiveTransform;
-	scripting::ScriptingEngine m_LuaEngine;
+
+	scripting::ScriptBase m_LuaEngine;
 	uint64_t m_LayerWidth, m_LayerHeight;
 	Layer(uint64_t width=1920, uint64_t height=1080) : m_LayerWidth{ width }, m_LayerHeight{ height }
 	{
 
 	}
 
-	//Layer() : m_LayerWidth{ 1920 }, m_LayerHeight{ 1080 } {}
-
 	~Layer()
 	{
-		/*
-		if (m_pActiveCamera)
-		{
-			m_pActiveCamera.reset();
-			m_pActiveCamera = nullptr;
-		}
-		if (m_pActiveTransform)
-		{
-			m_pActiveTransform.reset();
-			m_pActiveTransform = nullptr;
-		}
-		*/
+
 	};
 
 	virtual void Enable() = 0;
@@ -71,7 +49,6 @@ public:
 
 	virtual void LoadImageFromFile(std::string& path, _TextureView& image_data);
 	virtual void LoadSceneFromFile(std::string& path);
-	virtual void CreateSceneObjects();
 	virtual std::shared_ptr<Camera>& GetLayerCamera() { return m_pActiveCamera; };
 	virtual std::string GetFileName(const char* filter) = 0;
 };
@@ -95,7 +72,6 @@ public:
 
 	virtual void Run() = 0;
 	~Panel() = default;
-
 
 protected:
 	std::string m_PanelName;
@@ -784,7 +760,7 @@ inline void MenuBar<T>::Run()
 					{
 						const char* filter = ".obj";
 						std::string obj_path = parent->GetFileName(filter);
-						parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(obj_path));
+						//parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(obj_path));
 
 					}
 				}
@@ -795,7 +771,7 @@ inline void MenuBar<T>::Run()
 					{
 						const char* filter = ".fbx";
 						std::string fbx_path = parent->GetFileName(filter);
-						parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(fbx_path));
+						//parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(fbx_path));
 					}
 				}
 				ImGui::EndMenu();

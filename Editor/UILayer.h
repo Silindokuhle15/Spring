@@ -50,11 +50,6 @@ public:
         m_RenderPanel.Run();
         m_StatsPanel.Run();
         m_FileMenuBar.Run();
-        
-        if (m_ActiveScene)
-        {
-            m_ActiveScene->m_CurrentRenderMode = m_StatsPanel.selected_mode ? PrimitiveMode::WIRE_FRAME : PrimitiveMode::TRIANGLE_STRIP;
-        }
     }
 
     void LoadSceneFromFile(std::string& path) override
@@ -62,7 +57,7 @@ public:
         Layer::LoadSceneFromFile(path);
     }
 
-    void CreateSceneObjects() override
+    void CreateSceneObjects()
     {
         Layer::m_pActiveCamera = std::shared_ptr<Camera>(&m_ActiveCamera);
         m_pActiveCamera->OnInit();
@@ -77,22 +72,6 @@ public:
             Shader temp_shader(m_shaderInfo);
             //temp_shader.OnInit();
             m_ActiveScene->m_Shaders.push_back(temp_shader);
-
-            //std::string& texture_path = shader_paths[index + 2];
-
-            //_TextureView view{};
-            //Layer::LoadImageFromFile(texture_path, view);
-
-            //_TextureDescription desc{};
-            //desc.m_TextureSource = _TextureSource::FILE;
-            //desc.m_TextureFormat = _TextureFormat::RGB8;
-            //desc.m_TextureTarget = _TextureTarget::TEXTURE_2D;
-
-            //TextureBase<GL_Texture> base_tex{desc, view };
-
-            //std::string& mtl_path = shader_paths[index + 3];
-            //m_ActiveScene->m_Materials.push_back(Material(base_tex, mtl_path, m_shaderInfo));
-
             m_shaderInfo.clear();
 
         }
@@ -112,12 +91,12 @@ public:
 
         for (auto& s_mesh : static_mesh_paths)
         {
-            m_ActiveScene->LoadMeshData(s_mesh.c_str(), 0);
+            //m_ActiveScene->LoadMeshData(s_mesh.c_str(), 0);
         }
 
         for (auto& d_mesh : dynamic_mesh_paths)
         {
-            m_ActiveScene->LoadMeshData(d_mesh.c_str(), 1);
+            //m_ActiveScene->LoadMeshData(d_mesh.c_str(), 1);
         }
 
         m_SelectedMesh = 0;

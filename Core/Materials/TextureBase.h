@@ -7,7 +7,9 @@
 enum class _TextureFormat
 {
 	RGB8,
-	RGBA32F
+	RGB32F,
+	RGBA8,
+	RGBA32F,
 };
 enum class _TextureSource
 {
@@ -29,7 +31,8 @@ public:
 	uint64_t m_Height;
 	uint64_t m_NumMipMaps;
 	uint64_t m_MipMapLevel;
-	std::vector<unsigned char*> m_TextureData;
+	//std::vector<unsigned char*> m_TextureData;
+	std::vector<float*> m_TextureData;
 };
 
 class _TextureDescription
@@ -51,19 +54,15 @@ public:
 
 	virtual void OnInit()
 	{
-		m_Texture.OnInit();
+		//m_Texture.OnInit();
 	}
 	virtual void Bind()
 	{
-		m_Texture.Bind();
+		//m_Texture.Bind();
 	}
 	virtual void OnUpdate()
 	{
-		m_Texture.OnUpdate();
-	}
-	TextureBase(const PLATFORM& other) : m_Texture{ other.m_Texure }, m_ID{ other.m_ID }, m_Source{ other.m_Source }
-	{
-
+		//m_Texture.OnUpdate();
 	}
 
 	TextureBase(const _TextureDescription& desc, const _TextureView& view, uint64_t id= 0xFFFFFFFF) :

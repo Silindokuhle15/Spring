@@ -63,6 +63,36 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             m_SceneEventQueue.Push(new SceneEvent(EventID::ESCAPE));
             break;
 
+        case 0x30:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::ZERO));
+            break;
+        case 0x31:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::ONE));
+            break;
+        case 0x32:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::TWO));
+            break;
+        case 0x33:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::THREE));
+            break;
+        case 0x34:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::FOUR));
+            break;
+        case 0x35:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::FIVE));
+            break;
+        case 0x36:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::SIX));
+            break;
+        case 0x37:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::SEVEN));
+            break;
+        case 0x38:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::EIGHT));
+            break;
+        case 0x39:
+            m_SceneEventQueue.Push(new SceneEvent(EventID::NINE));
+            break;
         case 0x41:
             m_SceneEventQueue.Push(new SceneEvent(EventID::A));
             break;
@@ -158,7 +188,7 @@ Win32Window::Win32Window()
     ShowWindow(m_Hwnd, 10);
 }
 
-Win32Window::Win32Window(uint32_t width, uint32_t height, const char* name, bool show)
+Win32Window::Win32Window(uint64_t width, uint64_t height, const char* name, bool show)
 {
     CreateWin32Window(width, height, name);
     show ? ShowWindow(m_Hwnd, 10) : 0;

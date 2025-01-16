@@ -1,5 +1,8 @@
 #pragma once
-#include "Common.h"
+//#include "Common.h"
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
+#include "TimeStep.h"
 enum class PROJECTION
 {
 	ORTHOGRAPHIC = 0,
@@ -31,6 +34,8 @@ public:
 	virtual void SetHeight(int height) { m_Height = height; }
 	virtual int GetWidth() const { return m_Width; }
 	virtual int GetHeight() const { return m_Height; }
+
+	virtual glm::vec3 GetLookDirection() const { return glm::normalize(m_center - m_eye); }
 
 
 	virtual void OnInit()
@@ -64,7 +69,16 @@ public:
 		m_eye -= glm::vec3(0.0, 1.0, 0.0) * m_Speed * (float)m_Delta;
 	}
 
-	//virtual void Rotate(glm::vec3 rot_dir) = 0;
+	virtual void Rotate(glm::vec3 rot_dir)
+	{
+		float a = rot_dir.x, b = rot_dir.y, r = 50.0;
+
+		auto th2 = b;
+		auto ph2 = a;
+		auto dz = sin(th2) - cos(ph2);
+		auto dr =glm::normalize(glm::vec3(a, -b, dz));
+		m_eye = m_center + dr * r * m_Speed *float(m_Delta);
+	}
 	//virtual void Focus(glm::vec3 rot_dir) = 0;
 
 	virtual void OnUpdate(TimeStep delta_time) 
@@ -100,10 +114,10 @@ public:
 			break;
 
 		case PROJECTION::PERSPECTIVE:
-			m_ProjectionMatrix = glm::perspective(glm::radians(60.f * 2), m_AspectRatio, 0.010f, 100.0f);
+			m_ProjectionMatrix = glm::perspective(glm::radians(75.f), m_AspectRatio, 0.010f, 1000.0f);
 			break;
 		}
-		CameraView::m_View = glm::lookAt(m_eye, m_center, m_up);
+		CameraView::m_View = glm::lookAt(m_center, m_eye, m_up);
 	}
 	Camera() {}
 	Camera(int width, int height, float zFar, float zNear)

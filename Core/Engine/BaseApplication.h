@@ -7,14 +7,9 @@
 #include "Renderer.h"
 #include "Scene.h"
 #include "SceneEvent.h"
-#include "ScriptingEngine.h"
+#include "Script.h"
 #include "NGLFWwindow.h"
- 
-#include "msdfgen.h"
-#include "msdfgen-ext.h"
-#include "msdf-atlas-gen.h"
-#include "AtlasGenerator.h"
-// PhysX
+#include "FontMgr.h"
 //#include <PxPhysicsAPI.h>
 
 class Renderer;
@@ -35,8 +30,6 @@ public:
 
 	static void Run();
 	static void ShutDown();
-
-	static void TestFonts();
 
 	template<class T>
 	static void OnUpdate();

@@ -15,9 +15,9 @@ void physics::PhysicsEngine::ImpulseResolveCollision()
 
 	auto ApplyAngularImpuse = [&](PhysicsState& ob, glm::vec3& force)
 		{
-			float x = ob.inertia.x;
 			float y = ob.inertia.y;
 			float z = ob.inertia.z;
+			float x = ob.inertia.x;
 
 			return ob.velocity = ob.velocity + glm::vec3(force.x * x, force.y * y, force.z * z);
 		};
@@ -77,43 +77,5 @@ void physics::PhysicsEngine::OnInit()
 
 void physics::PhysicsEngine::OnUpdate(TimeStep ts)
 {
-	/*
-	for (size_t index = 0; index < m_PhysicsObjects.size(); index++)
-	{
-		auto& physics_state = m_PhysicsObjects[index].second;
-		auto new_x = 0.5*physics_state.linear_acceleration.x * ts*ts;
-		auto new_y = 0.5*physics_state.linear_acceleration.y * ts*ts;
-		auto new_z = 0.5*physics_state.linear_acceleration.z * ts*ts;
-		physics_state.position = physics_state.position + glm::vec3(new_x, new_y, new_z);
-
-		float rotation_rate = ts * 1.0f;
-		//physics_state.orientation = physics_state.orientation + glm::rotate(physics_state.orientation, glm::radians(rotation_rate), physics_state.angular_acceleration);
-		
-	}
-	*/
 	m_Collisions.clear();
-
-	for (size_t u_index = 0; u_index < m_PhysicsObjects.size(); u_index++)
-	{
-		for (size_t v_index = m_PhysicsObjects.size() - 1; v_index > 0; v_index--)
-		{
-			if (!(u_index == v_index))
-			{
-				auto& u = m_PhysicsObjects[u_index];
-				auto& v = m_PhysicsObjects[v_index];
-
-				auto intersection = Intersect(u, v);
-
-				if (intersection)
-				{
-					// DON'T KNOW WHAT TO DO HERE RIGHT NOW
-					auto var = m_Collisions.find(std::make_pair(v_index, u_index));
-					if (var == m_Collisions.end())
-					{
-						m_Collisions.insert(std::make_pair(u_index, v_index));
-					}
-				}
-			}
-		}
-	}
 }

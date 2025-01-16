@@ -17,11 +17,11 @@ public:
 
     void StartTimer() override
     {
-        m_StartTime = static_cast<double>(glfwGetTime());
+        m_StartTime = static_cast<float>(glfwGetTime());
     }
     void EndTimer() override
     {
-        m_EndTime = static_cast<double>(glfwGetTime());
+        m_EndTime = static_cast<float>(glfwGetTime());
     }
     void SwapBuffer() override;
 

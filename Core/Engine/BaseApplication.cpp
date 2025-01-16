@@ -1,6 +1,5 @@
 #include "BaseApplication.h"
 
-
 std::shared_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
 template<class T>
 std::shared_ptr<UILayer<T>> BaseApplication::m_pUILayer = nullptr;
@@ -15,37 +14,6 @@ bool BaseApplication::ExitWindow = false;
 using WINDOW_BASE = Win32Window;
 //using WINDOW_BASE = NGLFWwindow;
 
-
-struct Configuration {
-    msdf_atlas::ImageType imageType;
-    msdf_atlas::ImageFormat imageFormat;
-    msdf_atlas::YDirection yDirection;
-    int width, height;
-    double emSize;
-    msdfgen::Range pxRange;
-    double angleThreshold;
-    double miterLimit;
-    bool pxAlignOriginX, pxAlignOriginY;
-    struct {
-        int cellWidth, cellHeight;
-        int cols, rows;
-        bool fixedOriginX, fixedOriginY;
-    } grid;
-    void (*edgeColoring)(msdfgen::Shape&, double, unsigned long long);
-    bool expensiveColoring;
-    unsigned long long coloringSeed;
-    msdf_atlas::GeneratorAttributes generatorAttributes;
-    bool preprocessGeometry;
-    bool kerning;
-    int threadCount;
-    const char* arteryFontFilename;
-    const char* imageFilename;
-    const char* jsonFilename;
-    const char* csvFilename;
-    const char* shadronPreviewFilename;
-    const char* shadronPreviewText;
-};
-
 void BaseApplication::Run()
 {
     WINDOW_BASE AppWindow(1920, 1080, "Spring Editor");
@@ -54,18 +22,25 @@ void BaseApplication::Run()
 
     m_Window<WINDOW_BASE>->SetUpForRendering();
 
-    TestFonts();
+    //TestMyFont();
+
+
+    //scripting::ConfigScript test_script;
+    //test_script.SetScriptPath(std::string("C:/dev/Silindokuhle15/Spring/Assets/Projects/factorial.lua").c_str());
+    //test_script.Run();
+    
 
     std::string path = "C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua";
-    Scene square_scn(path);
-    std::shared_ptr<Scene> pscene = std::make_shared<Scene>(square_scn);
+    std::shared_ptr<Scene> pscene = std::shared_ptr<Scene>(new Scene(path));
+    pscene->LoadSceneFromFile();
+    pscene->OnCreateSceneObjects();
     
     UILayer<WINDOW_BASE> ImGui_Layer(AppWindow);
 
-    ImGui_Layer.LoadSceneFromFile(path);
+    //ImGui_Layer.LoadSceneFromFile(path);
     pscene->OnInit();
     ImGui_Layer.LoadScene(pscene);
-    ImGui_Layer.CreateSceneObjects();
+    //ImGui_Layer.CreateSceneObjects();
 
     BaseApplication::m_pUILayer<WINDOW_BASE> = std::shared_ptr<UILayer<WINDOW_BASE>>(&ImGui_Layer);
     BaseApplication::m_pUILayer<WINDOW_BASE>->OnInit();
@@ -115,71 +90,6 @@ void BaseApplication::ShutDown()
 {
     m_Window<WINDOW_BASE> = nullptr;
 }
-
-
-template <typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GEN_FN>
-bool makeAtlas(const std::vector<msdf_atlas::GlyphGeometry>& glyphs, const std::vector<msdf_atlas::FontGeometry>& fonts, const Configuration& config) {
-    msdf_atlas::ImmediateAtlasGenerator<S, N, GEN_FN, msdf_atlas::BitmapAtlasStorage<T, N> > generator(config.width, config.height);
-    generator.setAttributes(config.generatorAttributes);
-    generator.setThreadCount(config.threadCount);
-    generator.generate(glyphs.data(), glyphs.size());
-    msdfgen::BitmapConstRef<T, N> bitmap = (msdfgen::BitmapConstRef<T, N>) generator.atlasStorage();
-
-    bool success = true;
-
-    if (config.imageFilename) {
-        if (saveImage(bitmap, config.imageFormat, config.imageFilename, config.yDirection))
-            fputs("Atlas image file saved.\n", stderr);
-        else {
-            success = false;
-            fputs("Failed to save the atlas as an image file.\n", stderr);
-        }
-    }
-    return success;
-}
-
-
-
-
-void BaseApplication::TestFonts()
-{
-
-    auto AtlasGeneratorFunc = [](const char* fontFilename) {
-        using namespace msdfgen;
-
-        FreetypeHandle* ft = initializeFreetype();
-        if (ft) {
-            FontHandle* font = loadFont(ft, "C:\\Windows\\Fonts\\arialbd.ttf");
-            if (font) {
-                Shape shape;
-                if (loadGlyph(shape, font, 'A')) {
-                    shape.normalize();
-                    //                      max. angle
-                    edgeColoringSimple(shape, 3.0);
-                    //          output width, height
-                    Bitmap<float, 3> msdf(32, 32);
-                    //                           scale, translation
-                    SDFTransformation t(Projection(1.0, Vector2(4.0, 4.0)), Range(4.0));
-                    generateMSDF(msdf, shape, t);
-                    //savePng(msdf, "output.png");
-                }
-
-                
-                //msdf_atlas::FontGeometry fg;
-                //msdf_atlas::GlyphGeometry gg;
-
-                //auto result = fg.loadGlyphRange(font, 1.0, 1, 5);
-                //result = gg.load(font, 1.0, 0);
-                
-                destroyFont(font);
-            }
-            deinitializeFreetype(ft);
-        }
-    };
-
-    AtlasGeneratorFunc("");
-}
-
 
 template<class T>
 void BaseApplication::OnUpdate()

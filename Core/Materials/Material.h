@@ -1,9 +1,5 @@
 #pragma once
-#include "Shader.h"
-#include "Texture.h"
 #include "glm/glm.hpp"
-#include "glm/ext.hpp"
-#include <iostream>
 
 class Material
 {

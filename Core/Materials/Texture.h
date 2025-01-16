@@ -1,6 +1,7 @@
 #pragma once
 #include "TextureBase.h"
 
+/*
 class GL_Texture
 {
 public:
@@ -10,7 +11,9 @@ public:
 	GL_Texture(GLuint id= 0xFFFFFFFF) : m_Texture{ id}
 	{
 	}
+	GLuint operator() (){ return m_Texture; }
 	operator GLuint() { return m_Texture; }
+	operator GLuint*() { return &m_Texture; }
 
 	void OnInit()
 	{
@@ -23,3 +26,5 @@ public:
 	{
 	}
 };
+*/
+using GL_Texture = GLuint;

@@ -2,7 +2,8 @@
 #include <Windows.h>
 #include <windowsx.h>
 #include "SceneEvent.h"
-#include "OpenGLFrameBuffer.h"
+#include "GL/glew.h"
+#include "GL/wglew.h"
 #include "TimeStep.h"
 
 template <class WindowClass>
@@ -21,7 +22,7 @@ public:
 	virtual void EndTimer() = 0;
 	virtual void SwapBuffer() = 0;
 
-	BOOL CreateWin32Window(INT width, INT height, const char* app_name)
+	BOOL CreateWin32Window(uint64_t width, uint64_t height, const char* app_name)
 	{
 		m_Handle = GetModuleHandle(NULL);
 		// Register the window class.
@@ -40,7 +41,7 @@ public:
 			app_name, // Window text
 			WS_OVERLAPPEDWINDOW, // Window style
 			// Size and position
-			CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+			CW_USEDEFAULT, CW_USEDEFAULT, static_cast<int>(width), static_cast<int>(height),
 			NULL, // Parent window
 			NULL, // Menu
 			m_Handle, // Instance handle
@@ -99,7 +100,7 @@ public:
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
 	Win32Window();
-	Win32Window(uint32_t width, uint32_t height, const char* name, bool show = true);
+	Win32Window(uint64_t width, uint64_t height, const char* name, bool show = true);
 	~Win32Window();
 
 	void StartTimer() override {
@@ -115,7 +116,7 @@ protected:
 
 private:
 	// FRAMEBUFFERS
-	OpenGLFrameBuffer m_DrawFrame;
-	OpenGLFrameBuffer m_ReadFrame;
+	//OpenGLFrameBuffer m_DrawFrame;
+	//OpenGLFrameBuffer m_ReadFrame;
 };
 

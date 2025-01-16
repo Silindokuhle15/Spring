@@ -6,11 +6,11 @@ void Renderer::SetUpForRendering()
     unsigned int m_Width = 1920;
     unsigned int m_Height = 1080;
 
-    m_DrawFrame.SetHeight(m_Height);
-    m_DrawFrame.SetWidth(m_Width);
+    //m_DrawFrame.SetHeight(m_Height);
+    //m_DrawFrame.SetWidth(m_Width);
 
-    m_DrawFrame.OnCreate();
-    m_DrawFrame.Bind();
+    //m_DrawFrame.OnCreate();
+    //m_DrawFrame.Bind();
 
 
     glEnable(GL_BLEND);
@@ -114,21 +114,10 @@ void Renderer::SetUpForRendering()
                 uint32_t model_location = glGetUniformLocation(m_ActiveMaterial, "Model");
                 uint32_t normal_matrix_location = glGetUniformLocation(m_ActiveMaterial, "NormalMatrix");
 
-                //int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
-                //int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
-                //int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
-                //int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
-
                 m_ModelLocations.push_back(model_location);
                 m_NormalMatrixLocations.push_back(normal_matrix_location);
             }
         };
-
-    //func(m_ActiveScene->m_StaticGeometry);
-    func(m_ActiveScene->m_DynamicGeometry);
-    //func(m_ActiveScene->m_MeshData);
-    m_ActiveScene->Process();
-
 
     // CREATE OPENGL TEXTURE SAMPLERS
     for (size_t index = 0; index < m_ActiveScene->m_Materials.size(); index++)
@@ -158,7 +147,7 @@ void Renderer::SetUpForRendering()
     _TextureView view{};
     view.m_Height = 10;
     view.m_Width = 10;
-    view.m_TextureData.push_back((unsigned char*)(data));
+    view.m_TextureData.push_back((float*)(data));
     _TextureDescription desc{};
 
     desc.m_TextureFormat = _TextureFormat::RGB8;
@@ -188,10 +177,10 @@ void Renderer::SetUpForRendering()
     m_Textures[1].OnInit();
 
 
-    glBindImageTexture(1, m_Textures[0].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glBindImageTexture(2, m_Textures[1].m_Texture.m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
+    glBindImageTexture(1, m_Textures[0].m_Texture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, m_Textures[1].m_Texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 
-    auto eye = m_ActiveScene->m_ActiveCamera.GetEye();
+    auto eye = m_ActiveScene->m_pActiveCamera->GetEye();
     glm::vec3 end = glm::vec3(0.0, 0.0, 0.0);
     Ray test_ray(eye, end);
 }
@@ -229,16 +218,17 @@ void Renderer::UploadToOpenGL()
             }
         };
 
+    render_mode = GL_TRIANGLE_STRIP;
+    std::vector<Mesh> temp_vec;
+
     
-    switch (m_ActiveScene->m_CurrentRenderMode)
+    for (auto& ch : m_ActiveScene->m_Characters)
     {
-    case PrimitiveMode::WIRE_FRAME:
-        render_mode = GL_LINE_LOOP;
-        break;
-    default:
-        render_mode = GL_TRIANGLE_STRIP;
+        auto mesh = ch->GetComponent<Mesh>();
+        temp_vec.push_back(*mesh);
     }
-    UploadBuffer3v(m_ActiveScene->m_MeshData, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
+    
+    UploadBuffer3v(temp_vec, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
 
     //UploadBuffer3v(m_ActiveScene->m_DynamicGeometry, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
     //UploadBuffer3v(m_ActiveScene->m_MeshData, GL_TRIANGLES, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0]);
@@ -246,19 +236,19 @@ void Renderer::UploadToOpenGL()
 
 void Renderer::CreateOpenGLTexture(_TextureView& view, _TextureDescription& desc, GL_Texture& tex)
 {    
-    glCreateTextures(GL_TEXTURE_2D, 1, &tex.m_Texture);
+    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
 
     GLenum format = GL_RGB8;
 
     GLuint width = 10, height = 10;
     void* data = nullptr;
   
-    glTextureStorage2D(tex.m_Texture, 1, format, width, height);
+    glTextureStorage2D(tex, 1, format, width, height);
 
-    glTextureParameteri(tex.m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(tex.m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTextureSubImage2D(tex.m_Texture, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
 
 }
 
@@ -278,7 +268,7 @@ void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
     if (m_ActiveScene)
         m_ActiveScene.reset();
-    m_ActiveScene = std::make_shared<Scene>(*scene.get());
+    m_ActiveScene = scene;
 }
 
 void Renderer::OnUpdate(TimeStep ts)
@@ -289,7 +279,7 @@ void Renderer::OnUpdate(TimeStep ts)
     GLfloat pos_3fv[] = { pos.x, pos.y, pos.z };
     glUniform3fv(m_CameraEyeLocation, 3, pos_3fv);
 
-    auto light_pos = m_ActiveScene->m_Lights[0].GetPosition();
+    auto light_pos = glm::vec3(0.0, 15.0, 0.0);
     //float light_3fv[] = { light_pos.x, light_pos.y, light_pos.z };
     GLfloat light_3fv[] = { 0.0f, 10.5f,  0.0f};
     glUniform3fv(m_LightLocation, 3, light_3fv);
@@ -339,7 +329,7 @@ void Renderer::OnUpdate(TimeStep ts)
             }
         };
 
-    func(m_ActiveScene->m_StaticGeometry);
+    //func(m_ActiveScene->m_StaticGeometry);
     //func(m_ActiveScene->m_DynamicGeometry);
     //func(m_ActiveScene->m_MeshData);
     for (auto& tex : m_Textures)
@@ -352,12 +342,12 @@ void Renderer::CreateImage()
 {
     GLclampf r = 0.02f, g = 0.019f, b = 0.092f, a = 1.0f;
     glClearColor(r, g, b, a);
-    //glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
     //glDrawBuffer(GL_COLOR_ATTACHMENT1);
     //glDrawBuffer(GL_COLOR_ATTACHMENT2);
-    //glDrawBuffer(GL_DEPTH_ATTACHMENT);
+    glDrawBuffer(GL_DEPTH_ATTACHMENT);
     //glDrawBuffer(GL_FRONT);
-    glReadBuffer(GL_COLOR_ATTACHMENT1);
+    //glReadBuffer(GL_COLOR_ATTACHMENT1);
 }
 
 void Renderer::EnableTesselation()
@@ -372,7 +362,7 @@ void Renderer::EnableTesselation()
 
 void Renderer::BeginFrame()
 {
-    m_DrawFrame.Bind();
+    //m_DrawFrame.Bind();
     //m_VAO.Bind();
     GLenum flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
     glClear(flags);

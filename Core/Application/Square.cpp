@@ -6,7 +6,7 @@ void Square::OnInit()
     m_TexCoords = { { 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, { 0.0f, 1.0f}};
     m_Normals = { m_Color,  m_Color, m_Color, m_Color};
     m_VertexIDs = { 0, 1, 2, 3};
-    m_VertexIndices = { 0, 1, 2, 3, 0, 2};
+    m_VertexIndices = { 2, 3, 0, 1, 2, 0};
     // CHANGE THE VERTEX INDICES ORDER LATER
 
     m_Positions.shrink_to_fit();

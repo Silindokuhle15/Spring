@@ -1,8 +1,7 @@
 #pragma once
-#include "Common.h"
 #include "Utility/ObjectLoader.h"
-
-class Mesh
+#include "Component.h"
+class Mesh : public virtual Component
 {
 public:
     Mesh() :
@@ -24,8 +23,12 @@ public:
         this->NumIndices = static_cast<uint32_t>(m_points.size());
         this->NumVertices = static_cast<uint32_t>(m_points.size());
     }
-    virtual void OnInit();
+    void OnInit() override;
     virtual void OnUpdate(TimeStep ts);
+
+    Component& operator() () {
+        return *this;
+    }
 
     static Mesh Batch(std::vector<Mesh>& meshes);
 

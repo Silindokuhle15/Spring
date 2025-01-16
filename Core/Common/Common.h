@@ -4,12 +4,15 @@
 #include "Timestep.h"
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <unordered_map>
 #include <vector>
 #include <tuple>
 #include <set>
 #include <random>
 #include <string>
 #include <memory>
+#include <sstream>
 
 typedef struct
 {
@@ -18,6 +21,21 @@ typedef struct
 	float  ID;
 	glm::vec3 norm;
 } Vertex;
+
+typedef struct
+{
+	double x;
+	double y;
+	double z;
+}Vector3;
+
+typedef struct
+{
+	double x;
+	double y;
+	double z;
+	double w;
+}Vector4;
 
 typedef enum
 {

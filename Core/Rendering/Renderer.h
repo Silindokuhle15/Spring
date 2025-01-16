@@ -1,5 +1,4 @@
 #pragma once
-#include "OpenGLFrameBuffer.h"
 #include "Scene.h"
 #include "VertexArray.h"
 #include "Mesh.h"
@@ -37,8 +36,8 @@ public:
     bool m_PrimitiveModeWireFrame = false;
 
     // Try Out the New Framebuffer stuff
-    OpenGLFrameBuffer m_DrawFrame;
-    OpenGLFrameBuffer m_ReadFrame;
+    //OpenGLFrameBuffer m_DrawFrame;
+    //OpenGLFrameBuffer m_ReadFrame;
 
     unsigned int m_IndexBufferSize = 0;
 

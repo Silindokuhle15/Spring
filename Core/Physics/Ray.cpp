@@ -1,15 +1,21 @@
 #include "Ray.h"
 
-const glm::vec3& Ray::GetStart() const
+const glm::vec3 Ray::GetStart() const
 {
 	// TODO: insert return statement here
 	return m_Start;
 }
 
-const glm::vec3& Ray::GetEnd() const
+const glm::vec3 Ray::GetEnd() const
 {
 	// TODO: insert return statement here
 	return m_Start + glm::vec3(m_Length * m_Direction.x, m_Length * m_Direction.y, m_Length * m_Direction.z);
+}
+
+const glm::vec3 Ray::GetDirection() const
+{
+	// TODO: insert return statement here
+	return glm::normalize(m_Direction);
 }
 
 void Ray::SetDirection(const glm::vec3& dir)

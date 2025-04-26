@@ -71,7 +71,7 @@ public:
         m_FontConfig.imageType = msdf_atlas::ImageType::MTSDF;
         m_FontConfig.imageFormat = msdf_atlas::ImageFormat::FL32;
         m_FontConfig.yDirection = msdf_atlas::YDirection::BOTTOM_UP;
-        m_FontConfig.width = 2048;
+        m_FontConfig.width = 4096;
         m_FontConfig.height = 2048;
         m_FontConfig.emSize = 256;
         m_FontConfig.pxRange = 0;

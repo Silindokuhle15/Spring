@@ -202,7 +202,7 @@ Set(SOURCE_FILES
 	"Editor/Layer.cpp"
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
- "Core/FontMgr/FontMgr.h" "Core/FontMgr/FontMgr.cpp" "Core/Engine/TextField.h" "Core/Engine/TextField.cpp")
+ "Core/FontMgr/FontMgr.h" "Core/FontMgr/FontMgr.cpp" "Core/Engine/TextField.h" "Core/Engine/TextField.cpp" "Core/Text/Label.h" "Core/Text/Label.cpp")
 
 ## BUILD LUA
 set(LIB_NAME

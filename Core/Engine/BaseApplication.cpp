@@ -117,11 +117,11 @@ void BaseApplication::OnUpdate()
             delta = m->m_WheelDelta;
             if (delta > 0) 
             {
-                m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveUp();
+                //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveUp();
             }
             else
             {
-                m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveDown();
+                //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveDown();
             }
             break;
 
@@ -152,22 +152,22 @@ void BaseApplication::OnUpdate()
             break;
         // KEYBOARD
         case EventID::A:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveLeft();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveLeft();
             break;
         case EventID::D:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveRight();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveRight();
             break;
         case EventID::Q:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveBackward();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveBackward();
             break;
         case EventID::S:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveDown();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveDown();
             break;
         case EventID::W:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveUp();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveUp();
             break;
         case EventID::Z:
-            m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveForward();
+            //m_pUILayer<WINDOW_BASE>->m_ActiveCamera.MoveForward();
             break;
         case EventID::ESCAPE:
             BaseApplication::ExitWindow = true;

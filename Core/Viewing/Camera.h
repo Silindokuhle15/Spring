@@ -1,5 +1,4 @@
 #pragma once
-//#include "Common.h"
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 #include "TimeStep.h"
@@ -28,21 +27,20 @@ public:
 	virtual glm::vec3 GetEye() const { return m_eye; }
 	virtual void SetCenter(glm::vec3 new_pos) { m_center = new_pos; }
 	virtual void SetEye(glm::vec3 new_dir) { m_eye = new_dir; }
-	virtual glm::mat4 GetV() { return m_View; }
+	virtual glm::mat4 GetV() const { return m_View; }
 	
 	virtual void SetWidth(int width) { m_Width = width; }
 	virtual void SetHeight(int height) { m_Height = height; }
 	virtual int GetWidth() const { return m_Width; }
 	virtual int GetHeight() const { return m_Height; }
 
-	virtual glm::vec3 GetLookDirection() const { return glm::normalize(m_center - m_eye); }
-
-
 	virtual void OnInit()
 	{
 		m_AspectRatio = float(m_Width) / m_Height;
 		m_View = glm::lookAt(m_eye, m_center, m_up);
 	}
+
+	/*
 
 	virtual void MoveForward() 
 	{
@@ -79,6 +77,7 @@ public:
 		auto dr =glm::normalize(glm::vec3(a, -b, dz));
 		m_eye = m_center + dr * r * m_Speed *float(m_Delta);
 	}
+	*/
 	//virtual void Focus(glm::vec3 rot_dir) = 0;
 
 	virtual void OnUpdate(TimeStep delta_time) 
@@ -87,6 +86,7 @@ public:
 	}
 
 	CameraView() :
+		m_AspectRatio{1.0f},
 		m_View{glm::mat4(1.0f)}
 	{
 

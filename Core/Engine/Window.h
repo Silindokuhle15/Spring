@@ -83,7 +83,6 @@ public:
 class Win32Window : public BaseWindowClass<Win32Window>
 {
 public:
-	//const char* CLASS_NAME = "Win32Window";
 	HDC m_Hdc;
 	HGLRC m_Hrc;
 	TimeStep ts;
@@ -115,8 +114,5 @@ protected:
 	long long milliseconds_now();
 
 private:
-	// FRAMEBUFFERS
-	//OpenGLFrameBuffer m_DrawFrame;
-	//OpenGLFrameBuffer m_ReadFrame;
 };
 

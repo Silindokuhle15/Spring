@@ -18,6 +18,13 @@ public:
 
 	}
 
+	Label(const std::vector<int> glyphMap, int64_t separator, int64_t x, int64_t y, uint64_t width, uint64_t height, uint32_t borderWidth, const Alignment& alignment)
+		:m_Separator{separator}, m_PosX{ x }, m_PosY{ y }, m_Width{ width }, m_Height{ height }, m_BorderWidth{ borderWidth }, m_Alignment{ alignment }
+	{
+		Format(glyphMap);
+	}
+	void Format(const std::vector<int>& glyphMap);
+
 	const std::string& GetText() const;
 	void SetText(const std::string& text);
 
@@ -40,7 +47,9 @@ public:
 	void SetAlignment(const Alignment& alignment);
 
 private:
+	std::vector<std::vector<int>> m_FormattedIndices;
 	std::string m_Text;
+	int64_t m_Separator;
 	int64_t m_PosX;
 	int64_t m_PosY;
 	uint64_t m_Width;

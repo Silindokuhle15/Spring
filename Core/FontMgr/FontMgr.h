@@ -85,7 +85,8 @@ public:
         m_FontConfig.grid.rows = 48;
         m_FontConfig.grid.fixedOriginX = false;
         m_FontConfig.grid.fixedOriginY = true;
-        m_FontConfig.edgeColoring = &msdfgen::edgeColoringByDistance;
+        //m_FontConfig.edgeColoring = &msdfgen::edgeColoringByDistance;
+        m_FontConfig.edgeColoring = &msdfgen::edgeColoringInkTrap;
         m_FontConfig.expensiveColoring = true;
         m_FontConfig.coloringSeed = 2657987;
 

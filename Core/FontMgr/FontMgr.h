@@ -56,6 +56,7 @@ public:
         return m_FontAtlasBitmap;
     }
     msdfgen::GlyphIndex FindGlyphIndexFromChar(const char& c);
+    void SaveAtlas(const std::string& filename);
     FontMgr(std::string str = ""):
         m_FreetypeHandle{nullptr},
         m_FontHandle{nullptr},
@@ -72,7 +73,7 @@ public:
         m_FontConfig.imageFormat = msdf_atlas::ImageFormat::FL32;
         m_FontConfig.yDirection = msdf_atlas::YDirection::BOTTOM_UP;
         m_FontConfig.width = 4096;
-        m_FontConfig.height = 2048;
+        m_FontConfig.height = 4096;
         m_FontConfig.emSize = 256;
         m_FontConfig.pxRange = 0;
         m_FontConfig.angleThreshold = 3.0;

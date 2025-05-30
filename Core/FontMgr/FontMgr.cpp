@@ -66,3 +66,8 @@ msdfgen::GlyphIndex FontMgr::FindGlyphIndexFromChar(const char& c)
     msdfgen::getGlyphIndex(glyphIndex, m_FontHandle, c);
     return glyphIndex;
 }
+
+void FontMgr::SaveAtlas(const std::string& filename)
+{
+    msdfgen::saveRgba(m_FontAtlasBitmap, filename.c_str());
+}

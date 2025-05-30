@@ -40,53 +40,18 @@ public:
 		m_View = glm::lookAt(m_eye, m_center, m_up);
 	}
 
-	/*
-
-	virtual void MoveForward() 
-	{
-		m_eye += glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
-	}
-	virtual void MoveBackward() 
-	{
-		m_eye -= glm::vec3(0.0, 0.0, 1.0) * m_Speed * (float)m_Delta;
-	}
-	virtual void MoveRight() 
-	{
-		m_eye += glm::vec3(1.0, 0.0, 0.0) * m_Speed * (float)m_Delta;
-	}
-	virtual void MoveLeft() 
-	{
-		m_eye -= glm::vec3(1.0, 0.0, 0.0) * m_Speed * (float)m_Delta;
-	}
-	virtual void MoveUp() 
-	{
-		m_eye += glm::vec3(0.0, 1.0, 0.0) * m_Speed * (float)m_Delta;
-	}
-	virtual void MoveDown() 
-	{
-		m_eye -= glm::vec3(0.0, 1.0, 0.0) * m_Speed * (float)m_Delta;
-	}
-
-	virtual void Rotate(glm::vec3 rot_dir)
-	{
-		float a = rot_dir.x, b = rot_dir.y, r = 50.0;
-
-		auto th2 = b;
-		auto ph2 = a;
-		auto dz = sin(th2) - cos(ph2);
-		auto dr =glm::normalize(glm::vec3(a, -b, dz));
-		m_eye = m_center + dr * r * m_Speed *float(m_Delta);
-	}
-	*/
-	//virtual void Focus(glm::vec3 rot_dir) = 0;
-
 	virtual void OnUpdate(TimeStep delta_time) 
 	{
 		m_Delta = delta_time;
 	}
 
 	CameraView() :
+		m_Width{1920},
+		m_Height{1080},
 		m_AspectRatio{1.0f},
+		m_eye{ 0.0f, 0.0f, 0.0f },
+		m_center{0.0f, 0.0f, 1.0f},
+		m_up{0.0f, 1.0f, 0.0},
 		m_View{glm::mat4(1.0f)}
 	{
 
@@ -105,7 +70,7 @@ public:
 class Camera : public CameraView, public _Projection
 {
 public:
-	void Present()
+	virtual void Present()
 	{
 		switch(m_ProjectionType)
 		{	
@@ -117,12 +82,12 @@ public:
 			m_ProjectionMatrix = glm::perspective(glm::radians(75.f), m_AspectRatio, 0.010f, 1000.0f);
 			break;
 		}
-		CameraView::m_View = glm::lookAt(m_center, m_eye, m_up);
+		CameraView::m_View = glm::lookAt(m_eye, m_center,  m_up);
 	}
 	Camera() {}
 	Camera(int width, int height, float zFar, float zNear)
 	{
 	}
-	glm::mat4 GetVP() const { return m_ProjectionMatrix * m_View; }
+	virtual glm::mat4 GetVP() const { return m_ProjectionMatrix * m_View; }
 
 };

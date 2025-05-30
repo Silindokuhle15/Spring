@@ -1,32 +1,18 @@
 #include "ObjectLoader.h"
 
-
-bool CheckDescription(std::string str1, std::string str2)
-{
-    return (bool)str1.compare(str2) == 0 ? true : false;
+std::string GetDirectoryFromPath(const std::string& filepath) {
+	size_t found = filepath.find_last_of("/\\");
+	return (found != std::string::npos) ? filepath.substr(0, found + 1) : "";
 }
 
-bool InDescriptorSet(const char* disc, std::vector<const char*> descriptors)
-{
-    for (auto& i : descriptors)
-    {
-        if (CheckDescription(i, disc))
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
 int ObjectLoader::LoadObjectFromFile(const char* file_path)
 {
-
     return 0;
 }
 
 int ObjectLoader::LoadMaterialFromFile(const char* file_path)
 {
-   
     return 0;
 }
 
@@ -35,67 +21,30 @@ void ObjectLoader::LoadObject(const char* file_path)
     int ret = LoadObjectFromFile(file_path);
 }
 
-void ObjectLoader::ExtractDump(std::string dump, uint64_t object_index)
-{
-    /*
-    std::istringstream iss(dump);
-    unsigned int vindex;
-    unsigned int tindex;
-    unsigned int nindex;
-
-    iss >> vindex;
-    m_VertexIndices[object_index].push_back(--vindex);
-    
-    char delim;
-    iss.read(&delim, 1);
-    
-    if (iss >> tindex) {
-        m_TextureIndices[object_index].push_back(--tindex);
-    }
-    else {
-        m_TextureIndices[object_index].push_back(0x00000000);
-    }
-    iss.read(&delim, 1);
-   
-    iss >> nindex;
-    m_NormalIndices[object_index].push_back(--nindex);
-    //iss.read(&delim, 1);
-
-    */
-    dump = dump.substr(2, dump.length());
-    auto string_words = getWords(dump, " ");
-    char* endptr;
-    for (auto& word_temp : string_words)
-    {
-        auto digits = getWords(word_temp, "/");
-        switch (digits.size())
-        {
-            /*
-        case 2:
-            m_VertexIndices.push_back((strtoul(digits[0].c_str(), &endptr, 10)) - 1);
-            m_TextureIndices.push_back(0xFFFFFFFF);
-            m_NormalIndices.push_back((strtoul(digits[1].c_str(), &endptr, 10)) - 1);
-            break;
-            */
-        case 3:
-            m_VertexIndices[object_index].push_back((strtoul(digits[0].c_str(), &endptr, 10)) - 1);
-            m_TextureIndices[object_index].push_back((strtoul(digits[1].c_str(), &endptr, 10)) - 1);
-            m_NormalIndices[object_index].push_back((strtoul(digits[2].c_str(), &endptr, 10)) - 1);
-            break;
-        }
-    }
+void ObjectLoader::ExtractDump(const std::string& dump_line, uint64_t object_index) {
+	auto string_words = getWords(dump_line.substr(2), " ");
+	for (const auto& word : string_words) {
+		auto parts = getWords(word, "/");
+		if (parts.size() >= 1 && !parts[0].empty())
+			m_VertexIndices[object_index].push_back(std::stoul(parts[0]) - 1);
+		if (parts.size() >= 2 && !parts[1].empty())
+			m_TextureIndices[object_index].push_back(std::stoul(parts[1]) - 1);
+		if (parts.size() >= 3 && !parts[2].empty())
+			m_NormalIndices[object_index].push_back(std::stoul(parts[2]) - 1);
+	}
 }
 
-std::vector<std::string> ObjectLoader::getWords(std::string s, const char* delim) {
-    std::vector<std::string> res;
-    int pos = 0;
-    while (pos < s.size()) {
-        pos = s.find(delim);
-        res.push_back(s.substr(0, pos));
-        s.erase(0, pos + 1); // 3 is the length of the delimiter, "%20"
-    }
-    res.push_back(s);
-    return res;
+std::vector<std::string> ObjectLoader::getWords(const std::string& s, const char* delim) {
+	std::vector<std::string> tokens;
+	size_t start = 0, end;
+	while ((end = s.find(delim, start)) != std::string::npos) {
+		if (end != start)
+			tokens.push_back(s.substr(start, end - start));
+		start = end + strlen(delim);
+	}
+	if (start < s.length())
+		tokens.push_back(s.substr(start));
+	return tokens;
 }
 
 int FBXObjectLoader::LoadObjectFromFile(const char* file_path)
@@ -499,199 +448,154 @@ int FBXObjectLoader::LoadObjectFromFile(const char* file_path)
     return 0;
 }
 
-int OBJObjectLoader::LoadObjectFromFile(const char* file_path)
-{
-	unsigned int id = 1;
-	// Read the file
-	std::string whole_file;
-	std::ifstream is(file_path, std::ios::binary | std::ios::in);
-
-	if (!is.is_open())
-	{
-		std::cerr << "Failed to open the file\n" << file_path << "us not a vaild file" << std::endl;
-		std::flush(std::cerr);
+int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
+	std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open .obj file: " << file_path << "\n";
+		return -1;
 	}
 
-	// Now all the data is stored in whole_file
-	// Now Extract the data and do the thingies
-	std::string temp = "";
-	std::string c_temp = "";
-	//is >> std::ws; // skip whitespaces
+	std::streamsize size = file.tellg();
+	file.seekg(0);
+	std::string buffer(size, '\0');
+	if (!file.read(&buffer[0], size)) {
+		std::cerr << "Failed to read .obj file into memory.\n";
+		return -1;
+	}
 
-	std::string description;
-	float x, y, z;
-	float u, v;
+	std::istringstream in(buffer);
+	std::string line;
+	int64_t object_index = -1;
+	size_t material_index = 0;
+	std::unordered_map<std::string, size_t> materialLookup;
+	std::string objDir = GetDirectoryFromPath(file_path);
 
-	uint64_t object_index = 0;
-	auto material_index = 0;
+	while (std::getline(in, line)) {
+		auto words = ObjectLoader::getWords(line, " ");
+		if (words.empty()) continue;
+		const std::string& type = words[0];
+		char* endptr;
 
-	std::vector<const char*> descriptorSet = { "v", "vt", "vn","f", "#", "o", "s", "usemtl", "mtllib" };
+		if (type == "mtllib" && words.size() >= 2) {
+			std::string fullPath = objDir + words[1];
+			m_MaterialPaths.push_back(fullPath);
+			LoadMaterialFromFile(fullPath.c_str());
 
-	for (std::string str = ""; std::getline(is, str);)
-	{
-		//auto index = str.find(" ");
-		//description = str.substr(0, index);
-		auto words = getWords(str, " ");
-		description = words[0];
-
-		if (CheckDescription(description, "mtllib"))
-		{
-			m_MaterialPaths.push_back(words[1]);
-			LoadMaterialFromFile(m_MaterialPaths[m_MaterialPaths.size() - 1].c_str());
-		}
-		if (CheckDescription(description, "usemtl"))
-		{
-			auto& mat_name = words[1];
-			for (size_t index = 0; index < m_MaterialNames.size(); index++)
-			{
-				if (m_MaterialNames[index] == mat_name)
-				{
-					material_index = index;
-				}
+			for (size_t i = 0; i < m_MaterialNames.size(); ++i) {
+				materialLookup[m_MaterialNames[i]] = i;
 			}
-
 		}
-		else  if (CheckDescription(description, "o"))
-		{
-			// CREATE NEW MESH AND THEN BASH THEM TOGETHER
-
+		else if (type == "usemtl" && words.size() >= 2) {
+			auto it = materialLookup.find(words[1]);
+			if (it != materialLookup.end()) {
+				material_index = it->second;
+			}
+		}
+		else if (type == "o" && words.size() >= 2) {
 			m_ObjectNames.push_back(words[1]);
-			m_Positions.push_back({});
-			m_TexCoords.push_back({});
-			m_VertexIDs.push_back({});
-			m_Normals.push_back({});
-
-			m_VertexIndices.push_back({});
-			m_TextureIndices.push_back({});
-			m_NormalIndices.push_back({});
-			object_index++;
+			m_Positions.emplace_back();
+			m_TexCoords.emplace_back();
+			m_VertexIDs.emplace_back();
+			m_Normals.emplace_back();
+			m_VertexIndices.emplace_back();
+			m_TextureIndices.emplace_back();
+			m_NormalIndices.emplace_back();
+			++object_index;
 		}
-		else if (CheckDescription(description, "s"))
-		{
+		else if (type == "s" && words.size() >= 2) {
 			m_Surfaces.push_back(words[1]);
 		}
-		else if (CheckDescription(description, "v"))
-		{
-			// Vertex Position
-			x = std::stof(words[1]);
-			y = std::stof(words[2]);
-			z = std::stof(words[3]);
-			m_Positions[object_index - 1].push_back(glm::vec3(x, y, z));
-			//m_VertexIDs[object_index - 1].push_back(material_index);
+		else if (type == "v" && words.size() >= 4) {
+			float x = strtof(words[1].c_str(), &endptr);
+			float y = strtof(words[2].c_str(), &endptr);
+			float z = strtof(words[3].c_str(), &endptr);
+			m_Positions[object_index].emplace_back(x, y, z);
 		}
-		else if (CheckDescription(description, "vt"))
-		{
-			// Texture Coordinate
-			u = std::stof(words[1]);
-			v = std::stof(words[2]);
-			m_TexCoords[object_index - 1].push_back(glm::vec2(u, v));
+		else if (type == "vt" && words.size() >= 3) {
+			float u = strtof(words[1].c_str(), &endptr);
+			float v = strtof(words[2].c_str(), &endptr);
+			m_TexCoords[object_index].emplace_back(u, v);
 		}
-		else if (CheckDescription(description, "vn"))
-		{
-			// Vertex Normal
-			x = std::stof(words[1]);
-			y = std::stof(words[2]);
-			z = std::stof(words[3]);
-			m_Normals[object_index - 1].push_back(glm::vec3(x, y, z));
+		else if (type == "vn" && words.size() >= 4) {
+			float x = strtof(words[1].c_str(), &endptr);
+			float y = strtof(words[2].c_str(), &endptr);
+			float z = strtof(words[3].c_str(), &endptr);
+			m_Normals[object_index].emplace_back(x, y, z);
 		}
-		else if (CheckDescription(description, "f"))
-		{
-			ExtractDump(str, object_index - 1);
-			m_VertexIDs[object_index - 1].push_back(material_index);
-			m_VertexIDs[object_index - 1].push_back(material_index);
-			m_VertexIDs[object_index - 1].push_back(material_index);
+		else if (type == "f") {
+			ExtractDump(line, object_index);
+			m_VertexIDs[object_index].insert(m_VertexIDs[object_index].end(), 3, material_index);
 		}
-
-		is.clear();
 	}
+
 	return 0;
 }
 
-int OBJObjectLoader::LoadMaterialFromFile(const char* file_path)
-{
-	// Read the file
-	std::ifstream is(file_path, std::ios::binary | std::ios::in);
 
-	if (!is.is_open())
-	{
-		std::cerr << "Failed to open the file\n" << file_path << " is not a vaild file" << std::endl;
-		std::flush(std::cerr);
+int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
+	std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open .mtl file: " << file_path << "\n";
+		return -1;
 	}
 
-	// Now Extract the data and do the thingies
-	//is >> std::ws; // skip whitespaces
+	std::streamsize size = file.tellg();
+	file.seekg(0);
+	std::string buffer(size, '\0');
+	if (!file.read(&buffer[0], size)) {
+		std::cerr << "Failed to read .mtl file into memory.\n";
+		return -1;
+	}
 
-	std::string description;
-	float x, y, z;
-	const char* descriptors[] = { "newmtl", "Ka", "Kd", "Ks", "Ni", "Ns", "d", "illum" };
-	auto object_index = 0;
+	std::istringstream in(buffer);
+	std::string line;
+	uint64_t materialID = 0;
+	char* endptr = nullptr;
 
-	for (std::string str; std::getline(is, str);)
-	{
-		auto words = getWords(str, " ");
-		description = words[0];
-		//is >> description;
-		if (CheckDescription(description, "newmtl"))
-		{
-			m_Materials.push_back(Material(object_index));
+	while (std::getline(in, line)) {
+		auto words = ObjectLoader::getWords(line, " ");
+		if (words.empty()) continue;
+
+		const std::string& type = words[0];
+
+		if (type == "newmtl" && words.size() >= 2) {
 			m_MaterialNames.push_back(words[1]);
-			object_index++;
+			m_Materials.emplace_back(materialID++);
 		}
-		if (CheckDescription(description, "Ka"))
-		{
-			// Ambient Color
-			x = std::stof(words[1]);
-			y = std::stof(words[2]);
-			z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_Ka = glm::vec3(x, y, z);
+		else if (type == "Ka" && words.size() >= 4) {
+			m_Materials.back().m_Ka = glm::vec3(
+				strtof(words[1].c_str(), &endptr),
+				strtof(words[2].c_str(), &endptr),
+				strtof(words[3].c_str(), &endptr)
+			);
 		}
-		if (CheckDescription(description, "Kd"))
-		{
-			// Diffuse Color
-			x = std::stof(words[1]);
-			y = std::stof(words[2]);
-			z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_Kd = glm::vec3(x, y, z);
+		else if (type == "Kd" && words.size() >= 4) {
+			m_Materials.back().m_Kd = glm::vec3(
+				strtof(words[1].c_str(), &endptr),
+				strtof(words[2].c_str(), &endptr),
+				strtof(words[3].c_str(), &endptr)
+			);
 		}
-		if (CheckDescription(description, "Ks"))
-		{
-			// Specular Color
-			x = std::stof(words[1]);
-			y = std::stof(words[2]);
-			z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_Ks = glm::vec3(x, y, z);
+		else if (type == "Ks" && words.size() >= 4) {
+			m_Materials.back().m_Ks = glm::vec3(
+				strtof(words[1].c_str(), &endptr),
+				strtof(words[2].c_str(), &endptr),
+				strtof(words[3].c_str(), &endptr)
+			);
 		}
-		if (CheckDescription(description, "Ni"))
-		{
-			// Refractive Index
-			x = std::stof(words[1]);
-			//y = std::stof(words[2]);
-			//z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_Ni = x;
+		else if (type == "Ns" && words.size() >= 2) {
+			m_Materials.back().m_Ns = strtof(words[1].c_str(), &endptr);
 		}
-		if (CheckDescription(description, "Ns"))
-		{
-			// Refractive Index
-			x = std::stof(words[1]);
-			//y = std::stof(words[2]);
-			//z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_Ns = x;
+		else if (type == "Ni" && words.size() >= 2) {
+			m_Materials.back().m_Ni = strtof(words[1].c_str(), &endptr);
 		}
-		if (CheckDescription(description, "d"))
-		{
-			x = std::stof(words[1]);
-			//y = std::stof(words[2]);
-			//z = std::stof(words[3]);
-			m_Materials[object_index - 1].m_d = x;
+		else if (type == "d" && words.size() >= 2) {
+			m_Materials.back().m_d = strtof(words[1].c_str(), &endptr);
 		}
-		if (CheckDescription(description, "illum"))
-		{
-			x = std::stof(words[1]);
-			//y = std::stof(words[2]);
-			//z = std::stof(words[3]);
-			//m_Materials[object_index-1].m_illum = x;
+		else if (type == "illum" && words.size() >= 2) {
+			m_Materials.back().m_illum = strtof(words[1].c_str(), &endptr);
 		}
-		else continue;
 	}
+
 	return 0;
 }

@@ -1,6 +1,11 @@
 #include "Label.h"
 #include <vector>
 
+const std::vector<Square>& Label::GetGlyphBoxes() const
+{
+	return m_GlyphBoxes;
+}
+
 void Label::Format(const std::vector<int>& glyphMap)
 {
 	std::vector<int> currentLine;
@@ -11,75 +16,81 @@ void Label::Format(const std::vector<int>& glyphMap)
 	auto iter = glyphMap.begin();
 	while (iter != glyphMap.end())
 	{
-		auto glyphIndex = *iter;
-		while (!(glyphIndex == m_Separator)) // Extract all glyph indices until the separator
+		while (!(*iter == m_Separator)) // Extract all glyph indices until the separator
 		{
-			currentWord.push_back(glyphIndex);
+			currentWord.push_back(*iter);
+			iter++;
+			if (iter == glyphMap.end())
+			{
+				break;
+			}
 		}// Now we have whole word
-		while(currentWord.size() > availableWidth)
+		while (currentWord.size() > availableWidth)
 		{
 			// Handle the word that exceeds the width of the label
 			std::vector<int> temp;
-			int index = 0;
-			for (auto erase_iter = currentWord.begin(); index < availableWidth; erase_iter++)
+			std::vector<int> remainder;
+			for (size_t index = 0; index < availableWidth; index++)
 			{
 				temp.push_back(currentWord[index]);
-				currentWord.erase(erase_iter);
-				index++;
 			}
+			int index = 0;
+			for (size_t index = availableWidth; index < currentWord.size(); index++)
+			{
+				remainder.push_back(currentWord[index]);
+			}
+			currentWord = remainder;
+			currentWord.shrink_to_fit();
 			if (!(temp.empty()))
 			{
 				m_FormattedIndices.push_back(temp);
-				currentWord.shrink_to_fit();
 			}
+			temp.clear();
+			remainder.clear();
+		}
 
-			// Check if adding the current word exceeds the available width for the current line
-			if (currentLine.size() + currentWord.size() + 1 > availableWidth)
+		// Check if adding the current word exceeds the available width for the current line
+		if (currentLine.size() + currentWord.size() + 1 > availableWidth)
+		{
+			m_FormattedIndices.push_back(currentLine);
+			currentLine.clear();
+			currentLine = currentWord;
+		}
+		else
+		{
+			if (!currentLine.empty())
 			{
-				m_FormattedIndices.push_back(currentLine);
-				currentLine.clear();
-				currentLine = currentWord;
+				currentLine.push_back(m_Separator);
+			}
+			for (auto insert_iter = currentWord.begin(); insert_iter != currentWord.end(); insert_iter++)
+			{
+				currentLine.push_back(*insert_iter);
+			}
+			currentWord.clear();
+			if (iter == glyphMap.end())
+			{
+				break;
 			}
 			else
 			{
-				if (!currentLine.empty())
-				{
-					currentLine.push_back(m_Separator);
-				}
-				for (auto insert_iter = currentWord.begin(); insert_iter != currentWord.end(); insert_iter++)
-				{
-					currentLine.push_back(*insert_iter);
-				}
+				iter++;
 			}
 		}
-
-
 	}
-
 	if (!currentLine.empty())
 	{
 		m_FormattedIndices.push_back(currentLine);
 	}
 }
 
-const std::string& Label::GetText() const
+const std::vector<int>& Label::GetGlyphArray() const
 {
-
-	std::vector<int> temp{ 0, 1, 3, 3, 4, 5,6, 7 };
-	auto iter = temp.begin();
-	
-	for (auto iter = temp.begin(); iter != temp.end(); iter++)
-	{
-
-
-	}
-
-	return m_Text;
+	return m_GlyphArray;
 }
 
-void Label::SetText(const std::string& text)
+void Label::SetGlyphArray(const std::vector<int>& glyphs)
 {
-	m_Text = text;
+	m_GlyphArray = glyphs;
 }
 
 const int64_t Label::GetX() const
@@ -140,4 +151,48 @@ const Alignment Label::GetAlignment() const
 void Label::SetAlignment(const Alignment& alignment)
 {
 	m_Alignment = alignment;
+}
+
+void Label::GenerateGlyphBoxes()
+{
+	double xScale = 1.0;
+	double yScale = 3.0;
+	double z_offset = 0.1;
+
+	double spacingX = 0.2;
+	double spacingY = 0.1;
+
+	for (size_t row = 0; row < m_FormattedIndices.size(); row++)
+	{
+		for (size_t col = 0; col < m_FormattedIndices[row].size(); col++)
+		{
+			// Place the Sqaures
+			auto glyphIndex = m_FormattedIndices[row][col];
+			float id = static_cast<float>(glyphIndex);
+
+			double x_offset = static_cast<float>(col * xScale) - 0.5* m_FormattedIndices[row].size();
+			double y_offset = static_cast<float>(row * yScale);
+
+			x_offset += (col == 0 ? 0.0 : spacingX);
+			y_offset += (row == 0 ? 0.0 : spacingY);
+
+			double x_scale = 0.1;
+			double y_scale = 0.1;
+			double z_scale = 0.1;
+
+			Square glyphBox;
+			glyphBox.OnInit();
+			glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(x_scale, y_scale, z_scale));
+			transform = glm::translate(transform, glm::vec3(x_offset, y_offset, z_offset));
+
+			glyphBox.SetTransform(transform);
+			glyphBox.SetColor(glm::vec3(1.0f));
+			for (auto& v : glyphBox.m_V)
+			{
+				v.ID = id;
+			}
+
+			m_GlyphBoxes.push_back(glyphBox);
+		}
+	}
 }

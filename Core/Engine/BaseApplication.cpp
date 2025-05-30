@@ -1,12 +1,10 @@
 #include "BaseApplication.h"
 
 std::shared_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
-template<class T>
-std::shared_ptr<UILayer<T>> BaseApplication::m_pUILayer = nullptr;
+std::shared_ptr<UILayer<Win32Window>> BaseApplication::m_pUILayer = nullptr;
 std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
 
-template<class T>
-T * BaseApplication::m_Window = nullptr;
+Win32Window * BaseApplication::m_Window = nullptr;
 
 TimeStep BaseApplication::ts;
 bool BaseApplication::ExitWindow = false;
@@ -16,11 +14,11 @@ using WINDOW_BASE = Win32Window;
 
 void BaseApplication::Run()
 {
-    WINDOW_BASE AppWindow(1920, 1080, "Spring Editor");
+    Win32Window AppWindow(1920, 1080, "Spring Editor");
 
-    m_Window<WINDOW_BASE> = &AppWindow;
+    m_Window = &AppWindow;
 
-    m_Window<WINDOW_BASE>->SetUpForRendering();
+    m_Window->SetUpForRendering();
 
     //TestMyFont();
 
@@ -42,8 +40,8 @@ void BaseApplication::Run()
     ImGui_Layer.LoadScene(pscene);
     //ImGui_Layer.CreateSceneObjects();
 
-    BaseApplication::m_pUILayer<WINDOW_BASE> = std::shared_ptr<UILayer<WINDOW_BASE>>(&ImGui_Layer);
-    BaseApplication::m_pUILayer<WINDOW_BASE>->OnInit();
+    BaseApplication::m_pUILayer = std::shared_ptr<UILayer<WINDOW_BASE>>(&ImGui_Layer);
+    BaseApplication::m_pUILayer->OnInit();
     
     BaseApplication::m_Scene = pscene;
     Renderer OpenGLrenderer;
@@ -56,31 +54,31 @@ void BaseApplication::Run()
 
     while (!BaseApplication::ExitWindow)
     {
-        m_Window<WINDOW_BASE>->StartTimer();
-        BaseApplication::m_pUILayer<WINDOW_BASE>->BeginFrame();
+        m_Window->StartTimer();
+        BaseApplication::m_pUILayer->BeginFrame();
 
         BaseApplication::m_pActiveRenderer->BeginFrame();
 
         BaseApplication::m_pActiveRenderer->OnRender();
-        BaseApplication::m_pUILayer<WINDOW_BASE>->Enable();
+        BaseApplication::m_pUILayer->Enable();
 
-        m_Window<WINDOW_BASE>->EndTimer();
-        m_Window<WINDOW_BASE>->OnUpdate();
+        m_Window->EndTimer();
+        m_Window->OnUpdate();
 
-        m_Window<WINDOW_BASE>->ts = 20.f / 60.0f;
-        ts = m_Window<WINDOW_BASE>->ts;
+        m_Window->ts = 20.f / 60.0f;
+        ts = m_Window->ts;
  
         BaseApplication::m_pActiveRenderer->OnUpdate(ts);
         
-        BaseApplication::OnUpdate<WINDOW_BASE>();
+        BaseApplication::OnUpdate();
 
-        BaseApplication::m_pUILayer<WINDOW_BASE>->OnUpdate(ts);
+        BaseApplication::m_pUILayer->OnUpdate(ts);
 
         BaseApplication::m_pActiveRenderer->EndFrame();
 
-        BaseApplication::m_pUILayer<WINDOW_BASE>->EndFrame();
+        BaseApplication::m_pUILayer->EndFrame();
 
-        m_Window<WINDOW_BASE>->SwapBuffer();
+        m_Window->SwapBuffer();
     }
 
     ShutDown();
@@ -88,13 +86,12 @@ void BaseApplication::Run()
 
 void BaseApplication::ShutDown()
 {
-    m_Window<WINDOW_BASE> = nullptr;
+    m_Window = nullptr;
 }
 
-template<class T>
 void BaseApplication::OnUpdate()
 {
-    for (auto v : m_Window<T>->m_SceneEventQueue.m_Queue)
+    for (auto v : m_Window->m_SceneEventQueue.m_Queue)
     {
         MouseWheel* m = nullptr;
         MouseMove* mv = nullptr;
@@ -131,22 +128,22 @@ void BaseApplication::OnUpdate()
             {
                 if (mv->GetY() / 1080 < 0.5)
                 {
-                    m_pUILayer<WINDOW_BASE>->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    m_pUILayer->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
                 else
                 {
-                    m_pUILayer<WINDOW_BASE>->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    m_pUILayer->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
             }
             else {
 
                 if (mv->GetY() / 1080 < 0.5)
                 {
-                    m_pUILayer<WINDOW_BASE>->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    m_pUILayer->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
                 else
                 {
-                    m_pUILayer<WINDOW_BASE>->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    m_pUILayer->m_ActiveCamera.SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
             }
             break;

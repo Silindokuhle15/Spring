@@ -10,9 +10,13 @@ if (POLICY CMP0141)
 endif()
 
 Set(EXEC_NAME
+	"SpringEditor"
+) 
+Set(LIB_NAME
 	"Spring"
 )
 project (${EXEC_NAME})
+#project({${LIB_NAME}})
 
 # GLFW BUILD
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -24,8 +28,9 @@ add_compile_definitions(-DCMAKE_TOOLCHAIN_FILE=VCPKG_ROOT/scripts/buildsystems/v
 add_compile_definitions(-D__LEAN_AND_MEAN__)
 add_compile_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_compile_definitions(-DFBXSDK_SHARED)
-#add_compile_definitions(-DSTB_IMAGE_IMPLEMENTATION)
+add_compile_definitions(-DSTB_IMAGE_IMPLEMENTATION)
 add_compile_definitions(-DGLFW_INCLUDE_NONE)
+add_compile_definitions(-DGLEW_BUILD)
 
 include_directories(
 	"E:/FBX/include/"
@@ -68,8 +73,6 @@ file(GLOB MSDG_ATGN_INC "Dependencies/MSDF/msdf-atlas-gen/*.h")
 file(GLOB MSDG_ATGN_SRC "Dependencies/MSDF/msdf-atlas-gen/*.cpp")
 
 Set(SOURCE_FILES 
-	"SpringEditor.cpp"
-
 	# DEPENDENCIES
 	"Dependencies/GLEW/include/GL/glew.h"
 	"Dependencies/GLEW/src/glew.c"
@@ -105,13 +108,14 @@ Set(SOURCE_FILES
 	"Core/Common/Common.h"
 	"Core/Common/Common.cpp"
 	# ENGINE INCLUDES
-	"Core/Engine/BaseApplication.h"
-	"Core/Engine/BaseApplication.cpp"
+
 
 	"Core/Engine/TimeStep.h"
 	"Core/Engine/TimeStep.cpp"
-	"Core/Engine/Window.h" 
-	"Core/Engine/Window.cpp"
+	"Core/Engine/BaseWin32Window.h" 
+	"Core/Engine/BaseWin32Window.cpp"
+	"Core/Engine/Win32Window.h" 
+	"Core/Engine/Win32Window.cpp"
 	"Core/Engine/NGLFWwindow.h"
 	"Core/Engine/NGLFWwindow.cpp"
 	"Core/Engine/Component.h"
@@ -122,6 +126,14 @@ Set(SOURCE_FILES
 	# EVENTS
 	"Core/Event/Event.h" 
 	"Core/Event/Event.cpp"
+
+	# FONTS
+	"Core/FontMgr/FontMgr.h"
+	"Core/FontMgr/FontMgr.cpp"
+	"Core/Engine/TextField.h"
+	"Core/Engine/TextField.cpp"
+	"Core/Text/Label.h"
+	"Core/Text/Label.cpp"
 
 	# INPUT
 	"Core/Input/InputDevice.h"
@@ -186,8 +198,7 @@ Set(SOURCE_FILES
 	
 	# VIEWING
 	"Core/Viewing/Camera.h"
-	"Core/Viewing/Camera.cpp"
-	
+	"Core/Viewing/Camera.cpp"	
 
 	# APPLICATIONS
 	"Core/Application/Grid.h"
@@ -196,20 +207,35 @@ Set(SOURCE_FILES
 	"Core/Engine/Mesh.cpp"
 	"Core/Application/Square.h"
 	"Core/Application/Square.cpp"
-	
+)
+
+set(EDITOR_SOURCES	
 	# EDITOR 
+	"SpringEditor.cpp"
+	"Core/Engine/BaseApplication.h"
+	"Core/Engine/BaseApplication.cpp"
 	"Editor/Layer.h"
 	"Editor/Layer.cpp"
 	"Editor/UILayer.h"
 	"Editor/UILayer.cpp"
- "Core/FontMgr/FontMgr.h" "Core/FontMgr/FontMgr.cpp" "Core/Engine/TextField.h" "Core/Engine/TextField.cpp" "Core/Text/Label.h" "Core/Text/Label.cpp")
+ )
 
+Set(EXEC_SOURCES
+	${SOURCE_FILES}
+	${EDITOR_SOURCES}
+)
+
+Set(LIB_SOURCES
+	"Editor/Layer.h"
+	"Editor/Layer.cpp"
+	${SOURCE_FILES}
+ "Core/Engine/BaseWin32Window.h" "Core/Engine/BaseWin32Window.cpp")
 ## BUILD LUA
-set(LIB_NAME
+set(LUA_LIB_NAME
 	"lua54"
 )
 set(LUA_LIB_DIR
-	"${PROJECT_SOURCE_DIR}/Dependencies/Lua/${LIB_NAME}.lib"
+	"${PROJECT_SOURCE_DIR}/Dependencies/Lua/${LUA_LIB_NAME}.lib"
 )
 
 SET(FBX_LIB_DIR
@@ -225,20 +251,33 @@ SET(PHYSX_LIB_DIR
 )
 	
 # Add source to this project's executable
-add_executable (${EXEC_NAME} ${SOURCE_FILES} )
+#add_executable (${EXEC_NAME} ${EXEC_SOURCES} )
+add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 
 find_package(OpenGL REQUIRED)
-target_link_libraries(${EXEC_NAME} 
+target_link_libraries(${LIB_NAME} 
 	${OPENGL_gl_LIBRARY}
 	${LUA_LIB_DIR}
 	glfw
 	${FBX_LIB_DIR}
 	${FT_LIB_DIR}
-	#${PHYSX_LIB_DIR}
 )
 
+
+#find_package(OpenGL REQUIRED)
+#target_link_libraries(${EXEC_NAME} 
+#	${OPENGL_gl_LIBRARY}
+#	${LUA_LIB_DIR}
+#	glfw
+#	${FBX_LIB_DIR}
+#	${FT_LIB_DIR}
+#)
+
+
+
 if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET ${EXEC_NAME} PROPERTY CXX_STANDARD 20)
+  #set_property(TARGET ${EXEC_NAME} PROPERTY CXX_STANDARD 20)
+  set_property(TARGET ${LIB_NAME} PROPERTY CXX_STANDARD 20)
 endif()
 
 # TODO: Add tests and install targets if needed.

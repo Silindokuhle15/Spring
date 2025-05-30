@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <vector>
+#include "Square.h"
 
 typedef enum 
 {
@@ -12,21 +14,19 @@ typedef enum
 class Label
 {
 public:
-	Label(const std::string& text, int64_t x, int64_t y, uint64_t width, uint64_t height,uint32_t borderWidth, const Alignment& alignment)
-		: m_Text{ text }, m_PosX{x}, m_PosY{y}, m_Width{width}, m_Height{height}, m_BorderWidth{borderWidth}, m_Alignment{alignment}
-	{
-
-	}
-
-	Label(const std::vector<int> glyphMap, int64_t separator, int64_t x, int64_t y, uint64_t width, uint64_t height, uint32_t borderWidth, const Alignment& alignment)
+	
+	Label(const std::vector<int>& glyphMap, int64_t separator, int64_t x, int64_t y, uint64_t width, uint64_t height, uint32_t borderWidth, const Alignment& alignment)
 		:m_Separator{separator}, m_PosX{ x }, m_PosY{ y }, m_Width{ width }, m_Height{ height }, m_BorderWidth{ borderWidth }, m_Alignment{ alignment }
 	{
 		Format(glyphMap);
+		GenerateGlyphBoxes();
 	}
+
+	const std::vector<Square>& GetGlyphBoxes() const;
 	void Format(const std::vector<int>& glyphMap);
 
-	const std::string& GetText() const;
-	void SetText(const std::string& text);
+	const std::vector<int>& GetGlyphArray() const;
+	void SetGlyphArray(const std::vector<int>& glyphs);
 
 	const int64_t GetX() const;
 	void SetX(const int64_t& x);
@@ -47,8 +47,12 @@ public:
 	void SetAlignment(const Alignment& alignment);
 
 private:
+	void GenerateGlyphBoxes();
+
+private:
+	std::vector<Square> m_GlyphBoxes;
 	std::vector<std::vector<int>> m_FormattedIndices;
-	std::string m_Text;
+	std::vector<int> m_GlyphArray;
 	int64_t m_Separator;
 	int64_t m_PosX;
 	int64_t m_PosY;

@@ -1,6 +1,6 @@
 #pragma once
 #include "Layer.h"
-#include "Window.h"
+#include "Win32Window.h"
 #include "NGLFWwindow.h"
 #include <typeinfo>
 #include "Renderer.h"

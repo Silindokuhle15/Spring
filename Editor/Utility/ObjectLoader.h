@@ -4,6 +4,8 @@
 #include <fbxsdk.h>
 
 
+std::string GetDirectoryFromPath(const std::string& filepath);
+
 struct PerVertex
 {
 	glm::vec3 Position;
@@ -26,11 +28,11 @@ public:
 	std::vector<std::string> m_MaterialNames;
 	std::vector<std::string> m_ObjectNames;
 	std::vector<std::string> m_Surfaces;
-	static std::vector<std::string> getWords(std::string s, const char * delim);
+	static std::vector<std::string> getWords(const std::string& s, const char * delim);
 	virtual int LoadObjectFromFile(const char* file_path);
 	virtual int LoadMaterialFromFile(const char* file_path);
 
-	void ExtractDump(std::string dump, uint64_t object_index);
+	void ExtractDump(const std::string& dump, uint64_t object_index);
 
 public:
 	virtual void LoadObject(const char* file_path);

@@ -1,5 +1,5 @@
 #pragma once
-#include "Window.h"
+#include "Win32Window.h"
 #include <GLFW/glfw3.h>
 
 class NGLFWwindow : public BaseWindowClass<NGLFWwindow>

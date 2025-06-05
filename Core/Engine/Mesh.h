@@ -1,42 +1,21 @@
 #pragma once
 #include "Utility/ObjectLoader.h"
-#include "Component.h"
-class Mesh : public virtual Component
+
+class Mesh
 {
 public:
-    Mesh() :
-        m_Color{ glm::vec3(1.0f, 1.0f, 1.0f) },
-        m_Transform{ glm::mat4(1.0f) }
+    Mesh()
     {}
     Mesh(std::string file_path) :
-        m_OBJFilePath{ file_path },
-        m_Color{glm::vec3(1.0f, 1.0f, 1.0f)},
-        m_Transform{glm::mat4(1.0f)}
+        m_OBJFilePath{ file_path }
     {
         OnInit();
     }
-    Mesh(std::vector<Vertex> m_points, glm::mat4 transform=glm::mat4(1.0f)):
-        m_Transform{ transform},
-        m_Color{ glm::vec3(1.0f, 1.0f, 1.0f) }
+    Mesh(std::vector<Vertex> m_points)
     {
         this->m_V = m_points;
-        this->NumIndices = static_cast<uint32_t>(m_points.size());
-        this->NumVertices = static_cast<uint32_t>(m_points.size());
     }
-    void OnInit() override;
-    virtual void OnUpdate(TimeStep ts);
-
-    Component& operator() () {
-        return *this;
-    }
-
-    static Mesh Batch(std::vector<Mesh>& meshes);
-
-    unsigned int NumVertices;
-    unsigned int NumIndices;
-    volatile float m_Speed = 1.0;
-    glm::mat4 m_Transform;
-    glm::vec3 m_Color;
+    void OnInit();
 
     std::vector<glm::vec3 > m_Positions;
     std::vector<glm::vec2 > m_TexCoords;
@@ -49,17 +28,6 @@ public:
     std::vector<Material> m_Materials;
 
     std::vector<Mesh> m_SubMeshes;
-
-    TimeStep m_Ts;
-    virtual void SetTransform(const glm::mat4& transform) noexcept
-    {
-        m_Transform = transform;
-    }
-
-    virtual void SetColor(const glm::vec3& color) noexcept
-    {
-        m_Color = color;
-    }
 
 private:
     std::string m_OBJFilePath;

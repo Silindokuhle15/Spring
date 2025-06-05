@@ -118,11 +118,7 @@ Set(SOURCE_FILES
 	"Core/Engine/Win32Window.cpp"
 	"Core/Engine/NGLFWwindow.h"
 	"Core/Engine/NGLFWwindow.cpp"
-	"Core/Engine/Component.h"
-	"Core/Engine/Component.cpp"
-	"Core/Engine/Character.h"
-	"Core/Engine/Character.cpp"
-	
+		
 	# EVENTS
 	"Core/Event/Event.h" 
 	"Core/Event/Event.cpp"
@@ -130,8 +126,8 @@ Set(SOURCE_FILES
 	# FONTS
 	"Core/FontMgr/FontMgr.h"
 	"Core/FontMgr/FontMgr.cpp"
-	"Core/Engine/TextField.h"
-	"Core/Engine/TextField.cpp"
+	"Core/Text/TextField.h"
+	"Core/Text/TextField.cpp"
 	"Core/Text/Label.h"
 	"Core/Text/Label.cpp"
 
@@ -229,7 +225,8 @@ Set(LIB_SOURCES
 	"Editor/Layer.h"
 	"Editor/Layer.cpp"
 	${SOURCE_FILES}
- "Core/Engine/BaseWin32Window.h" "Core/Engine/BaseWin32Window.cpp")
+	"Core/Engine/BaseWin32Window.h" 
+	"Core/Engine/BaseWin32Window.cpp")
 ## BUILD LUA
 set(LUA_LIB_NAME
 	"lua54"

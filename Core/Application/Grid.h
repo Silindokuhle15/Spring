@@ -9,7 +9,7 @@ public:
     Grid(unsigned int size) : m_Rows{ size }, m_Columns{ size } {}
     Grid(unsigned int rows, unsigned int cols) : m_Rows{ rows}, m_Columns{ cols } {}
 
-    void OnInit() override;
+    void OnInit();
 
 private:
 

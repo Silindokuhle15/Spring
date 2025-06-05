@@ -1,7 +1,7 @@
 #include "Label.h"
 #include <vector>
 
-const std::vector<Square>& Label::GetGlyphBoxes() const
+const std::vector<GlyphBox>& Label::GetGlyphBoxes() const
 {
 	return m_GlyphBoxes;
 }
@@ -11,7 +11,7 @@ void Label::Format(const std::vector<int>& glyphMap)
 	std::vector<int> currentLine;
 	std::vector<int> currentWord;
 
-	int availableWidth = m_Width;
+	int availableWidth = static_cast<int>(m_Width);
 
 	auto iter = glyphMap.begin();
 	while (iter != glyphMap.end())
@@ -60,7 +60,7 @@ void Label::Format(const std::vector<int>& glyphMap)
 		{
 			if (!currentLine.empty())
 			{
-				currentLine.push_back(m_Separator);
+				currentLine.push_back(static_cast<int>(m_Separator));
 			}
 			for (auto insert_iter = currentWord.begin(); insert_iter != currentWord.end(); insert_iter++)
 			{
@@ -180,19 +180,27 @@ void Label::GenerateGlyphBoxes()
 			double y_scale = 0.1;
 			double z_scale = 0.1;
 
-			Square glyphBox;
-			glyphBox.OnInit();
+			GlyphBox glyphBox;
 			glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(x_scale, y_scale, z_scale));
 			transform = glm::translate(transform, glm::vec3(x_offset, y_offset, z_offset));
 
 			glyphBox.SetTransform(transform);
-			glyphBox.SetColor(glm::vec3(1.0f));
-			for (auto& v : glyphBox.m_V)
-			{
-				v.ID = id;
-			}
+			glyphBox.SetGlyphID(id);
 
 			m_GlyphBoxes.push_back(glyphBox);
 		}
 	}
+}
+
+void GlyphBox::SetGlyphID(float id)
+{
+	for (auto& v : m_Box.m_V)
+	{
+		v.ID = id;
+	}
+}
+
+void GlyphBox::SetTransform(const glm::mat4& transform)
+{
+	m_Transform = transform;
 }

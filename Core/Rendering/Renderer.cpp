@@ -191,7 +191,7 @@ void Renderer::UploadToOpenGL()
         {
             GLuint vBufferOffset = 0;                                                      // POSITIONS OFFSET INTO VERTEX ARRAY BUFFER
             GLuint iBufferOffset = 0;
-
+            /*
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             for (size_t bIndex = 0; bIndex < buffer.size(); bIndex++)
             {
@@ -216,17 +216,12 @@ void Renderer::UploadToOpenGL()
                     iBufferOffset += buffer[bIndex].NumIndices;
 
             }
+
+            */
         };
 
     render_mode = GL_TRIANGLE_STRIP;
     std::vector<Mesh> temp_vec;
-
-    
-    for (auto& ch : m_ActiveScene->m_Characters)
-    {
-        auto mesh = ch->GetComponent<Mesh>();
-        temp_vec.push_back(*mesh);
-    }
     
     UploadBuffer3v(temp_vec, render_mode, m_VAO, m_VertexBuffer[0], m_IndexBuffer[0], m_ModelLocation);
 
@@ -292,17 +287,17 @@ void Renderer::OnUpdate(TimeStep ts)
         {
             for (int i = 0; i < buffer.size(); i++)
             {
-                buffer[i].OnUpdate(ts);
+                //buffer[i].OnUpdate(ts);
                 unsigned int model_location = m_ModelLocations[i];
                 unsigned int normal_matrix_location = m_NormalMatrixLocations[i];
 
-                glm::mat4 transform = buffer[i].m_Transform;
-                glm::mat4 model_view = transform * m_ActiveScene->m_pActiveCamera->GetV();
+                //glm::mat4 transform = buffer[i].m_Transform;
+                //glm::mat4 model_view = transform * m_ActiveScene->m_pActiveCamera->GetV();
 
-                glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
+                //glm::mat4 normal_matrix = glm::transpose(glm::inverse(model_view));
 
-                glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
-                glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+                //glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(transform));
+                //glUniformMatrix4fv(normal_matrix_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
             }
 
             // UPDATE THE MATERIALS

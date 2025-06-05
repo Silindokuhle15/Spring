@@ -1,38 +1,6 @@
 #include "Mesh.h"
 
-/*
-auto CalculateCurrentSizeOffset3fv = [](std::vector<std::vector<glm::vec3>>& buffer, size_t index)
-    {
-        size_t temp_size = 0;
-        for (size_t inner_index = 0; inner_index < index; inner_index++)
-        {
-            temp_size += buffer[inner_index].size();
-        }
-        return index > 0 ? temp_size : 0;
-    };
 
-auto CalculateCurrentSizeOffset2fv = [](std::vector<std::vector<glm::vec2>>& buffer, size_t index)
-    {
-        size_t temp_size = 0;
-        for (size_t inner_index = 0; inner_index < index; inner_index++)
-        {
-            temp_size += buffer[inner_index].size();
-        }
-        return index > 0 ? temp_size : 0;
-    };
-
-
-auto CalculateCurrentSizeOffset1fv = [](std::vector<std::vector<unsigned int>>& buffer, size_t index)
-    {
-        size_t temp_size = 0;
-        for (size_t inner_index = 0; inner_index < index; inner_index++)
-        {
-            temp_size += buffer[inner_index].size();
-        }
-        return index > 0 ? temp_size : 0;
-    };
-
-    */
 void Mesh::OnInit() {
     // Extract extension
     auto file_split = ObjectLoader::getWords(m_OBJFilePath, ".");
@@ -83,11 +51,7 @@ void Mesh::OnInit() {
                 sub.m_VertexIndices.push_back(static_cast<unsigned int>(j));
             }
 
-            sub.NumVertices = static_cast<uint32_t>(sub.m_V.size());
-            sub.NumIndices = static_cast<uint32_t>(sub.m_VertexIndices.size());
             sub.m_Materials = m_Materials;
-            sub.SetColor(glm::vec3(1.0f));
-
             m_SubMeshes.push_back(std::move(sub));
         }
 
@@ -114,10 +78,6 @@ void Mesh::OnInit() {
             m_VertexIDs = submesh.m_VertexIDs;
             m_V = submesh.m_V;
 
-            // Set the number of vertices and indices
-            NumVertices = submesh.NumVertices;
-            NumIndices = submesh.NumIndices;
-
             // Optionally copy materials if needed (if not already set)
             if (m_Materials.empty()) {
                 m_Materials = submesh.m_Materials;
@@ -132,7 +92,6 @@ void Mesh::OnInit() {
         FBXObjectLoader ob;
         ob.LoadObjectFromFile(m_OBJFilePath.c_str());
         m_V = ob.m_MeshData;
-        NumIndices = m_V.size();
     }
     else {
         std::cerr << "[Mesh::OnInit] Unsupported format: ." << extension << std::endl;
@@ -142,14 +101,7 @@ void Mesh::OnInit() {
     }
 }
 
-
-void Mesh::OnUpdate(TimeStep ts)
-{
-    // Update the model transform 
-    //m_Transform = glm::mat4(glm::translate(m_Transform, glm::vec3(0.0, 0.0, -0.10))); // Not the best solution, still needs to be updated,, all in due time
-    m_Ts = ts;
-}
-
+/*
 Mesh Mesh::Batch(std::vector<Mesh>& meshes)
 {
     unsigned int padd_value = 0;
@@ -190,3 +142,4 @@ Mesh Mesh::Batch(std::vector<Mesh>& meshes)
     batchedMesh.NumIndices = static_cast<uint32_t>(batchedMesh.m_VertexIndices.size());
     return batchedMesh;
 }
+*/

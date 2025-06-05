@@ -1,6 +1,5 @@
 #pragma once
 #include "ScriptBase.h"
-#include "Component.h"
 
 namespace scripting
 {
@@ -27,17 +26,13 @@ namespace scripting
 		lua_State* m_pLuaState;
 	};
 
-	class ControlScript : public virtual Component
+	class ControlScript
 	{
 	public:
 		std::string m_ScriptPath;
 		void OnInit();
 		void OnUpdate(float ts);
 
-		Component& operator() ()
-		{
-			return *this;
-		}
 		lua_State* GetLuaState() const { return m_pLuaState; }
 
 		ControlScript(std::string path = "")

@@ -61,8 +61,6 @@ void Grid::OnInit()
 
         }
 
-        NumIndices = static_cast<uint32_t>(m_VertexIndices.size());
-        NumVertices = static_cast<int32_t>(m_Positions.size());
     }
 
 }

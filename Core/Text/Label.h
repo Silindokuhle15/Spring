@@ -11,6 +11,22 @@ typedef enum
 
 }Alignment;
 
+class GlyphBox
+{
+public:
+	GlyphBox() :
+		m_Transform{glm::mat4(1.0f)}
+	{
+
+	}
+	
+	void SetGlyphID(float id);
+	void SetTransform(const glm::mat4& transform);
+
+	glm::mat4 m_Transform;
+	Square m_Box;
+};
+
 class Label
 {
 public:
@@ -22,7 +38,7 @@ public:
 		GenerateGlyphBoxes();
 	}
 
-	const std::vector<Square>& GetGlyphBoxes() const;
+	const std::vector<GlyphBox>& GetGlyphBoxes() const;
 	void Format(const std::vector<int>& glyphMap);
 
 	const std::vector<int>& GetGlyphArray() const;
@@ -50,7 +66,7 @@ private:
 	void GenerateGlyphBoxes();
 
 private:
-	std::vector<Square> m_GlyphBoxes;
+	std::vector<GlyphBox> m_GlyphBoxes;
 	std::vector<std::vector<int>> m_FormattedIndices;
 	std::vector<int> m_GlyphArray;
 	int64_t m_Separator;

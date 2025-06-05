@@ -17,18 +17,12 @@ void Scene::OnCreateSceneObjects()
 
 	for (auto& s_mesh : static_mesh_paths)
 	{
-		CharacterPtr pch = std::make_shared<Character>();
-		pch->AddComponent<Mesh>(new Mesh(s_mesh));
-		LoadCharacterBase<CharacterPtr>(pch);
+
 	}
 
 	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
 	{
-		CharacterPtr pch = std::make_shared<Character>();
-		pch->AddComponent<Mesh>(new Mesh(dynamic_mesh_paths[index]));
-		auto& script_path = m_TempControlScripts[index];
-		pch->AddComponent<scripting::ControlScript>(new scripting::ControlScript(script_path));
-		LoadCharacterBase<CharacterPtr>(pch);
+
 	}
 }
 
@@ -50,10 +44,6 @@ void Scene::OnUpdate(TimeStep ts)
 		break;
 
 	case SceneState::RUNNING:
-		for (auto& ch : m_Characters)
-		{
-			ch->OnUpdate(ts);
-		}
 		break;
 
 	case SceneState::PAUSED:

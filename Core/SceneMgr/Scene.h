@@ -5,7 +5,7 @@
 #include "Shader.h"
 #include "Material.h"
 #include "PhysicsEngine.h"
-#include "Character.h"
+#include "Script.h"
 
 typedef enum
 {
@@ -25,7 +25,6 @@ public:
 	std::vector<Shader> m_Shaders;
 	std::vector<PointLight> m_Lights;
 	std::vector<Camera> m_Cameras;
-	std::vector<CharacterPtr> m_Characters;
 
 	std::shared_ptr<Camera> m_pActiveCamera;
 	std::shared_ptr<glm::mat4> m_pActiveTransform;
@@ -68,6 +67,5 @@ private:
 template<typename T>
 inline int Scene::LoadCharacterBase(T ch)
 {
-	m_Characters.push_back(ch);
 	return 0;
 }

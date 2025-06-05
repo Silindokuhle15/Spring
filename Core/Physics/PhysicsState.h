@@ -1,11 +1,13 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
-#include "Component.h"
+
 namespace physics
 {
-	typedef struct
+	class PhysicsState
 	{
+	public:
+
 		glm::quat orientation;
 		glm::vec3 position;
 		float mass;
@@ -17,21 +19,6 @@ namespace physics
 		float unused_2;
 		glm::vec3 inertia;
 		float unused_3;
-	} physics_state;
 
-	class PhysicsState : public Component, public physics_state
-	{
-	public:
-		physics::physics_state& operator ()() 
-		{
-			return *this;
-		}
-		void OnInit() override;
-		/*
-		Component& operator () () override
-		{
-			return *this;
-		}
-		*/
 	};
 }

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include "PhysicsState.h"
 template <typename T>
-class Collider : public Component
+class Collider
 {
 public:
 	//glm::vec3 m_Position;
@@ -23,8 +23,6 @@ struct SphereCollider
 	double m_Radius;
 	glm::vec3 m_Pos;
 
-	//void OnInit() override {}
-	//void OnUpdate(TimeStep ts) override {}
 };
 
 struct GenericCollider : public Mesh
@@ -34,8 +32,6 @@ public:
 	std::vector<double> m_xAxis;
 	std::vector<double> m_yAxis;
 	std::vector<double> m_zAxis;
-
-	//physics::PhysicsState m_PhysicsState;
 
 	double min_x;
 	double min_y;
@@ -90,19 +86,6 @@ public:
 		proj_y = max_y - min_y;
 		proj_z = max_z - min_z;
 	}
-
-	//void OnInit() override {}
-	//void OnUpdate(TimeStep ts) override {}
-	//
-	//GenericCollider() {
-	//
-	//}
-	//GenericCollider(Mesh& source)
-	//	//:
-	//	//m_Pos{ glm::vec3(0) }
-	//	//Mesh::Mesh(source)
-	//{
-	//}
 	
 };
 
@@ -144,18 +127,9 @@ public:
 		min_y = glm::dot(min_vec, glm::vec3(0.0f, 1.0f, 0.0f));
 		min_z = glm::dot(min_vec, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		//min_x = m_xAxis.at(1) + a;
-		//min_y = m_yAxis.at(1) + b;
-		//min_z = m_zAxis.at(1) + c;
-
-
 		max_x = glm::dot(max_vec, glm::vec3(1.0f, 0.0f, 0.0f));
 		max_y = glm::dot(max_vec, glm::vec3(0.0f, 1.0f, 0.0f));
 		max_z = glm::dot(max_vec, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		//max_x = m_xAxis.at(m_xAxis.size() - 1) + a;
-		//max_y = m_yAxis.at(m_yAxis.size() - 1) + b;
-		//max_z = m_zAxis.at(m_zAxis.size() - 1) + c;
 
 		proj_x = max_x - min_x;
 		proj_y = max_y - min_y;
@@ -163,14 +137,6 @@ public:
 		
 	}
 };
-
-/*
-template <typename T>
-inline bool Collider<SphereCollider>::Intersect(const Collider<T>& other)
-{
-	return false;
-}
-*/
 
 template<>
 inline bool Collider<GenericCollider>::Intersect(Collider<GenericCollider>& other)

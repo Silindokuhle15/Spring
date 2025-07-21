@@ -1,33 +1,24 @@
 #pragma once
-#include "Scene.h"
+#include "Character.h"
 #include "VertexArray.h"
-#include "Mesh.h"
-#include "Ray.h"
-#include <typeinfo>
 
 class Renderer
 {
 public:
-
-    GLenum render_mode;
     // Buffers
-    unsigned int m_VertexBuffer[2];
-    unsigned int m_IndexBuffer[2];
-    unsigned int m_TexBuffer;
+    unsigned int m_VertexBuffer;
+    unsigned int m_IndexBuffer;
 
     // Vertex Arrays
     VertexArray m_VAO;
-
-    std::vector<unsigned int> m_ModelLocations;
-    std::vector<unsigned int> m_NormalMatrixLocations;
-    std::vector<GLuint> m_RenderPrograms;
+    GLuint basicRenderProgram = 0;
 
     // Uniforms
     int m_LightLocation;
     int m_CameraEyeLocation;
     int m_ModelLocation;
-    int m_VPlocation;
-    int m_Vlocation;
+    int m_VPLocation;
+    int m_VLocation;
     int m_DeltaLocation;
 
     unsigned int m_CurrentIndexCount = 0;
@@ -35,20 +26,15 @@ public:
 
     bool m_PrimitiveModeWireFrame = false;
 
-    // Try Out the New Framebuffer stuff
-    //OpenGLFrameBuffer m_DrawFrame;
-    //OpenGLFrameBuffer m_ReadFrame;
-
     unsigned int m_IndexBufferSize = 0;
 
     std::shared_ptr<Scene> m_ActiveScene;
 
-    int m_Samples;
-    std::vector<GLuint> m_GLSamplers;
-    void* m_pTextureBuffer = nullptr;
     void BeginFrame();
 
     void BindScene(std::shared_ptr<Scene> scene);
+
+    void SetActiveCamera(std::shared_ptr<Camera> camera);
 
     void CreateImage();
     void EnableTesselation();
@@ -60,6 +46,7 @@ public:
 
     void SetUpForRendering();
     void UploadToOpenGL();
+    void CreateRenderingProgram(Shader& shader_resource, GLuint program);
     void CreateOpenGLTexture(_TextureView& view, _TextureDescription & desc, GL_Texture & tex);
     template<typename PLATFORM>
     void CreateTexture(TextureBase<PLATFORM>& tex_base);
@@ -68,22 +55,15 @@ public:
     ~Renderer() {}
 
 private:
-
-
     std::vector<TextureBase<GL_Texture>> m_Textures;
     std::vector<glm::mat4> m_ActiveTransforms;
     std::vector<Shader> m_ActiveShaders;
+    std::shared_ptr<Camera> m_pActiveCamera;
 };
 
 template<typename PLATFORM>
 inline void Renderer::CreateTexture(TextureBase<PLATFORM>& tex_base)
 {
-    const std::type_info& info = typeid(tex_base);
-    std::string type_name = info.name();
-    if(type_name.compare("class GL_Texture") == 0)
-    { 
-        CreateTexture<GL_Texture>(tex_base);
-    }
 }
 template<>
 inline void Renderer::CreateTexture(TextureBase<GL_Texture>& tex_base)

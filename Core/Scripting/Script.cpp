@@ -15,6 +15,8 @@ void scripting::ControlScript::OnUpdate(float ts)
 
 void scripting::ConfigScript::OnInit()
 {
+	m_pLuaState = luaL_newstate();
+	luaL_openlibs(m_pLuaState);
 }
 
 void scripting::ConfigScript::OnUpdate(float ts)

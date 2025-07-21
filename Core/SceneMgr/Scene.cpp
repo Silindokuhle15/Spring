@@ -1,10 +1,27 @@
 #include "Scene.h"
+#include "Character.h"
 
+Scene::Scene(const std::string& path)
+	:
+	OnEvent{ true },
+	m_Title{ path },
+	m_State{ SceneState::LOADING },
+	m_Script{ path },
+	m_pLuaState{ nullptr }
+{
+	m_pLuaState = luaL_newstate();
+	luaL_openlibs(m_pLuaState);
+}
+
+Character* Scene::CreateSceneObject()
+{
+	Character* newCharacter{ new Character(m_Registry.create(), this) };
+	m_Characters.push_back(newCharacter->GetCharacterID());
+	return newCharacter;
+}
 
 void Scene::OnCreateSceneObjects()
 {
-	m_pActiveCamera->OnInit();
-
 	std::vector<ShaderInfo> m_shaderInfo;
 	for (size_t index = 0; index < shader_paths.size(); index += 2)
 	{
@@ -15,16 +32,43 @@ void Scene::OnCreateSceneObjects()
 		m_shaderInfo.clear();
 	}
 
-	for (auto& s_mesh : static_mesh_paths)
-	{
-
-	}
-
+	/*
 	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
 	{
-
+		auto nt = CreateSceneObject();
+		Character* ch = new Character{ nt, this };
+		ch->AddComponent<Mesh>(Mesh{ dynamic_mesh_paths[index] });
+		scriptEngine.expose_character(m_pLuaState, ch, "myCharacter");
+		m_Characters.push_back(nt);
 	}
+	*/
+
+	// Should be calling Create Scene Object?
+	auto lambdaFunc = [](Scene * pscene) {
+		for (size_t index = 0; index < pscene->shader_paths.size(); index += 2)
+		{
+			auto vShaderPath = pscene->shader_paths[index];
+			auto fShaderPath = pscene->shader_paths[index + 1];
+			ShaderInfo	vShaderInfo{ vShaderPath, GL_VERTEX_SHADER };
+			ShaderInfo	fShaderInfo{ fShaderPath, GL_FRAGMENT_SHADER};
+			std::vector<ShaderInfo> shaderInfo{ vShaderInfo, fShaderInfo };
+			Shader tempShader{ shaderInfo };
+			pscene->m_Shaders.push_back(tempShader);
+			shaderInfo.clear();
+
+			for (auto& path : pscene->dynamic_mesh_paths)
+			{
+				auto ch = pscene->m_Registry.create();
+				pscene->m_Registry.emplace<Mesh>(ch, Mesh{ path });
+				pscene->m_Characters.push_back(ch);
+
+			}
+		}
+		
+		return 0;
+	};
 }
+
 
 void Scene::OnInit()
 {
@@ -54,6 +98,23 @@ void Scene::OnUpdate(TimeStep ts)
 
 	case SceneState::STOPPED:
 		break;
+	}
+
+	auto scriptView = m_Registry.view<scripting::ControlScript>();
+	for (auto& entity : scriptView)
+	{
+		auto& script = scriptView.get<scripting::ControlScript>(entity);
+
+		auto& path = script.m_ScriptPath;
+		auto result = luaL_dofile(m_pLuaState, path.c_str());
+
+		int res = lua_getglobal(m_pLuaState, "onUpdate");
+		lua_pushnumber(m_pLuaState, ts);
+
+		if (lua_pcall(m_pLuaState, 1, 0, 0) != LUA_OK)
+		{
+			auto error = true;
+		}
 	}
 }
 
@@ -241,27 +302,22 @@ int Scene::LoadSceneFromFile()
 				if (lua_getfield(pLuaState, -1, "eye"))
 				{
 					m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-					m_pActiveCamera->m_eye = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(pLuaState, 1);
 				}
 				if (lua_getfield(pLuaState, -1, "center"))
 				{
 					m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-					m_pActiveCamera->m_center = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(pLuaState, 1);
 				}
 				if (lua_getfield(pLuaState, -1, "up"))
 				{
 					m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-					m_pActiveCamera->m_up = glm::vec3(vec3.x, vec3.y, vec3.z);
 					lua_pop(pLuaState, 1);
 				}
 			}
 			break;
 		case LUA_TNUMBER:
 			number = lua_tonumber(pLuaState, -1);
-			var == "WIDTH" ? m_pActiveCamera->SetWidth(static_cast<int>(number)) : void();
-			var == "HEIGHT" ? m_pActiveCamera->SetHeight(static_cast<int>(number)) : void();
 			lua_pop(pLuaState, 1);
 			break;
 		}
@@ -273,3 +329,5 @@ int Scene::LoadSceneFromFile(const std::string& path)
 {
 	return 0;
 }
+
+

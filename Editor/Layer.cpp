@@ -4,7 +4,7 @@
 
 int gizmoCount = 1;
 
-void Layer::LoadImageFromFile(std::string& path, _TextureView& image_data)
+void LoadImageFromFile(std::string& path, _TextureView& image_data)
 {
 	const char* file_path = path.c_str();
 	// STBI STUFF HERE
@@ -25,7 +25,7 @@ void Layer::LoadImageFromFile(std::string& path, _TextureView& image_data)
 	}
 }
 
-void Layer::LoadSceneFromFile(std::string& path)
+void LoadSceneFromFile(std::string& path)
 {
 
 }

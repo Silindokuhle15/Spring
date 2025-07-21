@@ -6,15 +6,23 @@
 #include "Material.h"
 #include "PhysicsEngine.h"
 #include "Script.h"
+#include <entt.hpp>
+#include "ScriptMgr.h"
 
 typedef enum
 {
 	LOADING, RUNNING, PAUSED, STOPPED, END
 } SceneState;
 
+class Character;
+class Renderer;
+
+
+
 class Scene
 {
 public:
+	friend class Character;
 	bool OnEvent;
 	TimeStep ts;
 	std::string m_Title;
@@ -25,9 +33,8 @@ public:
 	std::vector<Shader> m_Shaders;
 	std::vector<PointLight> m_Lights;
 	std::vector<Camera> m_Cameras;
+	std::vector<entt::entity> m_Characters;
 
-	std::shared_ptr<Camera> m_pActiveCamera;
-	std::shared_ptr<glm::mat4> m_pActiveTransform;
 	physics::PhysicsEngine m_PhysicsEngine;
 
 	std::vector<physics::PhysicsState> m_TempPhysicsStates;
@@ -49,19 +56,22 @@ public:
 
 	std::string GetTitle() const { return m_Title; }
 
-	Scene(std::string path = "")
-		:
-		OnEvent{true},
-		m_Title{ path },
-		m_State{ SceneState::LOADING }
-	{
-		m_pActiveCamera = std::shared_ptr<Camera>(new Camera);
-	}
+	lua_State* GetLuaState() const { return m_pLuaState; }
+
+	Scene(const std::string& path);
 	~Scene()
 	{
 	}
+	friend class Character;
+	friend class Renderer;
+
+	Character* CreateSceneObject();
 private:
 	SceneState m_State;
+	entt::registry m_Registry;
+	scripting::ControlScript m_Script;
+	lua_State* m_pLuaState = nullptr;
+	scripting::ScriptMgr scriptEngine;
 };
 
 template<typename T>

@@ -1,5 +1,5 @@
 #pragma once
-#include "Layer.h"
+#include "Panel.h"
 #include "Win32Window.h"
 #include "NGLFWwindow.h"
 #include <typeinfo>
@@ -23,6 +23,7 @@ public:
     std::shared_ptr<Scene> m_ActiveScene;
     std::shared_ptr<Renderer> m_ActiveRenderer;
     std::shared_ptr<glm::mat4> m_pActiveTransform;
+    std::shared_ptr<Camera> m_pActiveCamera;
 
     // EDITOR CAMERA VARIABLES
 
@@ -31,14 +32,16 @@ public:
     int m_Samples;
     int m_ResultAvailable;
 
+    TimeStep m_Delta{ 0.0f };
+
     // OBJECT POINTERS
 
     // DISPLAY PANELS
     ComponentPanel<UILayer> m_ComponentPanel;
-    RenderPanel<UILayer> m_RenderPanel;
-    StatsPanel<UILayer> m_StatsPanel;
-    ContentBrowser<UILayer> m_ContentBrowser;
     MenuBar<UILayer> m_FileMenuBar;
+    RenderPanel m_RenderPanel;
+    StatsPanel m_StatsPanel;
+    ContentBrowser m_ContentBrowser;
 
 
 public:
@@ -52,75 +55,19 @@ public:
         m_FileMenuBar.Run();
     }
 
-    void LoadSceneFromFile(std::string& path) override
+    void LoadSceneFromFile(std::string& path)
     {
-        Layer::LoadSceneFromFile(path);
+        //Layer::LoadSceneFromFile(path);
     }
 
     void CreateSceneObjects()
     {
-        Layer::m_pActiveCamera = std::shared_ptr<Camera>(&m_ActiveCamera);
-        m_pActiveCamera->OnInit();
-        m_ActiveScene->m_pActiveCamera = Layer::m_pActiveCamera;
-        std::string texture_data = "";
-
-        std::vector<ShaderInfo> m_shaderInfo;
-        for (size_t index = 0; index < shader_paths.size(); index += 2)
-        {
-            m_shaderInfo = { ShaderInfo{ shader_paths[index], GL_VERTEX_SHADER },
-                ShaderInfo{ shader_paths[index + 1], GL_FRAGMENT_SHADER } };
-            Shader temp_shader(m_shaderInfo);
-            //temp_shader.OnInit();
-            m_ActiveScene->m_Shaders.push_back(temp_shader);
-            m_shaderInfo.clear();
-
-        }
-
-        for (auto& mat : m_ActiveScene->m_Materials)
-        {
-            mat.OnInit();
-        }
-        auto dummy_pos = glm::vec3(1.0f);
-        auto dummy_color = glm::vec3(1.0f);
-        m_ActiveScene->m_Lights.push_back(
-            PointLight(
-                glm::vec3(dummy_pos.x, dummy_pos.y, dummy_pos.z),
-                glm::vec3(dummy_color.x, dummy_color.y, dummy_color.z)
-            )
-        );
-
-        for (auto& s_mesh : static_mesh_paths)
-        {
-            //m_ActiveScene->LoadMeshData(s_mesh.c_str(), 0);
-        }
-
-        for (auto& d_mesh : dynamic_mesh_paths)
-        {
-            //m_ActiveScene->LoadMeshData(d_mesh.c_str(), 1);
-        }
-
-        m_SelectedMesh = 0;
-        //m_SelectedBuffer = (m_ActiveScene->m_StaticGeometry.size() > 0 ? 0 : (m_ActiveScene->m_DynamicGeometry.size() > 0 ? 1 : 2));
-        m_SelectedBuffer = 0;
-        /*
-        switch (m_SelectedBuffer)
-        {
-        case 0:
-            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_StaticGeometry[m_SelectedMesh].m_Transform));
-            break;
-        case 1:
-            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_DynamicGeometry[m_SelectedMesh].m_Transform));
-            break;
-        case 2:
-            m_pActiveTransform = std::shared_ptr<glm::mat4>(&(m_ActiveScene->m_MeshData[m_SelectedMesh].m_Transform));
-            break;
-        }
-        */
     }
 
     void BindRenderer(std::shared_ptr<Renderer> renderer)
     {
         m_ActiveRenderer = renderer;
+        renderer->SetActiveCamera(m_pActiveCamera);
     }
     void LoadScene(std::shared_ptr<Scene> scene)
     {
@@ -173,24 +120,22 @@ public:
     }
     virtual void OnInit() override
     {
-        // TO do Add some code here bro
-        //m_ActiveScene = 1;
-        glGenQueries(1, &m_Query);
+        m_pActiveCamera->OnInit();
     }
     virtual void OnUpdate(TimeStep ts) override
     {
         m_Delta = ts;
         //Update the Editor camera delta right here
-        m_ActiveCamera.Present();
-        m_ActiveCamera.OnUpdate(m_Delta);
+        //m_pActiveCamera->Present();
+        //m_pActiveCamera->OnUpdate(m_Delta);
         
     }
 
-    virtual std::shared_ptr<Camera>& GetLayerCamera() override
+    std::shared_ptr<Camera>& GetLayerCamera()
     {
         return m_pActiveCamera;
     }
-    virtual std::string GetFileName(const char* filter) override
+    std::string GetFileName(const char* filter)
     {
         auto temp_parent = m_ParentWindow.get();
         auto win32_window = reinterpret_cast<Win32Window*>(temp_parent);
@@ -234,7 +179,8 @@ public:
 
     UILayer(WindowBase window) :
         m_ParentWindow{std::make_shared<WindowBase>(window)},
-        m_ComponentPanel{this},
+        m_pActiveCamera{new Camera{ 1920, 1080, 0.1f, 1000.0f } },
+        m_ComponentPanel{this,  m_pActiveCamera},
         m_ContentBrowser{this},
         m_RenderPanel{this},
         m_StatsPanel{this},
@@ -248,7 +194,7 @@ public:
         ImGuiIO& io = ImGui::GetIO(); // Enable ImGui IO
         io.WantCaptureMouse;
         (void)io;
-        // Dark Theme lemme see 
+
         const std::type_info& info = typeid(window);
         std::string type_name = info.name();
         
@@ -269,6 +215,12 @@ public:
         const char* gl_ver = "#version 450";
         ImGui_ImplOpenGL3_Init(gl_ver);
         ImGui::StyleColorsDark();
+
+        // Initialize the camera
+        m_pActiveCamera->SetEye(glm::vec3{ 0.0, 1.0, -1.0 });
+        m_pActiveCamera->SetCenter(glm::vec3{ 0.0, 1.0, 0.0 });
+
+        
     }
     UILayer() : Layer() {}
 

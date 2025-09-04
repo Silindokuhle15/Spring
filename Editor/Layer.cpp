@@ -1,9 +1,9 @@
 #include "Layer.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "stb_image.h"
 
 int gizmoCount = 1;
-
+/*
 void LoadImageFromFile(std::string& path, _TextureView& image_data)
 {
 	const char* file_path = path.c_str();
@@ -29,3 +29,4 @@ void LoadSceneFromFile(std::string& path)
 {
 
 }
+*/

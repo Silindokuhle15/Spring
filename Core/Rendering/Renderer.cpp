@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "stb_image.h"
 
 void Renderer::SetUpForRendering()
 {
@@ -42,6 +43,14 @@ void Renderer::SetUpForRendering()
     basicRenderProgram = glCreateProgram();
     CreateRenderingProgram(m_ActiveScene->m_Shaders[0], basicRenderProgram);
     glLinkProgram(basicRenderProgram);
+
+    m_SkyboxRenderingProgram = glCreateProgram();
+    CreateRenderingProgram(m_SkyboxShader, m_SkyboxRenderingProgram);
+    glLinkProgram(m_SkyboxRenderingProgram);
+
+    CreateSkyboxCubeMap();
+
+    CreateOpenGLFrameBuffer();
 }
 
 
@@ -63,31 +72,63 @@ void Renderer::CreateRenderingProgram(Shader& shader_resource, GLuint program)
 
 void Renderer::UploadToOpenGL()
 {
-    GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-    glClear(flags);
     glUseProgram(basicRenderProgram);
 
     auto view = m_pActiveCamera->GetV();
+    auto proj = m_pActiveCamera->GetP();
 
     GLuint viewLocation = glGetUniformLocation(basicRenderProgram, "View");
+    GLuint projectionLocation = glGetUniformLocation(basicRenderProgram, "Projection");
     GLuint posLocation = glGetUniformLocation(basicRenderProgram, "pos");
     glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-    GLuint offset = 0;
-    GLuint Ioffset = 0;
+    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(proj));
+
     for (auto& ch : m_ActiveScene->m_Characters)
     {
-        Character var{ ch, m_ActiveScene.get()};
-       
+        Character var{ ch, m_ActiveScene.get() };
+
         auto& phzx = var.GetComponent<physics::PhysicsState>();
-        glUniform3fv(posLocation, 3, glm::value_ptr(phzx.position));
+        glUniform3f(posLocation, phzx.position.x, phzx.position.y, phzx.position.z);
         auto& mesh = var.GetComponent<Mesh>();
-        glNamedBufferSubData(m_VertexBuffer, offset, sizeof(Vertex) * mesh.m_V.size(), mesh.m_V.data());
-        offset += sizeof(Vertex) * mesh.m_V.size();
+        glNamedBufferSubData(m_VertexBuffer, vBuffer_offset, sizeof(Vertex) * mesh.m_V.size(), mesh.m_V.data());
+        vBuffer_offset += sizeof(Vertex) * mesh.m_V.size();
 
-        glDrawArrays(GL_TRIANGLES, Ioffset, mesh.m_V.size());
-        Ioffset += mesh.m_V.size();
+        glDrawArrays(GL_TRIANGLES, index_offset, mesh.m_V.size());
+        index_offset += mesh.m_V.size();
 
+        auto mousePos = UnprojectMouse();
+        std::vector<Vertex> line{{ {phzx.position}, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } },
+        { { mousePos }, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } }};
+
+        glNamedBufferSubData(m_VertexBuffer, vBuffer_offset, sizeof(Vertex) * line.size(), line.data());
+        vBuffer_offset += sizeof(Vertex) * line.size();
+
+        glDrawArrays(GL_LINES, index_offset, line.size());
+        index_offset += line.size();
     }
+}
+
+void Renderer::DrawSkyboxBackground()
+{
+    glUseProgram(m_SkyboxRenderingProgram);
+    glDisable(GL_CULL_FACE);
+    glDepthFunc(GL_LEQUAL);
+    vBuffer_offset = 0;
+    index_offset = 0;
+
+    glBufferSubData(GL_ARRAY_BUFFER, vBuffer_offset, sizeof(Vertex) * m_SkyboxMesh.m_V.size(), (void*)m_SkyboxMesh.m_V.data());
+    vBuffer_offset += sizeof(Vertex) * m_SkyboxMesh.m_V.size();
+    glBindTextureUnit(0, m_SkyboxTexture.m_Texture);
+
+    auto v = glm::mat4_cast(m_pActiveCamera->m_orientation);
+    auto rot_location = glGetUniformLocation(m_SkyboxRenderingProgram, "CameraOrientation");
+    glUniformMatrix4fv(rot_location, 1, GL_FALSE, glm::value_ptr(v));
+
+    glDrawArrays(GL_TRIANGLES, static_cast<int>(index_offset), 36);
+    index_offset += m_SkyboxMesh.m_V.size();
+
+    glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_LESS);
 }
 
 void Renderer::CreateOpenGLTexture(_TextureView& view, _TextureDescription& desc, GL_Texture& tex)
@@ -108,9 +149,166 @@ void Renderer::CreateOpenGLTexture(_TextureView& view, _TextureDescription& desc
 
 }
 
+void Renderer::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)
+{
+    GLuint target = 0;
+    GLenum format = 0;
+    auto data = tex_base.m_TextureData.data();
+
+    GLuint width = static_cast<GLuint>(tex_base.m_Width);
+    GLuint height = static_cast<GLuint>(tex_base.m_Height);
+
+    switch (tex_base.m_TextureTarget)
+    {
+    case _TextureTarget::TEXTURE_1D:
+        glCreateTextures(GL_TEXTURE_1D, 1, &tex_base.m_Texture);
+        glTextureStorage1D(tex_base.m_Texture, 1, format, width);
+        break;
+    case _TextureTarget::TEXTURE_2D:
+        glCreateTextures(GL_TEXTURE_2D, 1, &tex_base.m_Texture);
+        glTextureParameteri(tex_base.m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(tex_base.m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        switch (tex_base.m_TextureFormat)
+        {
+        case _TextureFormat::RGB8:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGB8, width, height);
+            break;
+        case _TextureFormat::RGB32F:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGB32F, width, height);
+            break;
+        case _TextureFormat::RGBA8:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGBA8, width, height);
+            break;
+        case _TextureFormat::RGBA32F:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGBA32F, width, height);
+            break;
+        }
+        break;
+    case _TextureTarget::TEXTURE_3D:
+        glCreateTextures(GL_TEXTURE_3D, 1, &tex_base.m_Texture);
+        glTextureStorage3D(tex_base.m_Texture, 1, format, width, height, 0);
+        break;
+
+    case _TextureTarget::TEXTURE_CUBE:
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex_base.m_Texture);
+
+        switch (tex_base.m_TextureFormat)
+        {
+        case _TextureFormat::RGB8:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGB8, width, height);
+            break;
+        case _TextureFormat::RGB32F:
+            glTextureStorage2D(tex_base.m_Texture, 1, GL_RGB32F, width, height);
+            break;
+        case _TextureFormat::RGBA8:
+            glBindTexture(GL_TEXTURE_CUBE_MAP, tex_base.m_Texture);
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, 10, GL_RGBA8, width, height);
+            //glTextureStorage2D(tex_base.m_Texture, 1, GL_RGBA8, width, height);
+            break;
+        case _TextureFormat::RGBA32F:
+            glBindTexture(GL_TEXTURE_CUBE_MAP, tex_base.m_Texture);
+            glTexStorage2D(GL_TEXTURE_CUBE_MAP, 10, GL_RGBA32F, width, height);
+            //glTextureStorage2D(tex_base.m_Texture, 1, GL_RGBA32F, width, height);
+            break;
+        }
+        break;
+    }
+}
+
+void Renderer::CreateSkyboxCubeMap()
+{
+    std::vector<std::string> paths{
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_2_3.png",
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_2_1.png",
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_3_2.png",
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_1_2.png",
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_2_2.png",
+        "C:/dev/Astron Battles/Assets/Textures/CubeMaps/Lava/cell_2_4.png",
+    };
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    int desired_channels = 4;
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* right = stbi_load(paths[0].c_str(), &width, &height, &channels, desired_channels);
+    stbi_uc* left = stbi_load(paths[1].c_str(), &width, &height, &channels, desired_channels);
+    stbi_uc* top = stbi_load(paths[2].c_str(), &width, &height, &channels, desired_channels);
+    stbi_uc* bottom = stbi_load(paths[3].c_str(), &width, &height, &channels, desired_channels);
+    stbi_uc* front = stbi_load(paths[4].c_str(), &width, &height, &channels, desired_channels);
+    stbi_uc* behind = stbi_load(paths[5].c_str(), &width, &height, &channels, desired_channels);
+
+    m_SkyboxTexture.m_Height = static_cast<uint64_t>(width);
+    m_SkyboxTexture.m_Width = static_cast<uint64_t>(height);
+
+    m_SkyboxTexture.m_TextureFormat = _TextureFormat::RGBA8;
+    m_SkyboxTexture.m_TextureSource = _TextureSource::GL_ATTACHMENT;
+    m_SkyboxTexture.m_TextureTarget = _TextureTarget::TEXTURE_CUBE;
+
+    CreateOpenGLTexture(m_SkyboxTexture);
+
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, right);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, left);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, top);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, bottom);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, front);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 0, 0, m_SkyboxTexture.m_Width, m_SkyboxTexture.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, behind);
+
+    stbi_image_free(right);
+    stbi_image_free(left);
+    stbi_image_free(top);
+    stbi_image_free(bottom);
+    stbi_image_free(front);
+    stbi_image_free(behind);
+}
+
+void Renderer::CreateOpenGLFrameBuffer()
+{
+    CustomFrameBufferTexture.m_Height = static_cast<uint64_t>(1024);
+    CustomFrameBufferTexture.m_Width = static_cast<uint64_t>(1024);
+
+    CustomFrameBufferTexture.m_TextureFormat = _TextureFormat::RGBA32F;
+    CustomFrameBufferTexture.m_TextureSource = _TextureSource::GL_ATTACHMENT;
+    CustomFrameBufferTexture.m_TextureTarget = _TextureTarget::TEXTURE_2D;
+    CreateOpenGLTexture(CustomFrameBufferTexture);
+
+    glGenFramebuffers(1, &CustomFrameBuffer);
+    glNamedFramebufferTexture(CustomFrameBuffer, GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
+}
+
+const glm::vec3 Renderer::UnprojectMouse() const
+{
+    auto mouseX = m_MousePos.x;
+    auto mouseY = m_MousePos.y;
+
+    // CONVERT TO NDC
+    auto ndcX = (2.0 * mouseX) / 1920.0 - 1.0;
+    auto ndcY = 1.0 - (2.0 * mouseY) / 1080.0;
+    auto ndcZ = 1.0;
+
+    glm::vec4 clipSpacePos{ ndcX, ndcY, ndcZ, 1.0 };
+    auto invProj = glm::inverse(m_pActiveCamera->GetP());
+    auto viewSpacePos = invProj * clipSpacePos;
+
+    viewSpacePos.x /= viewSpacePos.w;
+    viewSpacePos.y /= viewSpacePos.w;
+    viewSpacePos.z /= viewSpacePos.w;
+    viewSpacePos.w /= viewSpacePos.w;
+
+    auto invView = glm::inverse(m_pActiveCamera->GetV());
+    auto worldSpacePos = invView * viewSpacePos;
+
+    return glm::vec3(worldSpacePos);
+}
+
 void Renderer::OnRender()
 {
+    GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+    glClear(flags);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    DrawSkyboxBackground();
     UploadToOpenGL();
+    glFlush();
 }
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
@@ -149,5 +347,4 @@ void Renderer::BeginFrame()
 
 void Renderer::EndFrame()
 {
-    glFlush();
 }

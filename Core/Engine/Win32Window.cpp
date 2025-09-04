@@ -292,7 +292,7 @@ void Win32Window::SetUpForRendering()
 
 void Win32Window::SwapBuffer()
 {
-    wglSwapIntervalEXT(1);
+    //wglSwapIntervalEXT(1);
     SwapBuffers(m_Hdc);
 }
 
@@ -305,7 +305,7 @@ void Win32Window::OnUpdate()
         DispatchMessage(&msg);
     }
     m_SceneEventQueue.OnUpdate();
-    ts = (m_EndTime - m_StartTime)/1000.0f;
+    ts = (m_EndTime - m_StartTime);
 }
 
 long long Win32Window::milliseconds_now() {

@@ -24,7 +24,8 @@ class Scene
 public:
 	friend class Character;
 	bool OnEvent;
-	TimeStep ts;
+	TimeStep m_Ts;
+	double m_AccumulatedTime;
 	std::string m_Title;
 	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;
@@ -39,7 +40,9 @@ public:
 
 	std::vector<physics::PhysicsState> m_TempPhysicsStates;
 	std::vector<std::string> m_TempControlScripts;
+	std::vector<std::string> m_TempNames;
 	virtual void OnCreateSceneObjects();
+	virtual void CreateShaders();
 	virtual void OnInit();
 	virtual void OnUpdate(TimeStep ts);
 
@@ -58,7 +61,7 @@ public:
 
 	lua_State* GetLuaState() const { return m_pLuaState; }
 
-	Scene(const std::string& path);
+	Scene(const std::string& path = "");
 	~Scene()
 	{
 	}
@@ -66,6 +69,7 @@ public:
 	friend class Renderer;
 
 	Character* CreateSceneObject();
+	Character* GetSceneCharacter(entt::entity& id);
 private:
 	SceneState m_State;
 	entt::registry m_Registry;

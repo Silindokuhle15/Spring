@@ -1,4 +1,6 @@
 #include "KeyBoard.h"
+#include <windows.h>
+
 
 /*
 void KeyBoard::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -57,3 +59,10 @@ void KeyBoard::key_callback(GLFWwindow* window, int key, int scancode, int actio
     
 }
 */
+
+bool GetKeyboardState(EventID id)
+{
+    auto nid = static_cast<int>(id);
+    auto state = GetKeyState(nid);
+    return false;
+}

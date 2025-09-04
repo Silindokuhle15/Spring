@@ -3,6 +3,8 @@
 
 Scene::Scene(const std::string& path)
 	:
+	m_Ts{0.0f},
+	m_AccumulatedTime{0.0},
 	OnEvent{ true },
 	m_Title{ path },
 	m_State{ SceneState::LOADING },
@@ -20,7 +22,45 @@ Character* Scene::CreateSceneObject()
 	return newCharacter;
 }
 
+Character* Scene::GetSceneCharacter(entt::entity& id)
+{
+	Character* pch{ new Character{id, this }}; // This is a really bad idea
+	return pch;
+}
+
 void Scene::OnCreateSceneObjects()
+{
+	CreateShaders();
+	auto lua_state = GetLuaState();
+	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
+	{
+		auto* ch = CreateSceneObject();
+		ch->AddComponent<Mesh>(Mesh{ dynamic_mesh_paths[index] });
+		scripting::ControlScript script{ m_TempControlScripts[index] };
+		ch->AddComponent<scripting::ControlScript>(script);
+		auto name = m_TempNames[index].c_str();
+		scripting::ScriptMgr::expose_character(lua_state, ch, name);
+		int status = luaL_loadbuffer(lua_state, script.data.data(), script.data.size(), name);
+		if (status != LUA_OK)
+		{
+			// Handle error here
+			auto error = true;
+		}
+		status = lua_pcall(lua_state, 0, 0, 0);
+		if (status != LUA_OK)
+		{
+			// Handle error here
+			auto error = true;
+		}
+		int res = lua_getglobal(lua_state, "onInit");
+		if (lua_pcall(lua_state, 0, 0, 0) != LUA_OK)
+		{
+			return;
+		}
+	}
+}
+
+void Scene::CreateShaders()
 {
 	std::vector<ShaderInfo> m_shaderInfo;
 	for (size_t index = 0; index < shader_paths.size(); index += 2)
@@ -31,44 +71,7 @@ void Scene::OnCreateSceneObjects()
 		m_Shaders.push_back(temp_shader);
 		m_shaderInfo.clear();
 	}
-
-	/*
-	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
-	{
-		auto nt = CreateSceneObject();
-		Character* ch = new Character{ nt, this };
-		ch->AddComponent<Mesh>(Mesh{ dynamic_mesh_paths[index] });
-		scriptEngine.expose_character(m_pLuaState, ch, "myCharacter");
-		m_Characters.push_back(nt);
-	}
-	*/
-
-	// Should be calling Create Scene Object?
-	auto lambdaFunc = [](Scene * pscene) {
-		for (size_t index = 0; index < pscene->shader_paths.size(); index += 2)
-		{
-			auto vShaderPath = pscene->shader_paths[index];
-			auto fShaderPath = pscene->shader_paths[index + 1];
-			ShaderInfo	vShaderInfo{ vShaderPath, GL_VERTEX_SHADER };
-			ShaderInfo	fShaderInfo{ fShaderPath, GL_FRAGMENT_SHADER};
-			std::vector<ShaderInfo> shaderInfo{ vShaderInfo, fShaderInfo };
-			Shader tempShader{ shaderInfo };
-			pscene->m_Shaders.push_back(tempShader);
-			shaderInfo.clear();
-
-			for (auto& path : pscene->dynamic_mesh_paths)
-			{
-				auto ch = pscene->m_Registry.create();
-				pscene->m_Registry.emplace<Mesh>(ch, Mesh{ path });
-				pscene->m_Characters.push_back(ch);
-
-			}
-		}
-		
-		return 0;
-	};
 }
-
 
 void Scene::OnInit()
 {
@@ -99,23 +102,25 @@ void Scene::OnUpdate(TimeStep ts)
 	case SceneState::STOPPED:
 		break;
 	}
-
-	auto scriptView = m_Registry.view<scripting::ControlScript>();
-	for (auto& entity : scriptView)
+	auto view = m_Registry.view<scripting::ControlScript, physics::PhysicsState>();
+	// use a callback
+	view.each([&](const auto& script, auto& phzx_state) 
 	{
-		auto& script = scriptView.get<scripting::ControlScript>(entity);
-
 		auto& path = script.m_ScriptPath;
-		auto result = luaL_dofile(m_pLuaState, path.c_str());
-
+		auto result = luaL_dostring(m_pLuaState, script.data.c_str());
 		int res = lua_getglobal(m_pLuaState, "onUpdate");
 		lua_pushnumber(m_pLuaState, ts);
-
 		if (lua_pcall(m_pLuaState, 1, 0, 0) != LUA_OK)
 		{
 			auto error = true;
 		}
-	}
+
+		phzx_state.velocity += phzx_state.linear_acceleration * 0.01667f;
+		phzx_state.position += phzx_state.velocity * 0.01667f;
+	});
+
+	m_AccumulatedTime += (float)ts;
+	std::cout << "Scene Accumulated Time : " << m_AccumulatedTime << std::endl;
 }
 
 void Scene::Run()
@@ -207,7 +212,7 @@ int Scene::LoadSceneFromFile()
 			{
 				physics::PhysicsState ps = {};
 				auto n = luaL_len(pLuaState, -1);
-				std::vector<std::string> dynamic_keys = { "Mesh", "script","orientation", "position", "mass" ,"velocity", "restitution","angular_acceleration" ,"inertia" };
+				std::vector<std::string> dynamic_keys = { "Mesh", "script", "name","orientation", "position", "mass" ,"velocity", "restitution","angular_acceleration" ,"inertia"};
 				for (auto i = 1; i <= n; i++)
 				{
 					auto b = 1;
@@ -227,6 +232,12 @@ int Scene::LoadSceneFromFile()
 							{
 								str = lua_tostring(pLuaState, -1);
 								m_TempControlScripts.push_back(str);
+								lua_pop(pLuaState, 1);
+							}
+							else if (!key.compare("name"))
+							{
+								str = lua_tostring(pLuaState, -1);
+								m_TempNames.push_back(str);
 								lua_pop(pLuaState, 1);
 							}
 							else if (!key.compare("position"))

@@ -25,13 +25,6 @@ public:
     std::shared_ptr<glm::mat4> m_pActiveTransform;
     std::shared_ptr<Camera> m_pActiveCamera;
 
-    // EDITOR CAMERA VARIABLES
-
-    // Queries
-    unsigned int m_Query;
-    int m_Samples;
-    int m_ResultAvailable;
-
     TimeStep m_Delta{ 0.0f };
 
     // OBJECT POINTERS
@@ -103,12 +96,6 @@ public:
         }
 
         ImGui::NewFrame();
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::BeginFrame(); // ImGuizmo Begin Frame
-
-        // Begin the Query the Samples Renders
-        glBeginQuery(GL_SAMPLES_PASSED, m_Query);
-
     }
     virtual void EndFrame() override
     {
@@ -179,7 +166,7 @@ public:
 
     UILayer(WindowBase window) :
         m_ParentWindow{std::make_shared<WindowBase>(window)},
-        m_pActiveCamera{new Camera{ 1920, 1080, 0.1f, 1000.0f } },
+        m_pActiveCamera{new Camera{ 1920, 1080, 0.01f, 10000.0f } },
         m_ComponentPanel{this,  m_pActiveCamera},
         m_ContentBrowser{this},
         m_RenderPanel{this},
@@ -214,13 +201,7 @@ public:
 
         const char* gl_ver = "#version 450";
         ImGui_ImplOpenGL3_Init(gl_ver);
-        ImGui::StyleColorsDark();
-
-        // Initialize the camera
-        m_pActiveCamera->SetEye(glm::vec3{ 0.0, 1.0, -1.0 });
-        m_pActiveCamera->SetCenter(glm::vec3{ 0.0, 1.0, 0.0 });
-
-        
+        ImGui::StyleColorsDark();        
     }
     UILayer() : Layer() {}
 

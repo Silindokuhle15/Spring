@@ -34,6 +34,9 @@ void BaseApplication::Run()
 
     ImGui_Layer.BindRenderer(pOpenGLRenderer);
     ImGui_Layer.m_ActiveRenderer->SetUpForRendering();
+    ImGui_Layer.m_pActiveCamera->SetEye(glm::vec3(0, 2, -2));
+    ImGui_Layer.m_pActiveCamera->SetCenter(glm::vec3(0, 0, 12));
+    ImGui_Layer.m_pActiveCamera->OnInit();
 
     while (!BaseApplication::ExitWindow)
     {
@@ -45,26 +48,23 @@ void BaseApplication::Run()
         BaseApplication::m_pUILayer->m_pActiveCamera->Present();
         BaseApplication::m_pActiveRenderer->OnRender();
 
-        m_Window->EndTimer();
-        m_Window->OnUpdate();
-
-        m_Window->ts = 20.f / 60.0f;
-        ts = m_Window->ts;
- 
-        BaseApplication::m_Scene->OnUpdate(ts);
-        BaseApplication::m_pActiveRenderer->OnUpdate(ts);
+        BaseApplication::m_Scene->OnUpdate(m_Window->ts);
+        BaseApplication::m_pActiveRenderer->OnUpdate(m_Window->ts);
         
         BaseApplication::OnUpdate();
 
-        BaseApplication::m_pUILayer->OnUpdate(ts);
+        BaseApplication::m_pUILayer->OnUpdate(m_Window->ts);
 
         BaseApplication::m_pActiveRenderer->EndFrame();
 
         BaseApplication::m_pUILayer->EndFrame();
 
         m_Window->SwapBuffer();
-    }
 
+        m_Window->EndTimer();
+        m_Window->OnUpdate();
+        std::cout << "Frame Time :" << m_Window->ts << std::endl;
+    }
     ShutDown();
 }
 
@@ -108,26 +108,28 @@ void BaseApplication::OnUpdate()
 
         case EventID::MOUSEMOVE:
             mv = reinterpret_cast<MouseMove*>(v);
+            m_pActiveRenderer->m_MousePos.x = mv->GetX();
+            m_pActiveRenderer->m_MousePos.y = mv->GetY();
             if (mv->GetX() / 1920 < 0.5)
             {
                 if (mv->GetY() / 1080 < 0.5)
                 {
-                    m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    //m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
                 else
                 {
-                    m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    //m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(1 - 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
             }
             else {
 
                 if (mv->GetY() / 1080 < 0.5)
                 {
-                    m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    //m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(-1 + 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
                 else
                 {
-                    m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
+                    //m_pUILayer->m_pActiveCamera->SetCenter(glm::normalize(glm::vec3(-(-1 + 2 * (mv->GetX() / 1920.0f)), -(1 - 2 * (mv->GetY() / 1080.0f)), 1.0)));
                 }
             }
             break;

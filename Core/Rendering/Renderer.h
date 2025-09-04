@@ -5,13 +5,23 @@
 class Renderer
 {
 public:
+    glm::vec2 m_MousePos;
     // Buffers
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
+    GLuint index_offset = 0;
+    GLuint vBuffer_offset = 0;
 
     // Vertex Arrays
     VertexArray m_VAO;
     GLuint basicRenderProgram = 0;
+    GLuint m_SkyboxRenderingProgram = 0;
+    GLuint CustomFrameBuffer = 0;
+    TextureBase<GL_Texture> CustomFrameBufferTexture;
+    TextureBase<GL_Texture> m_SkyboxTexture;
+    std::vector<ShaderInfo> m_SkyboxShaderInfo;
+    Shader m_SkyboxShader;
+    Mesh m_SkyboxMesh;
 
     // Uniforms
     int m_LightLocation;
@@ -46,12 +56,26 @@ public:
 
     void SetUpForRendering();
     void UploadToOpenGL();
+    void DrawSkyboxBackground();
     void CreateRenderingProgram(Shader& shader_resource, GLuint program);
     void CreateOpenGLTexture(_TextureView& view, _TextureDescription & desc, GL_Texture & tex);
-    template<typename PLATFORM>
-    void CreateTexture(TextureBase<PLATFORM>& tex_base);
+    void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
+    void CreateSkyboxCubeMap();
+    void CreateOpenGLFrameBuffer();
 
-    Renderer() {}
+    const glm::vec3 UnprojectMouse() const;
+
+    Renderer():
+        m_MousePos{0.0, 0.0},
+        m_SkyboxShaderInfo{ 
+        {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxVertShader.glsl", GL_VERTEX_SHADER},
+        {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxFragShader.glsl", GL_FRAGMENT_SHADER}
+        },
+        m_SkyboxShader{m_SkyboxShaderInfo},
+        m_SkyboxMesh{ "C:/dev/Silindokuhle15/Spring/Assets/Objects/Cube/Cube.obj" }
+    {
+        m_SkyboxMesh.OnInit();
+    }
     ~Renderer() {}
 
 private:
@@ -60,27 +84,3 @@ private:
     std::vector<Shader> m_ActiveShaders;
     std::shared_ptr<Camera> m_pActiveCamera;
 };
-
-template<typename PLATFORM>
-inline void Renderer::CreateTexture(TextureBase<PLATFORM>& tex_base)
-{
-}
-template<>
-inline void Renderer::CreateTexture(TextureBase<GL_Texture>& tex_base)
-{
-    glCreateTextures(GL_TEXTURE_2D, 1, reinterpret_cast<GLuint*>(&tex_base.m_Texture));
-    auto& tex = tex_base.m_Texture;
-
-    GLenum format = GL_RGB8;
-
-    GLuint width = static_cast<GLuint>(tex_base.m_Width);
-    GLuint height = static_cast<GLuint>(tex_base.m_Height);
-
-    glTextureStorage2D(tex, 1, format, width, height);
-
-    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    auto tex_data = tex_base.m_TextureData.data();
-    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, (void*)(tex_data));
-}

@@ -1,6 +1,7 @@
 #include "ScriptMgr.h"
 #include "Character.h"
 #include <iostream>
+#include <windows.h>
 #include <cstring>
 
 namespace scripting {
@@ -50,9 +51,12 @@ namespace scripting {
         lua_pushcfunction(L, lua_Scene_DestroyCharacter);
         lua_setfield(L, -2, "DestroyCharacter");
 
-
         lua_pushcfunction(L, PrintStack);
         lua_setfield(L, -2, "PrintStack");
+
+        lua_pushcfunction(L, IsKeyDown);
+        lua_setfield(L, -2, "IsKeyDown");
+
         lua_pop(L, 1);
     }
 
@@ -85,6 +89,8 @@ namespace scripting {
         lua_setglobal(L, name);
     }
 
+
+
     int ScriptMgr::lua_pushCharacter(lua_State* L, Character* character) {
         auto** userdata = static_cast<Character**>(lua_newuserdata(L, sizeof(Character*)));
         *userdata = character;
@@ -93,10 +99,25 @@ namespace scripting {
         return 1;
     }
 
+
+
     Character* ScriptMgr::lua_checkCharacter(lua_State* L, int index) {
         return *static_cast<Character**>(luaL_checkudata(L, index, CHARACTER_MT));
     }
 
+    int ScriptMgr::lua_Character_AddMesh(lua_State* L)
+    {
+        Character* charater = lua_checkCharacter(L, 1);
+        const char* path = luaL_checkstring(L, 2);
+        PrintLuaStack(L);
+        charater->AddComponent<Mesh>(Mesh{ path });
+        return 0;
+    }
+
+    int ScriptMgr::lua_Character_GetMesh(lua_State* L)
+    {
+        return 0;
+    }
     int ScriptMgr::lua_Character_AddPhysicsState(lua_State* L) {
         Character* character = lua_checkCharacter(L, 1);
         character->AddComponent<physics::PhysicsState>();
@@ -136,9 +157,10 @@ namespace scripting {
 
         glm::vec3 vt{ temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-        state->position += glm::normalize(vt) * 0.166667f;
-        //PrintLuaStack(L);
-
+        state->linear_acceleration = glm::normalize(vt) * 0.0166f;
+        state->velocity += state->linear_acceleration * 0.01667f;
+        state->position += state->velocity * 0.01667f;
+        //state->position += glm::normalize(vt) * 0.01667f;
         return 0;
     }
 
@@ -146,6 +168,12 @@ namespace scripting {
         luaL_newmetatable(L, CHARACTER_MT);
 
         lua_newtable(L);
+        lua_pushcfunction(L, lua_Character_AddMesh);
+        lua_setfield(L, -2, "AddMesh");
+
+        lua_pushcfunction(L, lua_Character_GetMesh);
+        lua_setfield(L, -2, "GetMesh");
+
         lua_pushcfunction(L, lua_Character_AddPhysicsState);
         lua_setfield(L, -2, "AddPhysicsState");
 
@@ -297,7 +325,7 @@ namespace scripting {
                 lua_rawseti(L, -2, i + 1);
             }
         }
-        if (strcmp(key, "mass") == 0) {
+        else if (strcmp(key, "mass") == 0) {
             lua_pushnumber(L, state->mass);
         }
         else if (strcmp(key, "velocity") == 0) {
@@ -370,7 +398,6 @@ namespace scripting {
         }
         else if (strcmp(key, "mass") == 0) {
             state->mass = static_cast<float>(luaL_checknumber(L, 3));
-            std::cout << "PhysicsState[mass] = " << state->mass << std::endl;
         }
         else if (strcmp(key, "velocity") == 0 && lua_istable(L, 3)) {
             for (int i = 0; i < 3; ++i) {
@@ -490,5 +517,50 @@ namespace scripting {
         PrintLuaStack(L);
         return 0;
     }
+
+    int ScriptMgr::IsKeyDown(lua_State* L)
+    {
+        Scene* scene = lua_checkScene(L, 1);
+        auto keyString = lua_tostring(L, 2);
+        std::string key{ keyString };
+        if (key == "w" && (GetKeyState(0x57) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "a" && (GetKeyState(0x41) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "s" && (GetKeyState(0x53) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "d" && (GetKeyState(0x44) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "LMOUSE" && (GetKeyState(0x01) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "RMOUSE" && (GetKeyState(0x02) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "MMOUSE" && (GetKeyState(0x04) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        return 0;
+    }
+
+    
 
 } // namespace scripting

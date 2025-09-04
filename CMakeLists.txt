@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.15)
 
 # Enable hot reload for MSVC
 if(POLICY CMP0141)
@@ -175,6 +175,8 @@ set(LUA_LIB_DIR "${PROJECT_SOURCE_DIR}/Dependencies/Lua/lua54.lib")
 set(FBX_LIB_DIR "E:/FBX/lib/x64/debug/libfbxsdk.lib")
 set(FT_LIB_DIR "${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib")
 set(PHYSX_LIB_DIR "E:/PhysX/physx/bin/win.x86_64.vc143.mt/debug/PhysXDevice64.dll")
+
+add_subdirectory("Assets/Scripts")
 
 # Find OpenGL
 find_package(OpenGL REQUIRED)

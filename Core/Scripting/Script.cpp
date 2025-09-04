@@ -6,12 +6,13 @@ void scripting::ControlScript::OnInit()
 
 void scripting::ControlScript::OnUpdate(float ts)
 {
-	int result = luaL_dofile(m_pLuaState, m_ScriptPath.c_str());
-	if ( result != LUA_OK)
+	//int result = luaL_dofile(m_pLuaState, m_ScriptPath.c_str());
+	//if ( result != LUA_OK)
 	{
-		printf("Unable to execute script %s\n", m_ScriptPath.c_str());
+		//printf("Unable to execute script %s\n", m_ScriptPath.c_str());
 	}
 }
+
 
 void scripting::ConfigScript::OnInit()
 {

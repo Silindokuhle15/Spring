@@ -328,87 +328,29 @@ inline void ComponentPanel<T>::Run()
 {
 	auto parent_layer = reinterpret_cast<T*>(*(m_ParentLayer.get()));
 
-	//glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
-	//glGetProgramiv(m_ActiveMaterial, GL_ACTIVE_UNIFORMS, &m_ActiveUniforms);
-
 	ImGui::Begin(m_PanelName.c_str());
-	ImGui::Separator();
-	ImGui::Checkbox("Enable ImGuizmo", &m_EnableImGuizmo);
-	ImGuizmo::Enable(m_EnableImGuizmo);
 	ImGui::Text("Viewing and Transformation");
 	ImGui::Separator();
 
 	ImGui::Text("Number Of Cameras : %d", m_NumberOfCamera);
-	float cam_pos[] = {m_pEditorCamera->m_eye.x,m_pEditorCamera->m_eye.y, m_pEditorCamera->m_eye.z};
-	ImGui::SliderFloat3("Camera Position", cam_pos, -50.0, 50.0);
-	m_pEditorCamera->SetEye(glm::vec3{cam_pos[0], cam_pos[1], cam_pos[2]});
+	float cam_pos[] = { m_pEditorCamera->m_eye.x,m_pEditorCamera->m_eye.y, m_pEditorCamera->m_eye.z };
+	ImGui::SliderFloat3("Eye", cam_pos, -50.0, 50.0);
+	m_pEditorCamera->SetEye(glm::vec3{ cam_pos[0], cam_pos[1], cam_pos[2] });
+
+	float cam_center[] = { m_pEditorCamera->m_center.x,m_pEditorCamera->m_center.y, m_pEditorCamera->m_center.z };
+	ImGui::SliderFloat3("Center", cam_center, -50.0, 50.0);
+	m_pEditorCamera->SetCenter(glm::vec3{ cam_center[0], cam_center[1], cam_center[2] });
+
+	float cam_up[] = { m_pEditorCamera->m_up.x,m_pEditorCamera->m_up.y, m_pEditorCamera->m_up.z };
+	ImGui::SliderFloat3("Up", cam_up, -50.0, 50.0);
+	m_pEditorCamera->SetUp(glm::vec3{ cam_up[0], cam_up[1], cam_up[2] });
 	ImGui::SliderFloat("Camera Speed", (float*)&m_pEditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
 	
 	ImGui::Separator();
 
-	static bool enable_lighting = false;
-	ImGui::Checkbox("Enable Lighting", &enable_lighting);
-
-	switch (enable_lighting)
-	{
-	case true:
-		m_EnableLighting = 1;
-		break;
-	default:
-		m_EnableLighting = int(enable_lighting);
-	}
-	//glProgramUniform1i(m_ActiveMaterial, enable_lighting_locatin, m_EnableLighting);
-
-	ImGui::Text("HemiSphere Lighting Model");
-	ImGui::SliderFloat3("Sky Color", m_SkyColor, 0.0, 1.0);
-	ImGui::SliderFloat3("Grounr Color", m_GroundColor, 0.0, 1.0);
-
-	int light_location = glGetUniformLocation(m_ActiveMaterial, "LightPosition");
-	int light_color_location = glGetUniformLocation(m_ActiveMaterial, "LightColor");
-	int sky_color_location = glGetUniformLocation(m_ActiveMaterial, "SkyColor");
-	int ground_color_location = glGetUniformLocation(m_ActiveMaterial, "GroundColor");
-	int factor_location = glGetUniformLocation(m_ActiveMaterial, "factor");
-
-
-	ImGui::Text("Materials");
-	ImGui::Separator();
-
-	ImGui::Text("Active Material : %d", m_ActiveMaterial);
-
-	int enable_texture_location = glGetUniformLocation(m_ActiveMaterial, "EnableTexture");
-
-	glProgramUniform1i(m_ActiveMaterial, enable_texture_location, m_EnableTexture);
-
-	ImGui::Checkbox("Apply Texture", &m_EnableTexture);
-	int attached_shaders = 0;
-	ImGui::Text("Attached Shaders : % d", attached_shaders);
-	int tex_slot = 0;
-	glGetIntegerv(GL_ACTIVE_TEXTURE, &tex_slot);
-	ImGui::Text("Active Texture Slot : %d", 0);
-	ImGui::Text("Number of Active Uniforms : %d", m_ActiveUniforms);
-
-	int width = 0, height = 0, size = 0;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-	//glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_BUFFER_SIZE, &size);
-	ImGui::Text("Active Texture Dims : [%d , %d]", width, height);
-	//ImGui::Text("Active Texture Size : [ %d ]", size);
-
-	//ImGui::Checkbox("use Gizmo Window", &m_UseGizmoWindow);
-	//ImGui::End();
-	//ImGuizmo::SetOrthographic(false);
-	//ImGuizmo::BeginFrame(); // ImGuizmo Begin Frame
-
 	ImGui::Separator();
 	ImGui::Text("Edit Transform Component");
 
-	/*
-	EditTransform((float*)glm::value_ptr(parent_layer->m_pActiveCamera->GetV()),
-		(float*)glm::value_ptr(parent_layer->m_pActiveCamera->GetP()),
-		(float*)glm::value_ptr(*parent_layer->m_pActiveTransform), true);
-
-	parent_layer->m_ActiveScene->m_StaticGeometry[parent_layer->m_SelectedMesh].SetTransform(*parent_layer->m_pActiveTransform);
-	*/
 	const char* attr[] = { "Mesh", "Grid" };
 
 	if (ImGui::Button("Create..."))
@@ -442,6 +384,21 @@ inline void ComponentPanel<T>::Run()
 		}
 
 		ImGui::EndPopup();
+	}
+
+	if (ImGui::TreeNode("Scene Hierachy"))
+	{
+		for (auto nt : m_ActiveScene->m_Characters)
+		{
+			int t = static_cast<int>(nt);
+			std::string snt{ std::to_string(t) };
+			if (ImGui::TreeNode(snt.c_str()))
+			{
+				ImGui::TreePop();
+			}
+		}
+
+		ImGui::TreePop();
 	}
 
 	ImGui::End();
@@ -555,7 +512,7 @@ inline void ContentBrowser::Run()
 
 	std::string dummy_path = "C:/dev/Silindokuhle15/Spring/Assets";
 	root_path = std::filesystem::path(dummy_path);
-	DisplayDirTree(root_path, 0);
+	//DisplayDirTree(root_path, 0);
 
 	ImGui::End();
 }

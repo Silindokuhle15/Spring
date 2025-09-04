@@ -14,6 +14,7 @@ public:
 	glm::vec3 m_eye;
 	glm::vec3 m_center;
 	glm::vec3 m_up;
+	glm::quat m_orientation;
 	glm::mat4 m_View;
 
 	int m_Width;
@@ -27,6 +28,7 @@ public:
 	virtual glm::vec3 GetEye() const { return m_eye; }
 	virtual void SetCenter(glm::vec3 new_pos) { m_center = new_pos; }
 	virtual void SetEye(glm::vec3 new_dir) { m_eye = new_dir; }
+	virtual void SetUp(glm::vec3 new_dir) { m_up = new_dir; }
 	virtual glm::mat4 GetV() const { return m_View; }
 	
 	virtual void SetWidth(int width) { m_Width = width; }
@@ -52,6 +54,7 @@ public:
 		m_eye{ 0.0f, 0.0f, 0.0f },
 		m_center{0.0f, 0.0f, 1.0f},
 		m_up{0.0f, 1.0f, 0.0},
+		m_orientation{0.0f, 0.0f, 0.0f, 1.0f},
 		m_View{glm::mat4(1.0f)}
 	{
 

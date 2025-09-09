@@ -17,10 +17,10 @@ typedef enum
 class Character;
 class Renderer;
 
-
-
 class Scene
 {
+private:
+	glm::vec2 m_MousePosition;
 public:
 	friend class Character;
 	bool OnEvent;
@@ -37,6 +37,8 @@ public:
 	std::vector<entt::entity> m_Characters;
 
 	physics::PhysicsEngine m_PhysicsEngine;
+	const glm::vec2 GetMousePosition() const;
+	void SetMousePosition(const glm::vec2& mouse_position);
 
 	std::vector<physics::PhysicsState> m_TempPhysicsStates;
 	std::vector<std::string> m_TempControlScripts;
@@ -62,14 +64,11 @@ public:
 	lua_State* GetLuaState() const { return m_pLuaState; }
 
 	Scene(const std::string& path = "");
-	~Scene()
-	{
-	}
 	friend class Character;
 	friend class Renderer;
 
 	Character* CreateSceneObject();
-	Character* GetSceneCharacter(entt::entity& id);
+	Character GetSceneCharacter(entt::entity& id);
 private:
 	SceneState m_State;
 	entt::registry m_Registry;

@@ -85,7 +85,7 @@ public:
 			m_ProjectionMatrix = glm::perspective(glm::radians(75.f), m_AspectRatio, 0.010f, 1000.0f);
 			break;
 		}
-		CameraView::m_View = glm::lookAt(m_eye, m_center,  m_up);
+		CameraView::m_View = glm::translate(glm::mat4(1.0f), -m_eye) * glm::mat4_cast(m_orientation);
 	}
 	Camera() {}
 	Camera(int width, int height, float zFar, float zNear)

@@ -1,26 +1,48 @@
 #include "Shader.h"
 
-void Shader::OnInit()
+Shader::Shader():
+    m_Handle{0}
 {
-    //Tryna Refactor this entire Functuion
-    std::ifstream is;
-    std::string file_data;
+}
 
-    for (int i = 0; i < m_Info.size(); i++)   // Must Update this not to use the hard-coded value for the number of shaders
+Shader::Shader(const ShaderResource& shader_resource)
+{
+    m_Handle = glCreateProgram();
+    for (size_t k = 0; k < shader_resource.GetShaderInfo().size(); k++)
     {
-        const char* file_path = m_Info[i].FilePath.c_str();
+        auto shader_type = shader_resource.GetShaderInfo()[k].shaderType;
+        GLenum glShader_type{ 0 };
+        switch (shader_type)
+        {
+            case ShaderType::VERTEX:
+                glShader_type = GL_VERTEX_SHADER;
+                break;
+            case ShaderType::PIXEL:
+                glShader_type = GL_FRAGMENT_SHADER;
+                break;
+        }
+        auto shader = glCreateShader(glShader_type);
+        auto shader_source = shader_resource.GetShaderSources()[k].c_str();
+        glShaderSource(shader, 1, &shader_source, NULL);
+        glCompileShader(shader);
 
-        is = std::ifstream(file_path);
-        is.seekg(0, std::ios::end);
-        file_data.reserve(is.tellg());
-        is.seekg(0, std::ios::beg);
-        file_data.assign(std::istreambuf_iterator<char>(is),
-            std::istreambuf_iterator<char>());
-
-        m_ShaderSource.push_back(file_data);
+        glAttachShader(m_Handle, shader);
     }
+    glLinkProgram(m_Handle);
 }
 
-void Shader::Bind()
+uint32_t Shader::GetHandle() const
 {
+    return m_Handle;
 }
+
+void Shader::Bind() const
+{
+    glUseProgram(m_Handle);
+}
+
+Shader Shader::CreateShader(const ShaderResource& resource)
+{
+    return Shader(resource);
+}
+

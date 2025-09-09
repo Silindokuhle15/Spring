@@ -9,7 +9,8 @@ Scene::Scene(const std::string& path)
 	m_Title{ path },
 	m_State{ SceneState::LOADING },
 	m_Script{ path },
-	m_pLuaState{ nullptr }
+	m_pLuaState{ nullptr },
+	m_MousePosition{0.0f, 0.0f}
 {
 	m_pLuaState = luaL_newstate();
 	luaL_openlibs(m_pLuaState);
@@ -22,10 +23,19 @@ Character* Scene::CreateSceneObject()
 	return newCharacter;
 }
 
-Character* Scene::GetSceneCharacter(entt::entity& id)
+Character Scene::GetSceneCharacter(entt::entity& id)
 {
-	Character* pch{ new Character{id, this }}; // This is a really bad idea
-	return pch;
+	return Character::GetCharacterPtr(id, this);
+}
+
+void Scene::SetMousePosition(const glm::vec2& mouse_position)
+{
+	m_MousePosition = mouse_position;
+}
+
+const glm::vec2 Scene::GetMousePosition() const
+{
+	return m_MousePosition;
 }
 
 void Scene::OnCreateSceneObjects()
@@ -62,12 +72,13 @@ void Scene::OnCreateSceneObjects()
 
 void Scene::CreateShaders()
 {
+	
 	std::vector<ShaderInfo> m_shaderInfo;
 	for (size_t index = 0; index < shader_paths.size(); index += 2)
 	{
-		m_shaderInfo = { ShaderInfo{ shader_paths[index], GL_VERTEX_SHADER },
-			ShaderInfo{ shader_paths[index + 1], GL_FRAGMENT_SHADER } };
-		Shader temp_shader(m_shaderInfo);
+		ShaderResource r = { ShaderInfo{ shader_paths[index], ShaderType::VERTEX },
+			ShaderInfo{ shader_paths[index + 1], ShaderType::PIXEL } };
+		Shader temp_shader(r);
 		m_Shaders.push_back(temp_shader);
 		m_shaderInfo.clear();
 	}
@@ -76,6 +87,16 @@ void Scene::CreateShaders()
 void Scene::OnInit()
 {
 	m_State = SceneState::LOADING;
+	scripting::ScriptMgr::register_scene(m_pLuaState);
+	scripting::ScriptMgr::register_character(m_pLuaState);
+	scripting::ScriptMgr::register_vector3(m_pLuaState);
+	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
+
+	auto lastOfIndex = m_Title.find_last_of('/');
+	auto fullFilename = m_Title.substr(++lastOfIndex);
+	lastOfIndex = fullFilename.find_last_of('.');
+	auto filename = fullFilename.substr(0, lastOfIndex);
+	scripting::ScriptMgr::expose_scene(m_pLuaState, this, filename.c_str());
 
 	m_PhysicsEngine.OnInit();
 
@@ -102,9 +123,10 @@ void Scene::OnUpdate(TimeStep ts)
 	case SceneState::STOPPED:
 		break;
 	}
-	auto view = m_Registry.view<scripting::ControlScript, physics::PhysicsState>();
+
+	auto scriptView = m_Registry.view<scripting::ControlScript>();
 	// use a callback
-	view.each([&](const auto& script, auto& phzx_state) 
+	scriptView.each([&](const auto& script) 
 	{
 		auto& path = script.m_ScriptPath;
 		auto result = luaL_dostring(m_pLuaState, script.data.c_str());
@@ -114,10 +136,14 @@ void Scene::OnUpdate(TimeStep ts)
 		{
 			auto error = true;
 		}
-
-		phzx_state.velocity += phzx_state.linear_acceleration * 0.01667f;
-		phzx_state.position += phzx_state.velocity * 0.01667f;
 	});
+
+	auto phzxView = m_Registry.view<physics::PhysicsState>();
+	phzxView.each([&](auto& phzx_state)
+		{
+			phzx_state.velocity += phzx_state.linear_acceleration * 0.01667f;
+			phzx_state.position += phzx_state.velocity * 0.01667f;
+		});
 
 	m_AccumulatedTime += (float)ts;
 	std::cout << "Scene Accumulated Time : " << m_AccumulatedTime << std::endl;

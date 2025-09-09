@@ -25,61 +25,29 @@ void Renderer::SetUpForRendering()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
     glNamedBufferData(m_IndexBuffer, index_buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
-    GLuint m_Vao = 0;
-    glGenVertexArrays(1, &m_Vao);
-    glBindVertexArray(m_Vao);
-
-    GLsizei stride = sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(glm::vec1) + sizeof(glm::vec3);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(glm::vec3)));
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(glm::vec3) + sizeof(glm::vec2)));
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, stride, (void*)(sizeof(glm::vec3) + sizeof(glm::vec2) + sizeof(glm::vec1)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-    glEnableVertexAttribArray(3);
-
-    // CREATE THE MATERIALS
-    basicRenderProgram = glCreateProgram();
-    CreateRenderingProgram(m_ActiveScene->m_Shaders[0], basicRenderProgram);
-    glLinkProgram(basicRenderProgram);
-
-    m_SkyboxRenderingProgram = glCreateProgram();
-    CreateRenderingProgram(m_SkyboxShader, m_SkyboxRenderingProgram);
-    glLinkProgram(m_SkyboxRenderingProgram);
+    BufferLayout layout{
+        {ShaderDataType::Float3, "Position"},
+        {ShaderDataType::Float2, "TexCoord"},
+        {ShaderDataType::Float,  "ID"},
+        {ShaderDataType::Float3, "Normal"}
+    };
+    m_VAO.Bind();
+    m_VAO.SetBufferLayout(layout);
 
     CreateSkyboxCubeMap();
-
     CreateOpenGLFrameBuffer();
-}
-
-
-void Renderer::CreateRenderingProgram(Shader& shader_resource, GLuint program)
-{
-    shader_resource.OnInit();
-    for (size_t k = 0; k < shader_resource.m_Info.size(); k++)
-    {
-        GLenum shader_type = shader_resource.m_Info[k].ShaderType;
-        auto shader = glCreateShader(shader_type);
-
-        auto shader_source = shader_resource.m_ShaderSource[k].c_str();
-        glShaderSource(shader, 1, &shader_source, NULL);
-        glCompileShader(shader);
-
-        glAttachShader(program, shader);
-    }
 }
 
 void Renderer::UploadToOpenGL()
 {
-    glUseProgram(basicRenderProgram);
-
+    m_ActiveScene->m_Shaders[0].Bind();
+    auto handle = m_ActiveScene->m_Shaders[0].GetHandle();
     auto view = m_pActiveCamera->GetV();
     auto proj = m_pActiveCamera->GetP();
 
-    GLuint viewLocation = glGetUniformLocation(basicRenderProgram, "View");
-    GLuint projectionLocation = glGetUniformLocation(basicRenderProgram, "Projection");
-    GLuint posLocation = glGetUniformLocation(basicRenderProgram, "pos");
+    GLuint viewLocation = glGetUniformLocation(handle, "View");
+    GLuint projectionLocation = glGetUniformLocation(handle, "Projection");
+    GLuint posLocation = glGetUniformLocation(handle, "pos");
     glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(proj));
 
@@ -90,6 +58,14 @@ void Renderer::UploadToOpenGL()
         auto& phzx = var.GetComponent<physics::PhysicsState>();
         glUniform3f(posLocation, phzx.position.x, phzx.position.y, phzx.position.z);
         auto& mesh = var.GetComponent<Mesh>();
+        auto& material = mesh.m_Materials[1];
+        for (auto& materialComponent : material.m_Uniforms3f)
+        {
+            auto& name = materialComponent.first;
+            auto& data = materialComponent.second;
+            GLuint location = glGetUniformLocation(handle, materialComponent.first.c_str());
+            glUniform3f(location, data.x, data.y, data.z);
+        }
         glNamedBufferSubData(m_VertexBuffer, vBuffer_offset, sizeof(Vertex) * mesh.m_V.size(), mesh.m_V.data());
         vBuffer_offset += sizeof(Vertex) * mesh.m_V.size();
 
@@ -110,18 +86,16 @@ void Renderer::UploadToOpenGL()
 
 void Renderer::DrawSkyboxBackground()
 {
-    glUseProgram(m_SkyboxRenderingProgram);
+    m_SkyboxShader.Bind();
     glDisable(GL_CULL_FACE);
     glDepthFunc(GL_LEQUAL);
-    vBuffer_offset = 0;
-    index_offset = 0;
 
     glBufferSubData(GL_ARRAY_BUFFER, vBuffer_offset, sizeof(Vertex) * m_SkyboxMesh.m_V.size(), (void*)m_SkyboxMesh.m_V.data());
     vBuffer_offset += sizeof(Vertex) * m_SkyboxMesh.m_V.size();
     glBindTextureUnit(0, m_SkyboxTexture.m_Texture);
 
     auto v = glm::mat4_cast(m_pActiveCamera->m_orientation);
-    auto rot_location = glGetUniformLocation(m_SkyboxRenderingProgram, "CameraOrientation");
+    auto rot_location = glGetUniformLocation(m_SkyboxShader.GetHandle(), "CameraOrientation");
     glUniformMatrix4fv(rot_location, 1, GL_FALSE, glm::value_ptr(v));
 
     glDrawArrays(GL_TRIANGLES, static_cast<int>(index_offset), 36);
@@ -129,24 +103,6 @@ void Renderer::DrawSkyboxBackground()
 
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
-}
-
-void Renderer::CreateOpenGLTexture(_TextureView& view, _TextureDescription& desc, GL_Texture& tex)
-{    
-    glCreateTextures(GL_TEXTURE_2D, 1, &tex);
-
-    GLenum format = GL_RGB8;
-
-    GLuint width = 10, height = 10;
-    void* data = nullptr;
-  
-    glTextureStorage2D(tex, 1, format, width, height);
-
-    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-
 }
 
 void Renderer::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)
@@ -272,8 +228,9 @@ void Renderer::CreateOpenGLFrameBuffer()
     CustomFrameBufferTexture.m_TextureTarget = _TextureTarget::TEXTURE_2D;
     CreateOpenGLTexture(CustomFrameBufferTexture);
 
-    glGenFramebuffers(1, &CustomFrameBuffer);
-    glNamedFramebufferTexture(CustomFrameBuffer, GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
+    CustomFrameBuffer.SetTexture(GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
+    //glGenFramebuffers(1, &CustomFrameBuffer);
+    //glNamedFramebufferTexture(CustomFrameBuffer, GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
 }
 
 const glm::vec3 Renderer::UnprojectMouse() const
@@ -324,6 +281,7 @@ void Renderer::SetActiveCamera(std::shared_ptr<Camera> camera)
 
 void Renderer::OnUpdate(TimeStep ts)
 {
+    m_MousePos = m_ActiveScene->GetMousePosition();
 }
 
 void Renderer::CreateImage()
@@ -342,7 +300,8 @@ void Renderer::EnableTesselation()
 
 void Renderer::BeginFrame()
 {
-   
+    vBuffer_offset = 0;
+    index_offset = 0;
 }
 
 void Renderer::EndFrame()

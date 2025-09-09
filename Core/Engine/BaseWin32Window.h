@@ -12,7 +12,6 @@ template <class WindowClass>
 class BaseWindowClass
 {
 public:
-	SceneEventQueue m_SceneEventQueue;
 	HWND m_Hwnd;
 	HINSTANCE m_Handle;
 

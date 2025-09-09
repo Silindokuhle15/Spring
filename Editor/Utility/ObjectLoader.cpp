@@ -34,18 +34,7 @@ void ObjectLoader::ExtractDump(const std::string& dump_line, uint64_t object_ind
 	}
 }
 
-std::vector<std::string> ObjectLoader::getWords(const std::string& s, const char* delim) {
-	std::vector<std::string> tokens;
-	size_t start = 0, end;
-	while ((end = s.find(delim, start)) != std::string::npos) {
-		if (end != start)
-			tokens.push_back(s.substr(start, end - start));
-		start = end + strlen(delim);
-	}
-	if (start < s.length())
-		tokens.push_back(s.substr(start));
-	return tokens;
-}
+
 
 int FBXObjectLoader::LoadObjectFromFile(const char* file_path)
 {
@@ -471,7 +460,7 @@ int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 	std::string objDir = GetDirectoryFromPath(file_path);
 
 	while (std::getline(in, line)) {
-		auto words = ObjectLoader::getWords(line, " ");
+		auto words = getWords(line, " ");
 		if (words.empty()) continue;
 		const std::string& type = words[0];
 		char* endptr;
@@ -551,51 +540,87 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 	std::string line;
 	uint64_t materialID = 0;
 	char* endptr = nullptr;
-
+	std::vector<LayoutInfo> materialInfos;
+	Material tempMaterial{};
+	
 	while (std::getline(in, line)) {
-		auto words = ObjectLoader::getWords(line, " ");
+		auto words = getWords(line, " ");
 		if (words.empty()) continue;
 
 		const std::string& type = words[0];
+		LayoutInfo materialInfo;
+		bool materialComponent = false;
 
 		if (type == "newmtl" && words.size() >= 2) {
 			m_MaterialNames.push_back(words[1]);
 			m_Materials.emplace_back(materialID++);
 		}
 		else if (type == "Ka" && words.size() >= 4) {
-			m_Materials.back().m_Ka = glm::vec3(
+			auto Ka = glm::vec3(
 				strtof(words[1].c_str(), &endptr),
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
+			tempMaterial.m_Uniforms3f.insert({ "Ka", Ka });
+			materialInfo.Name = "Ka";
+			materialInfo.Type = ShaderDataType::Float3;
+			materialComponent = true;
 		}
 		else if (type == "Kd" && words.size() >= 4) {
-			m_Materials.back().m_Kd = glm::vec3(
+			auto Kd = glm::vec3(
 				strtof(words[1].c_str(), &endptr),
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
+			tempMaterial.m_Uniforms3f.insert({ "Kd", Kd });
+			materialInfo.Name = "Kd";
+			materialInfo.Type = ShaderDataType::Float3;
+			materialComponent = true;
 		}
 		else if (type == "Ks" && words.size() >= 4) {
-			m_Materials.back().m_Ks = glm::vec3(
+			auto Ks = glm::vec3(
 				strtof(words[1].c_str(), &endptr),
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
+			tempMaterial.m_Uniforms3f.insert({ "Ks", Ks });
+			materialInfo.Name = "Ks";
+			materialInfo.Type = ShaderDataType::Float3;
+			materialComponent = true;
 		}
 		else if (type == "Ns" && words.size() >= 2) {
-			m_Materials.back().m_Ns = strtof(words[1].c_str(), &endptr);
+			auto Ns = strtof(words[1].c_str(), &endptr);
+			tempMaterial.m_Uniforms1f.insert({ "Ns", glm::vec1(Ns) });
+			materialInfo.Name = "Ns";
+			materialInfo.Type = ShaderDataType::Float;
+			materialComponent = true;
 		}
 		else if (type == "Ni" && words.size() >= 2) {
-			m_Materials.back().m_Ni = strtof(words[1].c_str(), &endptr);
+			auto Ni = strtof(words[1].c_str(), &endptr);
+			tempMaterial.m_Uniforms1f.insert({ "Ni", glm::vec1(Ni) });
+			materialInfo.Name = "Ni";
+			materialInfo.Type = ShaderDataType::Float;
+			materialComponent = true;
 		}
 		else if (type == "d" && words.size() >= 2) {
-			m_Materials.back().m_d = strtof(words[1].c_str(), &endptr);
+			auto d = strtof(words[1].c_str(), &endptr);
+			tempMaterial.m_Uniforms1f.insert({ "d", glm::vec1(d) });
+			materialInfo.Name = "d";
+			materialInfo.Type = ShaderDataType::Float;
+			materialComponent = true;
 		}
 		else if (type == "illum" && words.size() >= 2) {
-			m_Materials.back().m_illum = strtof(words[1].c_str(), &endptr);
+			auto illum = strtof(words[1].c_str(), &endptr);
+			tempMaterial.m_Uniforms1f.insert({ "illum", glm::vec1(illum) });
+			materialInfo.Name = "illum";
+			materialInfo.Type = ShaderDataType::Float;
+			materialComponent = true;
+		}
+		if (materialComponent)
+		{
+			materialInfos.push_back(materialInfo);
 		}
 	}
-
+	m_Materials.push_back(tempMaterial);
 	return 0;
 }

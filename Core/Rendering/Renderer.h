@@ -1,6 +1,8 @@
 #pragma once
 #include "Character.h"
 #include "VertexArray.h"
+#include "FrameBuffer.h"
+#include "Shader.h"
 
 class Renderer
 {
@@ -12,18 +14,14 @@ public:
     GLuint index_offset = 0;
     GLuint vBuffer_offset = 0;
 
-    // Vertex Arrays
     VertexArray m_VAO;
-    GLuint basicRenderProgram = 0;
-    GLuint m_SkyboxRenderingProgram = 0;
-    GLuint CustomFrameBuffer = 0;
+    FrameBuffer CustomFrameBuffer;
     TextureBase<GL_Texture> CustomFrameBufferTexture;
     TextureBase<GL_Texture> m_SkyboxTexture;
-    std::vector<ShaderInfo> m_SkyboxShaderInfo;
+    ShaderResource m_SkyboxShaderInfo;
     Shader m_SkyboxShader;
     Mesh m_SkyboxMesh;
 
-    // Uniforms
     int m_LightLocation;
     int m_CameraEyeLocation;
     int m_ModelLocation;
@@ -57,8 +55,6 @@ public:
     void SetUpForRendering();
     void UploadToOpenGL();
     void DrawSkyboxBackground();
-    void CreateRenderingProgram(Shader& shader_resource, GLuint program);
-    void CreateOpenGLTexture(_TextureView& view, _TextureDescription & desc, GL_Texture & tex);
     void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
     void CreateSkyboxCubeMap();
     void CreateOpenGLFrameBuffer();
@@ -66,14 +62,19 @@ public:
     const glm::vec3 UnprojectMouse() const;
 
     Renderer():
-        m_MousePos{0.0, 0.0},
-        m_SkyboxShaderInfo{ 
-        {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxVertShader.glsl", GL_VERTEX_SHADER},
-        {"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxFragShader.glsl", GL_FRAGMENT_SHADER}
+        m_MousePos{960, 580},
+        m_SkyboxShaderInfo
+        {
+            {
+                ShaderInfo{"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxVertShader.glsl", ShaderType::VERTEX},
+                ShaderInfo{"C:/dev/Silindokuhle15/Spring/Assets/Shaders/SkyBoxFragShader.glsl", ShaderType::PIXEL}
+            }
         },
         m_SkyboxShader{m_SkyboxShaderInfo},
-        m_SkyboxMesh{ "C:/dev/Silindokuhle15/Spring/Assets/Objects/Cube/Cube.obj" }
+        m_SkyboxMesh{ "C:/dev/Silindokuhle15/Spring/Assets/Objects/Cube/Cube.obj" },
+        CustomFrameBuffer{}
     {
+        Material testMaterial(m_SkyboxShaderInfo);
         m_SkyboxMesh.OnInit();
     }
     ~Renderer() {}

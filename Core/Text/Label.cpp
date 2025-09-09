@@ -181,6 +181,7 @@ void Label::GenerateGlyphBoxes()
 			double z_scale = 0.1;
 
 			GlyphBox glyphBox;
+			
 			glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(x_scale, y_scale, z_scale));
 			transform = glm::translate(transform, glm::vec3(x_offset, y_offset, z_offset));
 

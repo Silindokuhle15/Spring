@@ -63,7 +63,7 @@ class Event
 public:
 	EventID  m_ID;
 	bool m_Resolved;
-	virtual bool Resolve() = 0;
+	virtual bool Resolve() { m_Resolved = true; return m_Resolved; };
 	Event(EventID id = EventID::None) : m_ID{ id }, m_Resolved { false } {}
 };
 

@@ -18,12 +18,13 @@ class BaseApplication
 public:
 	static bool ExitWindow;
 	static TimeStep ts;
-	static Win32Window* m_Window;
+	//static Win32Window* m_Window;
+	static std::shared_ptr<Win32Window> m_Window;
 
 	static std::shared_ptr<Renderer> m_pActiveRenderer;
 	static std::shared_ptr<UILayer<Win32Window>> m_pUILayer;
-	//static std::shared_ptr<Scene> m_Scene;
-	static Scene* m_Scene;
+	static std::shared_ptr<Scene> m_Scene;
+	//static Scene* m_Scene;
 
 	static void Run();
 	static void ShutDown();

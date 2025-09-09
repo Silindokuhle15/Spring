@@ -4,183 +4,17 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam
 
 LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-
     ImGui_ImplWin32_WndProcHandler(m_Hwnd, uMsg, wParam, lParam);
-
     switch (uMsg)
     {
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
-    case WM_LBUTTONDOWN:
-        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::LEFT));
-        break;
-    case WM_LBUTTONUP:
-        break;
-    case WM_MBUTTONDOWN:
-        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::MIDDLE));
-        break;
-    case WM_MBUTTONUP:
-        break;
-    case WM_RBUTTONDOWN:
-        m_SceneEventQueue.Push(new MouseButtonDown(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), MouseButton::RIGHT));
-        break;
-    case WM_RBUTTONUP:
-        break;
-    case WM_XBUTTONDOWN:
-        break;
-    case WM_XBUTTONUP:
-        break;
-    case WM_MOUSEMOVE:
-        m_SceneEventQueue.Push(new MouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
-        break;
-    case WM_MOUSEWHEEL:
-        m_SceneEventQueue.Push(new MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam)));
-        break;
-
-    case WM_KEYDOWN:
-        switch (wParam)
-        {
-        case VK_UP :
-            m_SceneEventQueue.Push(new SceneEvent(EventID::UP));
-            break;
-        case VK_RIGHT:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::RIGHT));
-            break;
-        case VK_DOWN:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::DOWN));
-            break;
-        case VK_LEFT:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::LEFT));
-            break;
-        case VK_SPACE:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::SPACE));
-            break;
-        case VK_ESCAPE:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::ESCAPE));
-            break;
-
-        case 0x30:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::ZERO));
-            break;
-        case 0x31:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::ONE));
-            break;
-        case 0x32:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::TWO));
-            break;
-        case 0x33:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::THREE));
-            break;
-        case 0x34:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::FOUR));
-            break;
-        case 0x35:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::FIVE));
-            break;
-        case 0x36:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::SIX));
-            break;
-        case 0x37:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::SEVEN));
-            break;
-        case 0x38:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::EIGHT));
-            break;
-        case 0x39:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::NINE));
-            break;
-        case 0x41:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::A));
-            break;
-        case 0x42:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::B));
-            break;
-        case 0x43:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::C));
-            break;
-        case 0x44:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::D));
-            break;
-        case 0x45:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::E));
-            break;
-        case 0x46:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::F));
-            break;
-        case 0x47:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::G));
-            break;
-        case 0x48:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::H));
-            break;
-        case 0x49:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::I));
-            break;
-        case 0x4A:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::J));
-            break;
-        case 0x4B:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::K));
-            break;
-        case 0x4C:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::L));
-            break;
-        case 0x4D:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::M));
-            break;
-        case 0x4E:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::N));
-            break;
-        case 0x4F:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::O));
-            break;
-        case 0x50:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::P));
-            break;
-        case 0x51:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::Q));
-            break;
-        case 0x52:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::R));
-            break;
-        case 0x53:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::S));
-            break;
-        case 0x54:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::T));
-            break;
-        case 0x55:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::U));
-            break;
-        case 0x56:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::V));
-            break;
-        case 0x57:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::W));
-            break;
-        case 0x58:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::X));
-            break;
-        case 0x59:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::Y));
-            break;
-        case 0x5A:
-            m_SceneEventQueue.Push(new SceneEvent(EventID::Z));
-            break;
-        }
-        break;
-    case WM_KEYUP:
-        break;
-
     default:
         return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }
-
-
-
 
 void Win32Window::CreateOpenGLContext()
 {
@@ -255,12 +89,17 @@ Win32Window::Win32Window()
 {
     CreateWin32Window(1920, 1080, "Empty Window");
     ShowWindow(m_Hwnd, 10);
+    SetUpForRendering();
 }
 
-Win32Window::Win32Window(uint64_t width, uint64_t height, const char* name, bool show)
+Win32Window::Win32Window(uint64_t width, uint64_t height, const char* name, bool show):
+    m_Width{width},
+    m_Height{height},
+    m_Title{name}
 {
     CreateWin32Window(width, height, name);
     show ? ShowWindow(m_Hwnd, 10) : 0;
+    SetUpForRendering();
 }
 
 
@@ -273,13 +112,33 @@ void Win32Window::SetWidth(int64_t width)
 {
     m_Width = width;
 }
+const uint64_t Win32Window::GetWidth() const
+{
+    return m_Width;
+}
 void Win32Window::SetHeight(int64_t height)
 {
     m_Height = height;
 }
+const uint64_t Win32Window::GetHeight() const
+{
+    return m_Height;
+}
 void Win32Window::SetTitle(std::string title)
 {
     m_Title = title;
+}
+std::vector<uint64_t> Win32Window::GetMousePosition() const
+{
+    CURSORINFO ci{ sizeof(CURSORINFO) };
+    uint64_t x{ 0 }, y{ 0 };
+    if (GetCursorInfo(&ci))
+    {
+        POINT pt{ ci.ptScreenPos };
+        x = pt.x;
+        y = pt.y;
+    }
+    return std::vector<uint64_t>(x, y);
 }
 void Win32Window::DestroyOpenGLContext()
 {
@@ -292,7 +151,6 @@ void Win32Window::SetUpForRendering()
 
 void Win32Window::SwapBuffer()
 {
-    //wglSwapIntervalEXT(1);
     SwapBuffers(m_Hdc);
 }
 
@@ -304,8 +162,7 @@ void Win32Window::OnUpdate()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    m_SceneEventQueue.OnUpdate();
-    ts = (m_EndTime - m_StartTime);
+    m_Ts = (m_EndTime - m_StartTime);
 }
 
 long long Win32Window::milliseconds_now() {

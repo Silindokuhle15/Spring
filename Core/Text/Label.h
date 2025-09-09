@@ -17,7 +17,7 @@ public:
 	GlyphBox() :
 		m_Transform{glm::mat4(1.0f)}
 	{
-
+		m_Box.OnInit();
 	}
 	
 	void SetGlyphID(float id);

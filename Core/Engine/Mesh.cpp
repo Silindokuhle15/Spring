@@ -3,7 +3,7 @@
 
 void Mesh::OnInit() {
     // Extract extension
-    auto file_split = ObjectLoader::getWords(m_OBJFilePath, ".");
+    auto file_split = getWords(m_OBJFilePath, ".");
     if (file_split.empty())
         return;
 

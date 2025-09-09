@@ -1,26 +1,18 @@
 #pragma once
 #include "GL/glew.h"
-#include <string>
-#include <fstream>
-#include <vector>
-
-
-struct ShaderInfo
-{
-	std::string FilePath;
-	GLenum ShaderType;
-};
+#include "ShaderResource.h"
 
 class Shader
 {
+	uint32_t m_Handle;
 public:
-	std::vector<ShaderInfo> m_Info;
-	std::vector<std::string> m_ShaderSource;
-public:
-	Shader(const std::vector<ShaderInfo> info= {}) : m_Info{info} {}
+	Shader();
+	Shader(const ShaderResource& shader_resource);
 	~Shader() {} 
-	
-	void OnInit();
-	void Bind();
+	uint32_t GetHandle() const;
+	void Bind() const;
+
+public:
+	static Shader CreateShader(const ShaderResource& resoure);
 };
 

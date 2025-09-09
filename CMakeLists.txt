@@ -59,6 +59,7 @@ include_directories(
     "Core/Physics/"
     "Core/Project/"
     "Core/Rendering/"
+    "Core/Resources/"
     "Core/SceneMgr/"
     "Core/Scripting/"
     "Core/Viewing/"
@@ -138,7 +139,9 @@ set(SHARED_SOURCES
     "Core/Application/Grid.h" "Core/Application/Grid.cpp"
     "Core/Engine/Mesh.h" "Core/Engine/Mesh.cpp"
     "Core/Application/Square.h" "Core/Application/Square.cpp"
-)
+    "Core/Rendering/FrameBuffer.h" "Core/Rendering/FrameBuffer.cpp"
+    "Core/Rendering/BufferLayout.h" "Core/Rendering/BufferLayout.cpp" 
+    "Core/Resources/ShaderResource.h" "Core/Resources/ShaderResource.cpp")
 
 # Executable-specific files
 set(EDITOR_SOURCES

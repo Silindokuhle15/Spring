@@ -15,11 +15,12 @@ template<class WindowBase>
 class UILayer :
     public Layer
 {
+private:
+    glm::vec2 m_MousePosition;
 public:
     ImGui_BeckEnd m_ImguiBackEnd;
-    unsigned int SelectedMesh;
     // Huh?
-    std::shared_ptr<WindowBase> m_ParentWindow;
+    std::shared_ptr<Win32Window> m_ParentWindow;
     std::shared_ptr<Scene> m_ActiveScene;
     std::shared_ptr<Renderer> m_ActiveRenderer;
     std::shared_ptr<glm::mat4> m_pActiveTransform;
@@ -113,9 +114,12 @@ public:
     {
         m_Delta = ts;
         //Update the Editor camera delta right here
-        //m_pActiveCamera->Present();
-        //m_pActiveCamera->OnUpdate(m_Delta);
-        
+        glm::vec2 deltaMouse = m_MousePosition  - m_ActiveScene->GetMousePosition();
+        glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * -0.0f * ts, deltaMouse.x * 0.5f * ts, 0.0f));
+        m_pActiveCamera->m_orientation = glm::normalize(deltaQuat * m_pActiveCamera->m_orientation);
+        m_pActiveCamera->Present();
+        m_pActiveCamera->OnUpdate(m_Delta);
+        m_ActiveScene->SetMousePosition(m_MousePosition);
     }
 
     std::shared_ptr<Camera>& GetLayerCamera()
@@ -164,18 +168,20 @@ public:
     }
     // CONSTRUCTORS
 
-    UILayer(WindowBase window) :
-        m_ParentWindow{std::make_shared<WindowBase>(window)},
-        m_pActiveCamera{new Camera{ 1920, 1080, 0.01f, 10000.0f } },
-        m_ComponentPanel{this,  m_pActiveCamera},
-        m_ContentBrowser{this},
-        m_RenderPanel{this},
-        m_StatsPanel{this},
-        m_FileMenuBar{this}
+    UILayer(std::shared_ptr<Win32Window> window) :
+        m_ParentWindow{window},
+        m_ImguiBackEnd{ ImGui_BeckEnd::Win32 },
+        m_MousePosition{window->GetWidth()/2.0, window->GetHeight()/2.0},
+        m_pActiveCamera{ new Camera{ 1920, 1080, 0.01f, 10000.0f } },
+        m_ComponentPanel{ this,  m_pActiveCamera },
+        m_ContentBrowser{ this },
+        m_RenderPanel{ this },
+        m_StatsPanel{ this },
+        m_FileMenuBar{ this }
     {
         //start the Imgui code here
         //Initialization Code
-   
+
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); // Enable ImGui IO
@@ -184,26 +190,27 @@ public:
 
         const std::type_info& info = typeid(window);
         std::string type_name = info.name();
-        
-        
-        if (type_name.compare("class Win32Window") == 0)
-        {
-            m_ImguiBackEnd = ImGui_BeckEnd::Win32;
-            ImGui_ImplWin32_Init(window);
-        }
-        /*
-        if (type_name.compare("class NGLFWwindow") == 0)
-        {
-            m_ImguiBackEnd = ImGui_BeckEnd::GLFW;
-            ImGui_ImplGlfw_InitForOpenGL(window, true);
-        }
-        */
 
+
+        if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
+        {
+            m_ImguiBackEnd = ImGui_BeckEnd::Win32;            
+            ImGui_ImplWin32_Init(m_ParentWindow->m_Hwnd);
+        }
         const char* gl_ver = "#version 450";
         ImGui_ImplOpenGL3_Init(gl_ver);
-        ImGui::StyleColorsDark();        
+        ImGui::StyleColorsDark();
     }
     UILayer() : Layer() {}
+    void SetMousePosition(const glm::vec2& mouse_position)
+    {
+        m_MousePosition = mouse_position;
+    }
+
+    const glm::vec2& GetMousePosition() const
+    {
+        return m_MousePosition;
+    }
 
     ~UILayer()
     {

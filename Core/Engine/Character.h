@@ -25,8 +25,7 @@ public :
 	template<typename T>
 	bool HasComponent()
 	{
-		// Find out how to check for a component type for a specific entity
-		return true;
+		return m_pScene->m_Registry.all_of<T>(m_Entity);
 	}
 
 	template<typename T>
@@ -36,6 +35,7 @@ public :
 	}
 
 	entt::entity GetCharacterID() const { return m_Entity; }
+	static Character GetCharacterPtr(entt::entity id, Scene* pscene);
 
 private:
 	entt::entity m_Entity;

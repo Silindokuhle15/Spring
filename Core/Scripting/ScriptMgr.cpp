@@ -158,9 +158,6 @@ namespace scripting {
         glm::vec3 vt{ temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
         state->linear_acceleration = glm::normalize(vt) * 0.0166f;
-        state->velocity += state->linear_acceleration * 0.01667f;
-        state->position += state->velocity * 0.01667f;
-        //state->position += glm::normalize(vt) * 0.01667f;
         return 0;
     }
 

@@ -28,7 +28,6 @@ public:
 	std::vector<std::string> m_MaterialNames;
 	std::vector<std::string> m_ObjectNames;
 	std::vector<std::string> m_Surfaces;
-	static std::vector<std::string> getWords(const std::string& s, const char * delim);
 	virtual int LoadObjectFromFile(const char* file_path);
 	virtual int LoadMaterialFromFile(const char* file_path);
 

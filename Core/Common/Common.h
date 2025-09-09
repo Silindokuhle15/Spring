@@ -41,9 +41,15 @@ typedef enum
 {
 	TRIANGLE_STRIP, WIRE_FRAME
 } PrimitiveMode;
-enum class VertexAttrib
+enum class ShaderDataType
 {
-	Position, TexCoord, ID, Normal
+	None = 0, Bool, Float, Float2, Float3, Float4, Mat2, Mat3, Mat4
+};
+
+typedef struct LayoutInfo
+{
+	ShaderDataType Type;
+	std::string Name;
 };
 
 enum class GameState
@@ -53,3 +59,5 @@ enum class GameState
 	PAUSED = 2,
 	EXIT = 3
 };
+
+std::vector<std::string> getWords(const std::string& s, const char* delim);

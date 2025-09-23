@@ -1,10 +1,7 @@
 #include "Win32Window.h"
 
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
 LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    ImGui_ImplWin32_WndProcHandler(m_Hwnd, uMsg, wParam, lParam);
     switch (uMsg)
     {
     case WM_DESTROY:
@@ -82,8 +79,6 @@ void Win32Window::CreateOpenGLContext()
     int OpenGLVersion[2];
     glGetIntegerv(GL_MAJOR_VERSION, &OpenGLVersion[0]);
     glGetIntegerv(GL_MINOR_VERSION, &OpenGLVersion[1]);
-
-    //MessageBoxA(0, (char*)glGetString(GL_VERSION), "OPENGL VERSION", 0);
 }
 Win32Window::Win32Window()
 {
@@ -101,7 +96,6 @@ Win32Window::Win32Window(uint64_t width, uint64_t height, const char* name, bool
     show ? ShowWindow(m_Hwnd, 10) : 0;
     SetUpForRendering();
 }
-
 
 Win32Window::~Win32Window()
 {
@@ -128,18 +122,7 @@ void Win32Window::SetTitle(std::string title)
 {
     m_Title = title;
 }
-std::vector<uint64_t> Win32Window::GetMousePosition() const
-{
-    CURSORINFO ci{ sizeof(CURSORINFO) };
-    uint64_t x{ 0 }, y{ 0 };
-    if (GetCursorInfo(&ci))
-    {
-        POINT pt{ ci.ptScreenPos };
-        x = pt.x;
-        y = pt.y;
-    }
-    return std::vector<uint64_t>(x, y);
-}
+
 void Win32Window::DestroyOpenGLContext()
 {
 }
@@ -162,7 +145,6 @@ void Win32Window::OnUpdate()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    m_Ts = (m_EndTime - m_StartTime);
 }
 
 long long Win32Window::milliseconds_now() {

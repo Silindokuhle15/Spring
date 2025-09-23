@@ -6,7 +6,6 @@ template <typename T>
 class Collider
 {
 public:
-	//glm::vec3 m_Position;
 	virtual bool Intersect(const Collider<T>& other);
 
 	glm::vec3 m_Pos;

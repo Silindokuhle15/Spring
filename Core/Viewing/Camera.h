@@ -33,8 +33,10 @@ public:
 	
 	virtual void SetWidth(int width) { m_Width = width; }
 	virtual void SetHeight(int height) { m_Height = height; }
+	virtual void SetOrientation(glm::quat orientation) { m_orientation = orientation; }
 	virtual int GetWidth() const { return m_Width; }
 	virtual int GetHeight() const { return m_Height; }
+	virtual const glm::quat GetOrientation() const { return m_orientation; }
 
 	virtual void OnInit()
 	{

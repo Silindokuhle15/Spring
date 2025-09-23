@@ -1,7 +1,5 @@
 #include "Layer.h"
 
-//class UILayer;
-
 class Panel
 {
 public:
@@ -66,6 +64,8 @@ public:
 	// EDITOR CAMERA VARIABLES
 	float m_CameraPosition[3] = { 0.0, 0.0, 0.0 };
 	int m_NumberOfCamera = 1;
+	float m_MouseSpeedScalerX{ 0.5f };
+	float m_MouseSpeedScalerY{ 0.5f };
 
 	// LIGHT 
 	float m_Factor = 0.0;
@@ -344,13 +344,22 @@ inline void ComponentPanel<T>::Run()
 	float cam_up[] = { m_pEditorCamera->m_up.x,m_pEditorCamera->m_up.y, m_pEditorCamera->m_up.z };
 	ImGui::SliderFloat3("Up", cam_up, -50.0, 50.0);
 	m_pEditorCamera->SetUp(glm::vec3{ cam_up[0], cam_up[1], cam_up[2] });
+
+	auto& camOrientation = m_pEditorCamera->GetOrientation();
+	float cam_orientation[] = { camOrientation.w ,camOrientation.x, camOrientation.y, camOrientation.z, };
+	ImGui::SliderFloat4("orientation", cam_orientation, -1.0f, 1.0f);
+	m_pEditorCamera->SetOrientation(glm::quat{ cam_orientation[0],cam_orientation[1], cam_orientation[2], cam_orientation[3] });
+
 	ImGui::SliderFloat("Camera Speed", (float*)&m_pEditorCamera->m_Speed, 0.0, 1.0f, "%.2f", 0);
-	
 	ImGui::Separator();
 
+	float mouseSpeedScaleX{ parent_layer->GetMouseSpeedScale().x }, mouseSpeedScaleY{ parent_layer->GetMouseSpeedScale().y };
+	ImGui::SliderFloat("Mouse Speed Scale X", &mouseSpeedScaleX, 0.0f, 10.0f);
+	ImGui::SliderFloat("Mouse Speed Scale Y", &mouseSpeedScaleY, 0.0f, 10.0f);
+	parent_layer->SetMouseSpeedScale(glm::vec2{ mouseSpeedScaleX, mouseSpeedScaleY });
 	ImGui::Separator();
+
 	ImGui::Text("Edit Transform Component");
-
 	const char* attr[] = { "Mesh", "Grid" };
 
 	if (ImGui::Button("Create..."))
@@ -403,7 +412,6 @@ inline void ComponentPanel<T>::Run()
 
 	ImGui::End();
 }
-
 
 inline void ContentBrowser::DisplayDirTree(const std::filesystem::path& pathToShow, int level)
 {
@@ -573,18 +581,7 @@ inline void StatsPanel::Run()
 	}
 
 	ImGui::End();
-	int m_ActiveMaterial = 0;
-
-	glGetIntegerv(GL_CURRENT_PROGRAM, &m_ActiveMaterial); // m_CurrentProgram shoubd be the currently bound Material ID
-	int output_attrb_location = glGetUniformLocation(m_ActiveMaterial, "output_attrib");
-	glUniform1ui(output_attrb_location, selected_attr);
-	m_ResultAvailable = false;
-
-	glGetQueryObjectiv(m_Query, GL_QUERY_RESULT_AVAILABLE, &m_ResultAvailable);
-	if (m_ResultAvailable)
-	{
-		glGetQueryObjectiv(m_Query, GL_QUERY_RESULT, &m_Samples);
-	}
+	
 }
 template<typename T>
 inline void MenuBar<T>::Run()

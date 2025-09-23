@@ -108,7 +108,6 @@ set(SHARED_SOURCES
     "Core/Engine/TimeStep.h" "Core/Engine/TimeStep.cpp"
     "Core/Engine/BaseWin32Window.h" "Core/Engine/BaseWin32Window.cpp"
     "Core/Engine/Win32Window.h" "Core/Engine/Win32Window.cpp"
-    #"Core/Engine/NGLFWwindow.h" "Core/Engine/NGLFWwindow.cpp"
     "Core/Event/Event.h" "Core/Event/Event.cpp"
     "Core/FontMgr/FontMgr.h" "Core/FontMgr/FontMgr.cpp"
     "Core/Text/TextField.h" "Core/Text/TextField.cpp"
@@ -141,7 +140,7 @@ set(SHARED_SOURCES
     "Core/Application/Square.h" "Core/Application/Square.cpp"
     "Core/Rendering/FrameBuffer.h" "Core/Rendering/FrameBuffer.cpp"
     "Core/Rendering/BufferLayout.h" "Core/Rendering/BufferLayout.cpp" 
-    "Core/Resources/ShaderResource.h" "Core/Resources/ShaderResource.cpp")
+    "Core/Resources/ShaderResource.h" "Core/Resources/ShaderResource.cpp" "Core/Engine/BoundingVolume.h" "Core/Engine/BoundingVolume.cpp" "Core/Engine/BVH.h" "Core/Engine/BVH.cpp")
 
 # Executable-specific files
 set(EDITOR_SOURCES
@@ -166,7 +165,7 @@ set(LIB_SOURCES
 add_executable(${EXEC_NAME}
     ${SHARED_SOURCES}
     ${EDITOR_SOURCES}
-)
+ "Core/Engine/BVH.cpp")
 
 # Static library target
 add_library(${LIB_NAME} STATIC

@@ -7,8 +7,6 @@
 class Renderer
 {
 public:
-    glm::vec2 m_MousePos;
-    // Buffers
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
     GLuint index_offset = 0;
@@ -59,10 +57,9 @@ public:
     void CreateSkyboxCubeMap();
     void CreateOpenGLFrameBuffer();
 
-    const glm::vec3 UnprojectMouse() const;
+    const glm::vec3 UnProjectMouse(const glm::vec2 & mouse_position) const;
 
     Renderer():
-        m_MousePos{960, 580},
         m_SkyboxShaderInfo
         {
             {
@@ -75,7 +72,6 @@ public:
         CustomFrameBuffer{}
     {
         Material testMaterial(m_SkyboxShaderInfo);
-        m_SkyboxMesh.OnInit();
     }
     ~Renderer() {}
 

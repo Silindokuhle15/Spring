@@ -10,7 +10,7 @@ Scene::Scene(const std::string& path)
 	m_State{ SceneState::LOADING },
 	m_Script{ path },
 	m_pLuaState{ nullptr },
-	m_MousePosition{0.0f, 0.0f}
+	m_MousePosition{0.5f, 0.5f}
 {
 	m_pLuaState = luaL_newstate();
 	luaL_openlibs(m_pLuaState);
@@ -70,6 +70,11 @@ void Scene::OnCreateSceneObjects()
 	}
 }
 
+bool Scene::CreateBoundingVolumeHierarchy(std::vector<physics::PhysicsState>& states)
+{
+	return false;
+}
+
 void Scene::CreateShaders()
 {
 	
@@ -99,12 +104,12 @@ void Scene::OnInit()
 	scripting::ScriptMgr::expose_scene(m_pLuaState, this, filename.c_str());
 
 	m_PhysicsEngine.OnInit();
-
 	m_State = SceneState::RUNNING;
 }
 
 void Scene::OnUpdate(TimeStep ts)
 {
+
 	switch (m_State)
 	{
 	case SceneState::LOADING:
@@ -124,6 +129,8 @@ void Scene::OnUpdate(TimeStep ts)
 		break;
 	}
 
+	std::vector<physics::PhysicsState> tempStates;
+
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
 	// use a callback
 	scriptView.each([&](const auto& script) 
@@ -141,12 +148,43 @@ void Scene::OnUpdate(TimeStep ts)
 	auto phzxView = m_Registry.view<physics::PhysicsState>();
 	phzxView.each([&](auto& phzx_state)
 		{
+			tempStates.push_back(phzx_state);
 			phzx_state.velocity += phzx_state.linear_acceleration * 0.01667f;
 			phzx_state.position += phzx_state.velocity * 0.01667f;
 		});
 
 	m_AccumulatedTime += (float)ts;
-	std::cout << "Scene Accumulated Time : " << m_AccumulatedTime << std::endl;
+
+	float minX{ -1.0f }, minY{ -1.0f }, minZ{ 0.0f };
+	float maxX{ +1.0f }, maxY{ +1.0f }, maxZ{ 1.0f };
+	float scale = 10.0f;
+	uint32_t bits = 21;
+	std::vector<BVEntry> entries;
+	std::vector<Bound3D> bounds;
+	for (size_t index=0; index < tempStates.size(); index++)
+	{
+		auto& pos = tempStates[index].position;
+		auto y = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
+		auto z = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
+		auto x = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
+		entries.push_back(BVEntry{ static_cast<uint64_t>(index), morton_encode_3d32(x, y, z) });
+
+		BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(index), pos, 1.0f);
+		auto& min = bbox.GetMin();
+		auto& max = bbox.GetMax();
+		bounds.push_back(Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z});
+	}
+	auto node = create_tree<Bound3D>(entries, bounds);
+
+	std::vector<std::pair<uint64_t, uint64_t>> collisionPairs;
+	for (auto& bound : bounds)
+	{
+		auto collisions = detect_overlapping_bounds<Bound3D>(bound, node);
+		if (collisions.size() == 2)
+		{
+			auto res = true;
+		}
+	}
 }
 
 void Scene::Run()
@@ -361,10 +399,4 @@ int Scene::LoadSceneFromFile()
 	}
 	return 0;
 }
-
-int Scene::LoadSceneFromFile(const std::string& path)
-{
-	return 0;
-}
-
 

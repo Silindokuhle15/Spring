@@ -1,72 +1,90 @@
 #include "BaseApplication.h"
 
-std::shared_ptr<Renderer> BaseApplication::m_pActiveRenderer = nullptr;
-std::shared_ptr<UILayer<Win32Window>> BaseApplication::m_pUILayer = nullptr;
-std::shared_ptr<Scene> BaseApplication::m_Scene = nullptr;
-//Scene* BaseApplication::m_Scene = nullptr;
-//Win32Window * BaseApplication::m_Window = nullptr;
-std::shared_ptr<Win32Window> BaseApplication::m_Window = nullptr;
-
-TimeStep BaseApplication::ts;
-bool BaseApplication::ExitWindow = false;
-
 using WINDOW_BASE = Win32Window;
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+LRESULT BaseApplication::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    ImGui_ImplWin32_WndProcHandler(m_Hwnd, uMsg, wParam, lParam);
+    double mouseX{ 0.0f }, mouseY{ 0.0f };
+    switch (uMsg)
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    case WM_MOUSEMOVE:
+        mouseX = 2.0 * (static_cast<double>(GET_X_LPARAM(lParam)) / 1920.0) - 1.0;
+        mouseY = 1.0 - 2.0 * (static_cast<double>(GET_Y_LPARAM(lParam)) / 1080.0);
+        m_pUILayer.SetMousePosition(glm::vec2{ mouseX, mouseY });
+        break;
+    default:
+        return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
 
 void BaseApplication::Run()
 {
-    m_Window = std::make_shared<Win32Window>(1920, 1080, "Spring Editor");
+    m_Scene->LoadSceneFromFile();
+    m_Scene->OnInit();
+    m_Scene->OnCreateSceneObjects();
 
-    BaseApplication::m_Scene = std::make_shared<Scene>("C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua");
-    BaseApplication::m_Scene->LoadSceneFromFile();
-    BaseApplication::m_Scene->OnInit();
-    BaseApplication::m_Scene->OnCreateSceneObjects();
-
-    BaseApplication::m_pUILayer = std::make_shared<UILayer<WINDOW_BASE>>(m_Window);
-    BaseApplication::m_pUILayer->LoadScene(std::shared_ptr<Scene>(BaseApplication::m_Scene));
-    BaseApplication::m_pUILayer->OnInit();
+    m_pUILayer.LoadScene(m_Scene);
+    m_pUILayer.OnInit();
     
-    BaseApplication::m_pActiveRenderer = std::make_shared<Renderer>();
-    BaseApplication::m_pActiveRenderer->BindScene(std::shared_ptr<Scene>(BaseApplication::m_Scene));
+    m_pActiveRenderer = std::make_shared<Renderer>();
+    m_pActiveRenderer->BindScene(m_Scene);
 
-    BaseApplication::m_pUILayer->BindRenderer(m_pActiveRenderer);
-    BaseApplication::m_pUILayer->m_ActiveRenderer->SetUpForRendering();
-    BaseApplication::m_pUILayer->m_pActiveCamera->SetEye(glm::vec3(0, 2, -2));
-    BaseApplication::m_pUILayer->m_pActiveCamera->SetCenter(glm::vec3(0, 0, 12));
-    BaseApplication::m_pUILayer->m_pActiveCamera->OnInit();
+    m_pUILayer.BindRenderer(m_pActiveRenderer);
+    m_pUILayer.m_ActiveRenderer->SetUpForRendering();
+    m_pUILayer.m_pActiveCamera->SetEye(glm::vec3(0, 2, -2));
+    m_pUILayer.m_pActiveCamera->SetCenter(glm::vec3(0, 0, 2));
+    m_pUILayer.m_pActiveCamera->SetOrientation(glm::quat(0, -1, 0, 0));
+    m_pUILayer.m_pActiveCamera->OnInit();
 
-    while (!BaseApplication::ExitWindow)
+    while (!m_ExitWindow)
     {
-        //m_Window->StartTimer();
+        //StartTimer();
         
-        BaseApplication::m_pUILayer->BeginFrame();
+        m_pUILayer.BeginFrame();
+        m_pActiveRenderer->BeginFrame();
+        m_pUILayer.Enable();
+        m_pActiveRenderer->OnRender();
 
-        BaseApplication::m_pActiveRenderer->BeginFrame();
-        BaseApplication::m_pUILayer->Enable();
-        BaseApplication::m_pActiveRenderer->OnRender();
+        m_Ts = 1.0f / 6.0f;
+        m_Scene->OnUpdate(m_Ts);
+        m_pActiveRenderer->OnUpdate(m_Ts);
+        OnUpdate();
+        m_pUILayer.OnUpdate(m_Ts);
 
-        m_Window->m_Ts = 1.0f / 6.0f;
-        BaseApplication::m_Scene->OnUpdate(m_Window->m_Ts);
-        BaseApplication::m_pActiveRenderer->OnUpdate(m_Window->m_Ts);
-        BaseApplication::OnUpdate();
-        BaseApplication::m_pUILayer->OnUpdate(m_Window->m_Ts);
+        m_pActiveRenderer->EndFrame();
+        m_pUILayer.EndFrame();
 
-        BaseApplication::m_pActiveRenderer->EndFrame();
-        BaseApplication::m_pUILayer->EndFrame();
-
-        m_Window->SwapBuffer();
-        //m_Window->EndTimer();
-        m_Window->OnUpdate();
+        //EndTimer();
+        SwapBuffer();
     }
     ShutDown();
 }
 
 void BaseApplication::ShutDown()
 {
-    m_Window = nullptr;
 }
 
 void BaseApplication::OnUpdate()
 {
-    auto mousePosition = m_Window->GetMousePosition();
-    m_pUILayer->SetMousePosition(glm::vec2(mousePosition[0], mousePosition[1]));
+    MSG msg = {};
+    if (PeekMessage(&msg, m_Hwnd, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
+BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* title)
+    :
+    Win32Window{width, height, title},
+    m_ExitWindow{false},
+    m_Scene{std::make_shared<Scene>("C:/dev/Silindokuhle15/Spring/Assets/Projects/Lobby.lua")},
+    m_pUILayer{std::shared_ptr<BaseApplication>(this)}
+{
 }

@@ -157,7 +157,8 @@ namespace scripting {
 
         glm::vec3 vt{ temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-        state->linear_acceleration = glm::normalize(vt) * 0.0166f;
+        state->linear_acceleration = vt * 0.01667f;
+        // TO DO... Change this to not manipulate the object direct, but queue the application of the force into a physics tasks buffer maybe? anything better than this
         return 0;
     }
 
@@ -551,6 +552,11 @@ namespace scripting {
             return 1;
         }
         else if (key == "MMOUSE" && (GetKeyState(0x04) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        else if (key == "SPACE" && (GetKeyState(VK_SPACE) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;

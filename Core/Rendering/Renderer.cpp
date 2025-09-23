@@ -72,7 +72,8 @@ void Renderer::UploadToOpenGL()
         glDrawArrays(GL_TRIANGLES, index_offset, mesh.m_V.size());
         index_offset += mesh.m_V.size();
 
-        auto mousePos = UnprojectMouse();
+
+        auto mousePos = UnProjectMouse(m_ActiveScene->GetMousePosition());
         std::vector<Vertex> line{{ {phzx.position}, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } },
         { { mousePos }, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } }};
 
@@ -233,17 +234,9 @@ void Renderer::CreateOpenGLFrameBuffer()
     //glNamedFramebufferTexture(CustomFrameBuffer, GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
 }
 
-const glm::vec3 Renderer::UnprojectMouse() const
+const glm::vec3 Renderer::UnProjectMouse(const glm::vec2& mouse_position) const
 {
-    auto mouseX = m_MousePos.x;
-    auto mouseY = m_MousePos.y;
-
-    // CONVERT TO NDC
-    auto ndcX = (2.0 * mouseX) / 1920.0 - 1.0;
-    auto ndcY = 1.0 - (2.0 * mouseY) / 1080.0;
-    auto ndcZ = 1.0;
-
-    glm::vec4 clipSpacePos{ ndcX, ndcY, ndcZ, 1.0 };
+    glm::vec4 clipSpacePos{ mouse_position.x, mouse_position.y, 1.0, 1.0 };
     auto invProj = glm::inverse(m_pActiveCamera->GetP());
     auto viewSpacePos = invProj * clipSpacePos;
 
@@ -281,7 +274,6 @@ void Renderer::SetActiveCamera(std::shared_ptr<Camera> camera)
 
 void Renderer::OnUpdate(TimeStep ts)
 {
-    m_MousePos = m_ActiveScene->GetMousePosition();
 }
 
 void Renderer::CreateImage()

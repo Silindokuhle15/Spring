@@ -2,6 +2,7 @@
 
 int main(void)
 {
-    BaseApplication::Run();
-    BaseApplication::ShutDown();
+    BaseApplication springEditor{ 1920, 1080, "SprigEditor" };
+    springEditor.Run();
+    springEditor.ShutDown();
 }

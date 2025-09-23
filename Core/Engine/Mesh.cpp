@@ -1,8 +1,9 @@
 #include "Mesh.h"
 
 
-void Mesh::OnInit() {
-    // Extract extension
+Mesh::Mesh(std::string file_path):
+    m_OBJFilePath{file_path}
+{
     auto file_split = getWords(m_OBJFilePath, ".");
     if (file_split.empty())
         return;

@@ -6,16 +6,7 @@ class Mesh
 public:
     Mesh()
     {}
-    Mesh(std::string file_path) :
-        m_OBJFilePath{ file_path }
-    {
-        OnInit();
-    }
-    Mesh(std::vector<Vertex> m_points)
-    {
-        this->m_V = m_points;
-    }
-    void OnInit();
+    Mesh(std::string file_path);
 
     std::vector<glm::vec3 > m_Positions;
     std::vector<glm::vec2 > m_TexCoords;

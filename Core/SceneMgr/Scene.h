@@ -8,6 +8,8 @@
 #include "Script.h"
 #include <entt.hpp>
 #include "ScriptMgr.h"
+#include "BVH.h"
+#include "BoundingVolume.h"
 
 typedef enum
 {
@@ -44,6 +46,7 @@ public:
 	std::vector<std::string> m_TempControlScripts;
 	std::vector<std::string> m_TempNames;
 	virtual void OnCreateSceneObjects();
+	virtual bool CreateBoundingVolumeHierarchy(std::vector<physics::PhysicsState>& states);
 	virtual void CreateShaders();
 	virtual void OnInit();
 	virtual void OnUpdate(TimeStep ts);
@@ -54,10 +57,7 @@ public:
 	void OnStop();
 	void OnReload();
 
-	template<typename T>
-	int LoadCharacterBase(T ch);
 	virtual int LoadSceneFromFile();
-	virtual int LoadSceneFromFile(const std::string& path);
 
 	std::string GetTitle() const { return m_Title; }
 
@@ -76,9 +76,3 @@ private:
 	lua_State* m_pLuaState = nullptr;
 	scripting::ScriptMgr scriptEngine;
 };
-
-template<typename T>
-inline int Scene::LoadCharacterBase(T ch)
-{
-	return 0;
-}

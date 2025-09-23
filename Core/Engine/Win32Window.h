@@ -28,7 +28,7 @@ public:
 	void SetHeight(int64_t height);
 	const uint64_t GetHeight() const;
 	void SetTitle(std::string title);
-	std::vector<uint64_t> GetMousePosition() const;
+
 	void StartTimer() override {
 		m_StartTime = static_cast<float>(milliseconds_now());
 	}
@@ -40,7 +40,6 @@ protected:
 	uint64_t m_Width;
 	uint64_t m_Height;
 	std::string m_Title;
-
 private:
 };
 

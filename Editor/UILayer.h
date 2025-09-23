@@ -1,25 +1,20 @@
 #pragma once
 #include "Panel.h"
 #include "Win32Window.h"
-#include "NGLFWwindow.h"
 #include <typeinfo>
 #include "Renderer.h"
+#include <Commdlg.h>
 
 #define IMPORT_FROM_EDITBOX 1003
 
-enum class ImGui_BeckEnd
-{
-    None, Win32, GLFW
-};
-template<class WindowBase>
+template<typename T>
 class UILayer :
     public Layer
 {
 private:
     glm::vec2 m_MousePosition;
+    glm::vec2 m_MouseSpeedScale;
 public:
-    ImGui_BeckEnd m_ImguiBackEnd;
-    // Huh?
     std::shared_ptr<Win32Window> m_ParentWindow;
     std::shared_ptr<Scene> m_ActiveScene;
     std::shared_ptr<Renderer> m_ActiveRenderer;
@@ -27,10 +22,7 @@ public:
     std::shared_ptr<Camera> m_pActiveCamera;
 
     TimeStep m_Delta{ 0.0f };
-
-    // OBJECT POINTERS
-
-    // DISPLAY PANELS
+    
     ComponentPanel<UILayer> m_ComponentPanel;
     MenuBar<UILayer> m_FileMenuBar;
     RenderPanel m_RenderPanel;
@@ -39,7 +31,14 @@ public:
 
 
 public:
-    // PURE FUNCTIONS
+    void SetMouseSpeedScale(const glm::vec2& scale_xy)
+    {
+        m_MouseSpeedScale = scale_xy;
+    }
+    const glm::vec2 GetMouseSpeedScale() const
+    {
+        return m_MouseSpeedScale;
+    }
     void Enable() override
     {
         m_ComponentPanel.Run();
@@ -47,15 +46,6 @@ public:
         m_RenderPanel.Run();
         m_StatsPanel.Run();
         m_FileMenuBar.Run();
-    }
-
-    void LoadSceneFromFile(std::string& path)
-    {
-        //Layer::LoadSceneFromFile(path);
-    }
-
-    void CreateSceneObjects()
-    {
     }
 
     void BindRenderer(std::shared_ptr<Renderer> renderer)
@@ -79,44 +69,26 @@ public:
         m_RenderPanel.m_ActiveScene = m_ActiveScene;
     }
 
-    // VIRTUAL FUNCTIONS
     virtual void BeginFrame() override
     {
-        // ImGui BeginFrame
         ImGui_ImplOpenGL3_NewFrame();
-
-        switch (m_ImguiBackEnd)
-        {
-        case ImGui_BeckEnd::GLFW:
-            ImGui_ImplGlfw_NewFrame();
-            break;
-
-        case ImGui_BeckEnd::Win32:
-            ImGui_ImplWin32_NewFrame();
-            break;
-        }
-
+        ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
     }
     virtual void EndFrame() override
     {
-        glEndQuery(GL_SAMPLES_PASSED);
-        // ImGui EndFrame
-        // Render ImGui stuff
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
     virtual void OnInit() override
     {
-        m_pActiveCamera->OnInit();
     }
     virtual void OnUpdate(TimeStep ts) override
     {
         m_Delta = ts;
-        //Update the Editor camera delta right here
-        glm::vec2 deltaMouse = m_MousePosition  - m_ActiveScene->GetMousePosition();
-        glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * -0.0f * ts, deltaMouse.x * 0.5f * ts, 0.0f));
-        m_pActiveCamera->m_orientation = glm::normalize(deltaQuat * m_pActiveCamera->m_orientation);
+        glm::vec2 deltaMouse = m_MousePosition - m_ActiveScene->GetMousePosition();
+        glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * m_MouseSpeedScale.x * ts, deltaMouse.x * m_MouseSpeedScale.y * ts, 0.0f));
+        m_pActiveCamera->SetOrientation(glm::normalize(deltaQuat * m_pActiveCamera->m_orientation));
         m_pActiveCamera->Present();
         m_pActiveCamera->OnUpdate(m_Delta);
         m_ActiveScene->SetMousePosition(m_MousePosition);
@@ -168,10 +140,10 @@ public:
     }
     // CONSTRUCTORS
 
-    UILayer(std::shared_ptr<Win32Window> window) :
+    UILayer(std::shared_ptr<T> window) :
         m_ParentWindow{window},
-        m_ImguiBackEnd{ ImGui_BeckEnd::Win32 },
-        m_MousePosition{window->GetWidth()/2.0, window->GetHeight()/2.0},
+        m_MousePosition{0.5f, 0.5f},
+        m_MouseSpeedScale{0.0f, 10.0f},
         m_pActiveCamera{ new Camera{ 1920, 1080, 0.01f, 10000.0f } },
         m_ComponentPanel{ this,  m_pActiveCamera },
         m_ContentBrowser{ this },
@@ -180,7 +152,6 @@ public:
         m_FileMenuBar{ this }
     {
         //start the Imgui code here
-        //Initialization Code
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -191,10 +162,9 @@ public:
         const std::type_info& info = typeid(window);
         std::string type_name = info.name();
 
-
-        if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
+        //if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
+        if (type_name.compare("class std::shared_ptr<class BaseApplication>") == 0)
         {
-            m_ImguiBackEnd = ImGui_BeckEnd::Win32;            
             ImGui_ImplWin32_Init(m_ParentWindow->m_Hwnd);
         }
         const char* gl_ver = "#version 450";
@@ -214,17 +184,7 @@ public:
 
     ~UILayer()
     {
-        //ImGui Clean Up Code
-        switch (m_ImguiBackEnd)
-        {
-        case ImGui_BeckEnd::Win32:
-            ImGui_ImplWin32_Shutdown();
-            break;
-        case ImGui_BeckEnd::GLFW:
-            ImGui_ImplGlfw_Shutdown();
-            break;
-        }
-
+        ImGui_ImplWin32_Shutdown();
         ImGui_ImplOpenGL3_Shutdown();
         ImGui::DestroyContext();
     }

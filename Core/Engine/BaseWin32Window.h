@@ -1,12 +1,10 @@
 #pragma once
 #include <Windows.h>
 #include <windowsx.h>
-#include "SceneEvent.h"
 #include <GL/glew.h>
 #include <GL/wglew.h>
+#include <cstdint>
 #include "TimeStep.h"
-//#include <imgui_impl_win32.h>
-#include <memory>
 
 template <class WindowClass>
 class BaseWindowClass
@@ -26,7 +24,6 @@ public:
 	BOOL CreateWin32Window(uint64_t width, uint64_t height, const char* app_name)
 	{
 		m_Handle = GetModuleHandle(NULL);
-		// Register the window class.
 		const char CLASS_NAME[] = "Win32Window";
 		WNDCLASS wc = { };
 		wc.lpfnWndProc = WindowClass::WindowProcedure;
@@ -35,7 +32,6 @@ public:
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 
 		RegisterClass(&wc);
-		// Create the window.
 		m_Hwnd = CreateWindowEx(
 			0, // Optional window styles.
 			CLASS_NAME, // Window class
@@ -48,7 +44,6 @@ public:
 			m_Handle, // Instance handle
 			this // Additional application data
 		);
-
 		return (m_Hwnd ? TRUE : FALSE);
 	}
 	static LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -77,6 +72,5 @@ public:
 	}
 
 	BaseWindowClass() : m_Hwnd{ NULL }, m_Handle{ NULL } {}
-
 	virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 };

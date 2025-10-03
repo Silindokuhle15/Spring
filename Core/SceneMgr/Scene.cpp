@@ -5,7 +5,6 @@ Scene::Scene(const std::string& path)
 	:
 	m_Ts{0.0f},
 	m_AccumulatedTime{0.0},
-	OnEvent{ true },
 	m_Title{ path },
 	m_State{ SceneState::LOADING },
 	m_Script{ path },
@@ -21,6 +20,17 @@ Character* Scene::CreateSceneObject()
 	Character* newCharacter{ new Character(m_Registry.create(), this) };
 	m_Characters.push_back(newCharacter->GetCharacterID());
 	return newCharacter;
+}
+
+void Scene::DestroySceneObject(entt::entity id)
+{
+	auto isValidEntity = m_Registry.valid(id);
+	auto isValidCharacter = std::find(m_Characters.begin(), m_Characters.end(), id);
+	if ((isValidEntity && (isValidCharacter != m_Characters.end())))
+	{
+		m_Registry.destroy(id);
+		m_Characters.erase(isValidCharacter);
+	}
 }
 
 Character Scene::GetSceneCharacter(entt::entity& id)
@@ -44,29 +54,18 @@ void Scene::OnCreateSceneObjects()
 	auto lua_state = GetLuaState();
 	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
 	{
+		AssetResource meshR{ AssetType::MeshResource, dynamic_mesh_paths[index] };
+		auto meshHandle = m_AssetManager.GetResourceHandle(meshR);
+		MeshInstance meshInstance{ meshHandle };
+
 		auto* ch = CreateSceneObject();
-		ch->AddComponent<Mesh>(Mesh{ dynamic_mesh_paths[index] });
+		ch->AddComponent<MeshInstance>(meshInstance);
 		scripting::ControlScript script{ m_TempControlScripts[index] };
 		ch->AddComponent<scripting::ControlScript>(script);
+		ch->AddComponent<RenderComponent>(RenderComponent{ 0, 0 });
 		auto name = m_TempNames[index].c_str();
 		scripting::ScriptMgr::expose_character(lua_state, ch, name);
-		int status = luaL_loadbuffer(lua_state, script.data.data(), script.data.size(), name);
-		if (status != LUA_OK)
-		{
-			// Handle error here
-			auto error = true;
-		}
-		status = lua_pcall(lua_state, 0, 0, 0);
-		if (status != LUA_OK)
-		{
-			// Handle error here
-			auto error = true;
-		}
-		int res = lua_getglobal(lua_state, "onInit");
-		if (lua_pcall(lua_state, 0, 0, 0) != LUA_OK)
-		{
-			return;
-		}
+		scripting::ScriptMgr::ExecuteScript(lua_state, script.data.data(), script.data.size(), name);
 	}
 }
 
@@ -77,15 +76,11 @@ bool Scene::CreateBoundingVolumeHierarchy(std::vector<physics::PhysicsState>& st
 
 void Scene::CreateShaders()
 {
-	
-	std::vector<ShaderInfo> m_shaderInfo;
 	for (size_t index = 0; index < shader_paths.size(); index += 2)
 	{
-		ShaderResource r = { ShaderInfo{ shader_paths[index], ShaderType::VERTEX },
-			ShaderInfo{ shader_paths[index + 1], ShaderType::PIXEL } };
-		Shader temp_shader(r);
-		m_Shaders.push_back(temp_shader);
-		m_shaderInfo.clear();
+		auto combinedPaths = shader_paths[index] + "\n" + shader_paths[index + 1];
+		AssetResource shaderResource{ AssetType::ShaderResource, combinedPaths };
+		auto shaderHandle = m_AssetManager.GetResourceHandle(shaderResource);
 	}
 }
 
@@ -97,23 +92,21 @@ void Scene::OnInit()
 	scripting::ScriptMgr::register_vector3(m_pLuaState);
 	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
 
-	auto lastOfIndex = m_Title.find_last_of('/');
-	auto fullFilename = m_Title.substr(++lastOfIndex);
-	lastOfIndex = fullFilename.find_last_of('.');
-	auto filename = fullFilename.substr(0, lastOfIndex);
+	auto filename = scripting::ScriptMgr::GetLuaFilenameWithoutExtension(m_Title);
 	scripting::ScriptMgr::expose_scene(m_pLuaState, this, filename.c_str());
 
-	m_PhysicsEngine.OnInit();
 	m_State = SceneState::RUNNING;
 }
 
 void Scene::OnUpdate(TimeStep ts)
 {
+	entries.clear();
+	bounds.clear();
+	collisionPairs.clear();
 
 	switch (m_State)
 	{
 	case SceneState::LOADING:
-
 		break;
 
 	case SceneState::RUNNING:
@@ -129,60 +122,51 @@ void Scene::OnUpdate(TimeStep ts)
 		break;
 	}
 
-	std::vector<physics::PhysicsState> tempStates;
-
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
 	// use a callback
 	scriptView.each([&](const auto& script) 
 	{
-		auto& path = script.m_ScriptPath;
-		auto result = luaL_dostring(m_pLuaState, script.data.c_str());
-		int res = lua_getglobal(m_pLuaState, "onUpdate");
-		lua_pushnumber(m_pLuaState, ts);
-		if (lua_pcall(m_pLuaState, 1, 0, 0) != LUA_OK)
-		{
-			auto error = true;
-		}
+		scripting::ScriptMgr::ExecuteScriptFunction(m_pLuaState, script.data.c_str(), "onUpdate", ts);
 	});
 
 	auto phzxView = m_Registry.view<physics::PhysicsState>();
-	phzxView.each([&](auto& phzx_state)
-		{
-			tempStates.push_back(phzx_state);
-			phzx_state.velocity += phzx_state.linear_acceleration * 0.01667f;
-			phzx_state.position += phzx_state.velocity * 0.01667f;
-		});
-
-	m_AccumulatedTime += (float)ts;
-
 	float minX{ -1.0f }, minY{ -1.0f }, minZ{ 0.0f };
 	float maxX{ +1.0f }, maxY{ +1.0f }, maxZ{ 1.0f };
 	float scale = 10.0f;
 	uint32_t bits = 21;
-	std::vector<BVEntry> entries;
-	std::vector<Bound3D> bounds;
-	for (size_t index=0; index < tempStates.size(); index++)
+	for (auto [entity, phzx_state] : phzxView.each())
 	{
-		auto& pos = tempStates[index].position;
-		auto y = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
-		auto z = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
-		auto x = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
-		entries.push_back(BVEntry{ static_cast<uint64_t>(index), morton_encode_3d32(x, y, z) });
+		phzx_state.velocity += phzx_state.linear_acceleration * (float)ts;
+		phzx_state.position += phzx_state.velocity * (float)ts;
 
-		BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(index), pos, 1.0f);
+		auto& pos = phzx_state.position;
+		auto y = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
+		auto z = static_cast<uint64_t>(glm::floor((pos.y - minY) / (maxY - minY) * glm::pow(2, bits)));
+		auto x = static_cast<uint64_t>(glm::floor((pos.z - minZ) / (maxZ - minZ) * glm::pow(2, bits)));
+		entries.push_back(BVEntry{ static_cast<uint64_t>(entity), morton_encode_3d32(x, y, z) });
+
+		BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(entity), pos, 1.0f);
 		auto& min = bbox.GetMin();
 		auto& max = bbox.GetMax();
-		bounds.push_back(Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z});
+		bounds.push_back(Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z });
 	}
+
+	m_AccumulatedTime += (float)ts;
 	auto node = create_tree<Bound3D>(entries, bounds);
 
-	std::vector<std::pair<uint64_t, uint64_t>> collisionPairs;
 	for (auto& bound : bounds)
 	{
 		auto collisions = detect_overlapping_bounds<Bound3D>(bound, node);
 		if (collisions.size() == 2)
 		{
-			auto res = true;
+			uint64_t first = collisions[0];
+			uint64_t second = collisions[1];
+			if ((first <= m_Characters.size() - 1) && (second <= m_Characters.size() - 1))
+			{
+				std::pair<entt::entity, entt::entity> pair(m_Characters[first], m_Characters[second]);
+				collisionPairs.push_back(pair);
+				//print_tree<Bound3D>(node);
+			}
 		}
 	}
 }
@@ -304,6 +288,7 @@ int Scene::LoadSceneFromFile()
 								m_TempNames.push_back(str);
 								lua_pop(pLuaState, 1);
 							}
+							/**/
 							else if (!key.compare("position"))
 							{
 								m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
@@ -348,10 +333,10 @@ int Scene::LoadSceneFromFile()
 								ps.inertia = glm::vec3(vec3.x, vec3.y, vec3.z);
 								lua_pop(pLuaState, 1);
 							}
+							/**/
 						}
 					}
-
-					m_TempPhysicsStates.push_back(ps);
+					//m_TempPhysicsStates.push_back(ps);
 				}
 
 			}

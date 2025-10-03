@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseWin32Window.h"
 #include <string>
+#include "Event.h"
 
 class Win32Window : public BaseWindowClass<Win32Window>
 {
@@ -28,6 +29,8 @@ public:
 	void SetHeight(int64_t height);
 	const uint64_t GetHeight() const;
 	void SetTitle(std::string title);
+
+	void (*OnEvent)(event::Event& event);
 
 	void StartTimer() override {
 		m_StartTime = static_cast<float>(milliseconds_now());

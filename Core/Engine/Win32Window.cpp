@@ -1,14 +1,22 @@
 #include "Win32Window.h"
-
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    ImGui_ImplWin32_WndProcHandler(m_Hwnd, uMsg, wParam, lParam);
     switch (uMsg)
     {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-    default:
-        return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
+        case WM_DESTROY:
+        {
+            event::WindowCloseEvent event;
+            OnEvent(event);
+        }break;
+        case WM_MOUSEMOVE:
+        {
+            event::MouseMoveEvent event(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            OnEvent(event);
+        }break;
+        default:
+            return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }
@@ -145,6 +153,7 @@ void Win32Window::OnUpdate()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    m_Ts = 1.0f / 60.0f;
 }
 
 long long Win32Window::milliseconds_now() {

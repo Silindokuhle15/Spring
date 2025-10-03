@@ -1,30 +1,57 @@
 #include "Event.h"
-
-bool MouseWheel::Resolve()
+namespace event
 {
-	m_WheelDelta = 0;
-	m_Resolved = true;
-	return m_Resolved;
-}
+	int64_t event::MouseMoveEvent::GetX()const
+	{
+		return m_X;
+	}
+	int64_t event::MouseMoveEvent::GetY()const
+	{
+		return m_Y;
+	}
 
-bool MouseButtonDown::Resolve()
-{
-	m_Resolved = true;
-	return m_Resolved;
-}
+	Dispatcher& event::Dispatcher::Get()
+	{
+		static Dispatcher globalDispatcher;
+		return globalDispatcher;
+	}
 
-const int64_t MouseMove::GetX() const
-{
-	return m_X;
-}
+	void event::Dispatcher::Dispatch(Event& event)
+	{
+		auto& globalDispatcher = Get();
+		for (auto& listener : globalDispatcher.m_EventListeners)
+		{
+			if (event::Event::GetType(event) == EventID::MOUSEMOVE)
+			{
+				listener->OnMouseMove(*(MouseMoveEvent*)&event);
+			}
+		}
+	}
 
-const int64_t MouseMove::GetY() const
-{
-	return m_Y;
-}
+	void event::Dispatcher::RegisterListener(IEventListener& listener)
+	{
+		auto& globalDispatcher = Get();
+		globalDispatcher.m_EventListeners.push_back(&listener);
+	}
 
-bool MouseMove::Resolve()
-{ 
-	m_Resolved = true;
-	return m_Resolved;
+	void event::IEventListener::OnWindowClose(WindowCloseEvent& window_close)
+	{
+	}
+
+	void event::IEventListener::OnWindowResize(WindowResizeEvent& window_resize)
+	{
+	}
+
+	void event::IEventListener::OnMouseMove(MouseMoveEvent& mouse_move)
+	{
+	}
+
+	void event::IEventListener::OnMousePress(MousePressEvent& mouse_press)
+	{
+	}
+
+	void event::IEventListener::OnKeyPress(KeyPressEvent& key_press)
+	{
+	}
+
 }

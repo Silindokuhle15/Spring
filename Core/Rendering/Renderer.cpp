@@ -40,48 +40,42 @@ void Renderer::SetUpForRendering()
 
 void Renderer::UploadToOpenGL()
 {
-    m_ActiveScene->m_Shaders[0].Bind();
-    auto handle = m_ActiveScene->m_Shaders[0].GetHandle();
-    auto view = m_pActiveCamera->GetV();
-    auto proj = m_pActiveCamera->GetP();
-
-    GLuint viewLocation = glGetUniformLocation(handle, "View");
-    GLuint projectionLocation = glGetUniformLocation(handle, "Projection");
-    GLuint posLocation = glGetUniformLocation(handle, "pos");
-    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(proj));
-
-    for (auto& ch : m_ActiveScene->m_Characters)
+    m_LargeVertexBuffer.Clear();
+    auto meshView = m_ActiveScene->GetView<MeshInstance, RenderComponent>();
+    for (auto [entity, meshInstance, renderComponent] : meshView.each())
     {
-        Character var{ ch, m_ActiveScene.get() };
+        auto handle = meshInstance.m_Handle;
+        auto& mesh = m_ActiveScene->m_AssetManager.GetMesh(handle);
+        m_LargeVertexBuffer.UpdateBuffer(mesh.m_V);
+        renderComponent.m_VertexBufferOffset = m_LargeVertexBuffer.m_BufferOffset;
+        renderComponent.m_IndexBufferOffset = m_LargeVertexBuffer.m_BufferElementCount;
+        auto currentIndices = mesh.m_V.size();
+        auto currentSize = sizeof(Vertex) * currentIndices;
+        renderComponent.m_Size = static_cast<uint64_t>(currentSize);
+        renderComponent.m_IndexCount = static_cast<uint64_t>(currentIndices);
+    }
+    glNamedBufferSubData(m_VertexBuffer, 0, m_LargeVertexBuffer.Size(), m_LargeVertexBuffer.m_Buffer.data());
+}
 
-        auto& phzx = var.GetComponent<physics::PhysicsState>();
-        glUniform3f(posLocation, phzx.position.x, phzx.position.y, phzx.position.z);
-        auto& mesh = var.GetComponent<Mesh>();
-        auto& material = mesh.m_Materials[1];
-        for (auto& materialComponent : material.m_Uniforms3f)
-        {
-            auto& name = materialComponent.first;
-            auto& data = materialComponent.second;
-            GLuint location = glGetUniformLocation(handle, materialComponent.first.c_str());
-            glUniform3f(location, data.x, data.y, data.z);
-        }
-        glNamedBufferSubData(m_VertexBuffer, vBuffer_offset, sizeof(Vertex) * mesh.m_V.size(), mesh.m_V.data());
-        vBuffer_offset += sizeof(Vertex) * mesh.m_V.size();
-
-        glDrawArrays(GL_TRIANGLES, index_offset, mesh.m_V.size());
-        index_offset += mesh.m_V.size();
-
-
-        auto mousePos = UnProjectMouse(m_ActiveScene->GetMousePosition());
-        std::vector<Vertex> line{{ {phzx.position}, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } },
-        { { mousePos }, { 0.0, 1.0 }, 0, { 0.0, 1.0, 0.0 } }};
-
-        glNamedBufferSubData(m_VertexBuffer, vBuffer_offset, sizeof(Vertex) * line.size(), line.data());
-        vBuffer_offset += sizeof(Vertex) * line.size();
-
-        glDrawArrays(GL_LINES, index_offset, line.size());
-        index_offset += line.size();
+void Renderer::BeginCommandRecording()
+{
+    m_CommandBuffer.clear();
+    AssetHandle fakeShaderHandle{ 0,0 };
+    //auto& shader = m_ActiveScene->m_AssetManager.GetShader(fakeShaderHandle);
+    auto meshView = m_ActiveScene->GetView<MeshInstance, RenderComponent>();
+    for (auto [entity, meshInstance, renderComponent] : meshView.each())
+    {
+        auto& mesh = m_ActiveScene->m_AssetManager.GetMesh(meshInstance.m_Handle);
+        auto& material = m_ActiveScene->m_AssetManager.GetMaterial(meshInstance.m_Handle);
+        RenderCommand cmd;
+        cmd.m_EntityID = static_cast<uint64_t>(entity);
+        cmd.m_ShaderHandle = fakeShaderHandle;
+        cmd.m_MaterialHandle = meshInstance.m_Handle;
+        cmd.m_VertexBufferOffset = renderComponent.m_VertexBufferOffset;
+        cmd.m_IndexBufferOffset = renderComponent.m_IndexBufferOffset;
+        cmd.m_CommandSize = renderComponent.m_Size;
+        cmd.m_IndexCount = renderComponent.m_IndexCount;
+        m_CommandBuffer.push_back(cmd);
     }
 }
 
@@ -256,9 +250,96 @@ void Renderer::OnRender()
     GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
     glClear(flags);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    DrawSkyboxBackground();
-    UploadToOpenGL();
+    AssetHandle fake{ 0,0 };
+    auto& shader = m_ActiveScene->m_AssetManager.GetShader(fake);
+    shader.Bind();
+    for (auto& cmd : m_CommandBuffer)
+    {
+        Draw(cmd);
+        glDrawArrays(GL_TRIANGLES, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount);
+    }
     glFlush();
+}
+void Renderer::Draw(RenderCommand& cmd)
+{
+    auto& shader = m_ActiveScene->m_AssetManager.GetShader(cmd.m_ShaderHandle);
+    auto shaderHandlePlatform = shader.GetHandle();
+
+    auto entity = static_cast<entt::entity>(cmd.m_EntityID);
+    auto ch = m_ActiveScene->GetSceneCharacter(entity);
+    auto& phyzx = ch.GetComponent<physics::PhysicsState>();
+
+    glm::mat4 view{ 1.0f };
+    glm::mat4 proj{ 1.0f };
+    m_UniformBuffer.m_Mat4Map["View"] = m_pActiveCamera->GetV();
+    m_UniformBuffer.m_Mat4Map["Projection"] =  m_pActiveCamera->GetP();
+    m_UniformBuffer.m_Float3Map["pos"] = phyzx.position;
+
+    auto& material = m_ActiveScene->m_AssetManager.GetMaterial(cmd.m_MaterialHandle);
+    for (auto& materialComponent : material.m_Uniforms1f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        GLuint location = glGetUniformLocation(shaderHandlePlatform, materialComponent.first.c_str());
+        glUniform1f(location, data.x);
+    }
+    for (auto& materialComponent : material.m_Uniforms2f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        GLuint location = glGetUniformLocation(shaderHandlePlatform, materialComponent.first.c_str());
+        glUniform2f(location, data.x, data.y);
+    }
+    for (auto& materialComponent : material.m_Uniforms3f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        GLuint location = glGetUniformLocation(shaderHandlePlatform, materialComponent.first.c_str());
+        glUniform3f(location, data.x, data.y, data.z);
+    }
+    for (auto& materialComponent : material.m_Uniforms4f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        GLuint location = glGetUniformLocation(shaderHandlePlatform, materialComponent.first.c_str());
+        glUniform4f(location, data.x, data.y, data.z, data.w);
+    }
+
+    for (auto& uniformFloat : m_UniformBuffer.m_FloatMap)
+    {
+        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat.first.c_str());
+        glUniform1f(uniformLocation, uniformFloat.second);
+    }
+    for (auto& uniformFloat2 : m_UniformBuffer.m_Float2Map)
+    {
+        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat2.first.c_str());
+        auto x = uniformFloat2.second.x;
+        auto y = uniformFloat2.second.y;
+        glUniform2f(uniformLocation, x, y);
+    }
+    for (auto& uniformFloat3 : m_UniformBuffer.m_Float3Map)
+    {
+        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat3.first.c_str());
+        auto x = uniformFloat3.second.x;
+        auto y = uniformFloat3.second.y;
+        auto z = uniformFloat3.second.z;
+        glUniform3f(uniformLocation, x, y, z);
+    }
+    for (auto& uniformFloat4 : m_UniformBuffer.m_Float4Map)
+    {
+        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat4.first.c_str());
+        auto x = uniformFloat4.second.x;
+        auto y = uniformFloat4.second.y;
+        auto z = uniformFloat4.second.z;
+        auto w = uniformFloat4.second.w;
+        glUniform4f(uniformLocation, x, y, z, w);
+    }
+    for (auto& uniformMat4 : m_UniformBuffer.m_Mat4Map)
+    {
+        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformMat4.first.c_str());
+        auto mat = uniformMat4.second;
+        glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(mat));
+    }
 }
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
@@ -274,6 +355,7 @@ void Renderer::SetActiveCamera(std::shared_ptr<Camera> camera)
 
 void Renderer::OnUpdate(TimeStep ts)
 {
+    m_Ts = ts;
 }
 
 void Renderer::CreateImage()

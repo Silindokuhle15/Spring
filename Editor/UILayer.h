@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include "Renderer.h"
 #include <Commdlg.h>
+#include "Event.h"
 
 #define IMPORT_FROM_EDITBOX 1003
 
@@ -22,13 +23,11 @@ public:
     std::shared_ptr<Camera> m_pActiveCamera;
 
     TimeStep m_Delta{ 0.0f };
-    
     ComponentPanel<UILayer> m_ComponentPanel;
     MenuBar<UILayer> m_FileMenuBar;
     RenderPanel m_RenderPanel;
     StatsPanel m_StatsPanel;
     ContentBrowser m_ContentBrowser;
-
 
 public:
     void SetMouseSpeedScale(const glm::vec2& scale_xy)
@@ -82,6 +81,16 @@ public:
     }
     virtual void OnInit() override
     {
+    }
+    void OnMouseMove(event::MouseMoveEvent& event) override
+    {
+        auto x = static_cast<float>(event.GetX());
+        auto y = static_cast<float>(event.GetY());
+        glm::vec2 mousePos{
+            (2.0 * (x / 1920.0) - 1.0),
+            (1.0 - 2.0 * (y / 1080.0))
+        };
+        SetMousePosition(mousePos);
     }
     virtual void OnUpdate(TimeStep ts) override
     {
@@ -162,8 +171,8 @@ public:
         const std::type_info& info = typeid(window);
         std::string type_name = info.name();
 
-        //if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
-        if (type_name.compare("class std::shared_ptr<class BaseApplication>") == 0)
+        //if (type_name.compare("class std::shared_ptr<class BaseApplication>") == 0)
+        if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
         {
             ImGui_ImplWin32_Init(m_ParentWindow->m_Hwnd);
         }
@@ -188,5 +197,4 @@ public:
         ImGui_ImplOpenGL3_Shutdown();
         ImGui::DestroyContext();
     }
-
 };

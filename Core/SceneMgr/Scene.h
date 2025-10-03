@@ -3,13 +3,14 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Shader.h"
+#include "Mesh.h"
 #include "Material.h"
-#include "PhysicsEngine.h"
 #include "Script.h"
 #include <entt.hpp>
 #include "ScriptMgr.h"
 #include "BVH.h"
 #include "BoundingVolume.h"
+#include "AssetManager.h"
 
 typedef enum
 {
@@ -25,7 +26,9 @@ private:
 	glm::vec2 m_MousePosition;
 public:
 	friend class Character;
-	bool OnEvent;
+	friend class Renderer;
+	friend class scripting::ScriptMgr;
+
 	TimeStep m_Ts;
 	double m_AccumulatedTime;
 	std::string m_Title;
@@ -38,11 +41,12 @@ public:
 	std::vector<Camera> m_Cameras;
 	std::vector<entt::entity> m_Characters;
 
-	physics::PhysicsEngine m_PhysicsEngine;
+	std::vector<BVEntry> entries;
+	std::vector<Bound3D> bounds;
+	std::vector<std::pair<entt::entity, entt::entity>> collisionPairs;
 	const glm::vec2 GetMousePosition() const;
 	void SetMousePosition(const glm::vec2& mouse_position);
 
-	std::vector<physics::PhysicsState> m_TempPhysicsStates;
 	std::vector<std::string> m_TempControlScripts;
 	std::vector<std::string> m_TempNames;
 	virtual void OnCreateSceneObjects();
@@ -68,11 +72,23 @@ public:
 	friend class Renderer;
 
 	Character* CreateSceneObject();
+	void DestroySceneObject(entt::entity id);
 	Character GetSceneCharacter(entt::entity& id);
+	template<typename... T>
+	auto GetView();
+
+	AssetManager& GetAssetManager() { return m_AssetManager; }
 private:
 	SceneState m_State;
 	entt::registry m_Registry;
 	scripting::ControlScript m_Script;
 	lua_State* m_pLuaState = nullptr;
 	scripting::ScriptMgr scriptEngine;
+	AssetManager m_AssetManager;
 };
+
+template<typename... T>
+inline auto Scene::GetView()
+{
+	return m_Registry.view<T...>();
+}

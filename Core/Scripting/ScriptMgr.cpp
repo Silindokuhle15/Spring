@@ -10,6 +10,58 @@ namespace scripting {
         constexpr const char* SCENE_MT = "Scene";
         constexpr const char* CHARACTER_MT = "Character";
         constexpr const char* PHYSICSSTATE_MT = "PhysicsState";
+        constexpr const char* RENDERCOMPONENT_MT = "RenderComponent";
+    }
+
+    std::string ScriptMgr::GetLuaFilenameWithoutExtension(const std::string& path)
+    {
+        auto lastOfIndex = path.find_last_of('/');
+        auto fullFilename = path.substr(++lastOfIndex);
+        lastOfIndex = fullFilename.find_last_of('.');
+        auto filename = fullFilename.substr(0, lastOfIndex);
+        return filename;
+    }
+
+    void ScriptMgr::ExecuteScript(lua_State* L, const char* script, size_t size, const char* name)
+    {
+        int status = luaL_loadbuffer(L, script, size, name);
+        if (status != LUA_OK)
+        {
+            // Load the script onto the stack
+            // Handle error here
+            auto error = true;
+        }
+        status = lua_pcall(L, 0, 0, 0);
+        if (status != LUA_OK)
+        {
+            // Execute the script that is ontop the stack
+            // Handle error here
+            auto error = true;
+        }
+        int res = lua_getglobal(L, "onInit");
+        if (lua_pcall(L, 0, 0, 0) != LUA_OK)
+        {
+            // Find the onInit function of the object
+            // Execute onInit function of the object
+            return;
+        }
+    }
+
+    void ScriptMgr::ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts)
+    {
+        if (!luaL_dostring(L, script))
+        {
+            assert("Failed to execute script");
+        }
+        if (!lua_getglobal(L, function_name))
+        {
+            assert("Failed to Locate function");
+        }
+        lua_pushnumber(L, ts);
+        if (lua_pcall(L, 1, 0, 0) != LUA_OK)
+        {
+            assert("Failed to execute script function");
+        }
     }
 
     // --------------------- Scene ---------------------
@@ -107,15 +159,39 @@ namespace scripting {
 
     int ScriptMgr::lua_Character_AddMesh(lua_State* L)
     {
-        Character* charater = lua_checkCharacter(L, 1);
+        Character* character = lua_checkCharacter(L, 1);
         const char* path = luaL_checkstring(L, 2);
         PrintLuaStack(L);
-        charater->AddComponent<Mesh>(Mesh{ path });
+        AssetResource meshResource{ AssetType::MeshResource, path };
+        auto* activeScene = character->GetScenePointer();
+        auto assetHandle = activeScene->m_AssetManager.GetResourceHandle(meshResource);
+        //auto& mesh = activeScene->m_AssetManager.GetMesh(assetHandle);
+        character->AddComponent<MeshInstance>(assetHandle);
         return 0;
     }
 
     int ScriptMgr::lua_Character_GetMesh(lua_State* L)
     {
+        return 0;
+    }
+    int ScriptMgr::lua_Character_AddRenderComponent(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        character->AddComponent<RenderComponent>();
+        return 0;
+    }
+    int ScriptMgr::lua_Character_GetRenderComponent(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        if (!character->HasComponent<RenderComponent>()){
+            return luaL_error(L, "Character hs no RenderComponent");
+        }
+        RenderComponent* state = &character->GetComponent<RenderComponent>();
+        auto** userdata = static_cast<RenderComponent**>(lua_newuserdata(L, sizeof(RenderComponent*)));
+        *userdata = state;
+
+        luaL_getmetatable(L, RENDERCOMPONENT_MT);
+        lua_setmetatable(L, -2);
         return 0;
     }
     int ScriptMgr::lua_Character_AddPhysicsState(lua_State* L) {
@@ -171,6 +247,12 @@ namespace scripting {
 
         lua_pushcfunction(L, lua_Character_GetMesh);
         lua_setfield(L, -2, "GetMesh");
+
+        lua_pushcfunction(L, lua_Character_AddRenderComponent);
+        lua_setfield(L, -2, "AddRenderComponent");
+
+        lua_pushcfunction(L, lua_Character_GetRenderComponent);
+        lua_setfield(L, -2, "GetRenderComponent");
 
         lua_pushcfunction(L, lua_Character_AddPhysicsState);
         lua_setfield(L, -2, "AddPhysicsState");
@@ -563,7 +645,5 @@ namespace scripting {
         }
         return 0;
     }
-
-    
 
 } // namespace scripting

@@ -227,22 +227,38 @@ void print_tree(const BVNode<U>* node, int depth = 0)
 template<typename U>
 BVNode<U>* create_sub_tree(const std::vector<BVEntry> list, const std::vector<U>& bounds, uint64_t start, uint64_t end)
 {
+	if (list.empty() || bounds.empty())
+	{
+		return nullptr;
+	}
 	if (start == end)
 	{
 		uint64_t id = list[start].ID;
-		assert(id < bounds.size());
+		if (id > start) return nullptr;
 		return new BVNode<U>(bounds[id], list[start].ID, nullptr, nullptr);
 	}
 	uint64_t mid = get_split_position(list.data(), start, end);
 	BVNode<U>* left = create_sub_tree(list, bounds, start, mid);
 	BVNode<U>* right = create_sub_tree(list, bounds, mid + 1, end);
 
-	const U& lb = left->m_Bounds;
-	const U& rb = right->m_Bounds;
+	if (right && left)
+	{
+		const U& lb = left->m_Bounds;
+		const U& rb = right->m_Bounds;
 
-	U merged = U::merge(lb, rb);
+		U merged = U::merge(lb, rb);
 
-	return new BVNode<U>(merged, static_cast<uint64_t>(-1), left, right);
+		return new BVNode<U>(merged, static_cast<uint64_t>(-1), left, right);
+	}
+	else if (right && !left)
+	{
+		return right;
+	}
+	else if (!right && left)
+	{
+		return left;
+	}
+	return nullptr;
 }
 
 template<typename U>

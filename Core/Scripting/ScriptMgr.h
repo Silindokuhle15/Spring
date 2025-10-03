@@ -15,6 +15,7 @@ namespace scripting
 		glm::vec3* vec;
 	};
 
+
 	class ScriptMgr
 	{
 	public:
@@ -22,6 +23,9 @@ namespace scripting
 		static void PrintLuaStack(lua_State* L);
 		static int PrintStack(lua_State* L);
 		static int IsKeyDown(lua_State* L);
+		static std::string GetLuaFilenameWithoutExtension(const std::string& path);
+		static void ExecuteScript(lua_State* L, const char* script, size_t size, const char* name);
+		static void ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts);
 
 		// -------------------Scene-------------------
 		static Scene* lua_checkScene(lua_State* L, int index);
@@ -40,6 +44,8 @@ namespace scripting
 		static int lua_pushCharacter(lua_State* L, Character* character);
 		static int lua_Character_AddMesh(lua_State* L);
 		static int lua_Character_GetMesh(lua_State* L);
+		static int lua_Character_AddRenderComponent(lua_State* L);
+		static int lua_Character_GetRenderComponent(lua_State* L);
 		static int lua_Character_AddPhysicsState(lua_State* L);
 		static int lua_Character_GetPhysicsState(lua_State* L);
 		static int lua_Character_ApplyForce(lua_State* L);

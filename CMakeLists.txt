@@ -121,14 +121,12 @@ set(SHARED_SOURCES
     "Core/Materials/Shader.h" "Core/Materials/Shader.cpp"
     "Core/Materials/Texture.h" "Core/Materials/Texture.cpp"
     "Core/Physics/Collider.h" "Core/Physics/Collider.cpp"
-    "Core/Physics/PhysicsEngine.h" "Core/Physics/PhysicsEngine.cpp"
     "Core/Physics/Ray.h" "Core/Physics/Ray.cpp"
     "Core/Physics/PhysicsState.h" "Core/Physics/PhysicsState.cpp"
     "Core/Project/Project.h" "Core/Project/Project.cpp"
     "Core/Rendering/Renderer.h" "Core/Rendering/Renderer.cpp"
     "Core/Rendering/VertexArray.h" "Core/Rendering/VertexArray.cpp"
     "Core/SceneMgr/Scene.h" "Core/SceneMgr/Scene.cpp"
-    "Core/SceneMgr/SceneEvent.h" "Core/SceneMgr/SceneEvent.cpp"
     "Core/Scripting/ScriptBase.h" "Core/Scripting/ScriptBase.cpp"
     "Core/Scripting/ScriptMgr.h" "Core/Scripting/ScriptMgr.cpp"
     "Core/Scripting/Script.h" "Core/Scripting/Script.cpp"
@@ -140,16 +138,23 @@ set(SHARED_SOURCES
     "Core/Application/Square.h" "Core/Application/Square.cpp"
     "Core/Rendering/FrameBuffer.h" "Core/Rendering/FrameBuffer.cpp"
     "Core/Rendering/BufferLayout.h" "Core/Rendering/BufferLayout.cpp" 
-    "Core/Resources/ShaderResource.h" "Core/Resources/ShaderResource.cpp" "Core/Engine/BoundingVolume.h" "Core/Engine/BoundingVolume.cpp" "Core/Engine/BVH.h" "Core/Engine/BVH.cpp")
+    "Core/Resources/ShaderResource.h" "Core/Resources/ShaderResource.cpp" 
+    "Core/Engine/BoundingVolume.h" "Core/Engine/BoundingVolume.cpp"
+    "Core/Engine/BVH.h" "Core/Engine/BVH.cpp"
+    "Core/Resources/AssetManager.h" "Core/Resources/AssetManager.cpp"
+ "Core/Engine/UUID.h" "Core/Engine/UUID.cpp" "Core/Rendering/VertexBuffer.h" "Core/Rendering/VertexBuffer.cpp" "Core/Rendering/UniformBuffer.h")
 
 # Executable-specific files
 set(EDITOR_SOURCES
     "SpringEditor.cpp"
     "Core/Engine/BaseApplication.h"
     "Core/Engine/BaseApplication.cpp"
-    "Editor/Layer.h" "Editor/Layer.cpp"
-    "Editor/UILayer.h" "Editor/UILayer.cpp"
-    "Editor/Panel.h"    "Editor/Panel.cpp"
+    "Editor/Layer.h"
+    "Editor/Layer.cpp"
+    "Editor/UILayer.h"
+    "Editor/UILayer.cpp"
+    "Editor/Panel.h" 
+    "Editor/Panel.cpp"
 )
 
 # Library-specific sources
@@ -165,7 +170,7 @@ set(LIB_SOURCES
 add_executable(${EXEC_NAME}
     ${SHARED_SOURCES}
     ${EDITOR_SOURCES}
- "Core/Engine/BVH.cpp")
+)
 
 # Static library target
 add_library(${LIB_NAME} STATIC

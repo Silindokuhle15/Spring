@@ -1,3 +1,4 @@
+#pragma once
 #include <entt.hpp>
 #include "Scene.h"
 
@@ -37,6 +38,7 @@ public :
 	entt::entity GetCharacterID() const { return m_Entity; }
 	static Character GetCharacterPtr(entt::entity id, Scene* pscene);
 
+	Scene* GetScenePointer() const { return m_pScene; }
 private:
 	entt::entity m_Entity;
 	Scene* m_pScene;

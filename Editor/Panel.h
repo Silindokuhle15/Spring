@@ -1,4 +1,15 @@
 #include "Layer.h"
+#include "GL/glew.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "ImGuizmo.h"
+#include "imgui_impl_win32.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+#include <string>
+#include <set>
+#include "Scene.h"
+#include "Project.h"
 
 class Panel
 {
@@ -214,6 +225,7 @@ private:
 template<class T>
 inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraProjection, float* matrix, bool editTransformDecomposition)
 {
+	/*
 	auto parent_layer = reinterpret_cast<T*>(*(m_ParentLayer.get()));
 	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::LOCAL);
 	static bool useSnap = false;
@@ -321,6 +333,7 @@ inline void ComponentPanel<T>::EditTransform(float* cameraView, float* cameraPro
 		ImGui::End();
 		ImGui::PopStyleColor(1);
 	}
+	*/
 }
 
 template<class T>

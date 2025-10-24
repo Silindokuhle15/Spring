@@ -2,8 +2,7 @@
 #include "GL/glew.h"
 
 Material::Material(const std::initializer_list<LayoutInfo>& uniforms):
-	m_Uniforms{uniforms},
-	m_MaterialID{ 0xFFFFFFFF }
+	m_Uniforms{uniforms}
 {
 }
 
@@ -46,6 +45,7 @@ void Material::AddNewUniform(const LayoutInfo& uniform)
 {
 	m_Uniforms.push_back(uniform);
 }
+/*
 
 void Material::SetUniformI(const std::string& uniform_name, int value) const
 {
@@ -112,3 +112,4 @@ void Material::SetUniform4FM(const std::string& uniform_name, float* matrix4) co
 	GLuint location = glGetUniformLocation(static_cast<GLuint>(m_MaterialID), uniform_name.c_str());
 	glUniformMatrix4fv(location, 16, GL_FALSE, matrix4);
 }
+*/

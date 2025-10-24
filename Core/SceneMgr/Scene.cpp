@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Character.h"
-
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 Scene::Scene(const std::string& path)
 	:
 	m_Ts{0.0f},
@@ -9,7 +10,7 @@ Scene::Scene(const std::string& path)
 	m_State{ SceneState::LOADING },
 	m_Script{ path },
 	m_pLuaState{ nullptr },
-	m_MousePosition{0.5f, 0.5f}
+	m_MousePosition{0.0f, 0.0f}
 {
 	m_pLuaState = luaL_newstate();
 	luaL_openlibs(m_pLuaState);
@@ -55,7 +56,7 @@ void Scene::OnCreateSceneObjects()
 	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
 	{
 		AssetResource meshR{ AssetType::MeshResource, dynamic_mesh_paths[index] };
-		auto meshHandle = m_AssetManager.GetResourceHandle(meshR);
+		auto meshHandle = m_AssetManager->GetResourceHandle(meshR);
 		MeshInstance meshInstance{ meshHandle };
 
 		auto* ch = CreateSceneObject();
@@ -69,9 +70,27 @@ void Scene::OnCreateSceneObjects()
 	}
 }
 
-bool Scene::CreateBoundingVolumeHierarchy(std::vector<physics::PhysicsState>& states)
+void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state)
 {
-	return false;
+	float minX{ -2.0f }, minY{ -2.0f }, minZ{ -2.0f };
+	float maxX{ +2.0f }, maxY{ +2.0f }, maxZ{ +2.0f };
+	uint32_t bits = 21;
+
+	auto& pos = physics_state.position;
+	auto y = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
+	auto z = static_cast<uint64_t>(glm::floor((pos.y - minY) / (maxY - minY) * glm::pow(2, bits)));
+	auto x = static_cast<uint64_t>(glm::floor((pos.z - minZ) / (maxZ - minZ) * glm::pow(2, bits)));
+	auto morton_code = morton_encode_3d32(x, y, z);
+	entries.push_back(BVEntry{ static_cast<uint64_t>(entity), morton_code});
+
+	BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(entity), pos, 1.0f);
+	auto& min = bbox.GetMin();
+	auto& max = bbox.GetMax();
+	auto bound{ Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z }};
+	bounds.push_back(bound);
+
+	m_BVEntries.push_back(BVNode<Bound3D>{static_cast<uint64_t>(entity), morton_code, bound, nullptr, nullptr});
+
 }
 
 void Scene::CreateShaders()
@@ -80,7 +99,7 @@ void Scene::CreateShaders()
 	{
 		auto combinedPaths = shader_paths[index] + "\n" + shader_paths[index + 1];
 		AssetResource shaderResource{ AssetType::ShaderResource, combinedPaths };
-		auto shaderHandle = m_AssetManager.GetResourceHandle(shaderResource);
+		auto shaderHandle = m_AssetManager->GetResourceHandle(shaderResource);
 	}
 }
 
@@ -88,6 +107,7 @@ void Scene::OnInit()
 {
 	m_State = SceneState::LOADING;
 	scripting::ScriptMgr::register_scene(m_pLuaState);
+	scripting::ScriptMgr::register_scene_camera(m_pLuaState);
 	scripting::ScriptMgr::register_character(m_pLuaState);
 	scripting::ScriptMgr::register_vector3(m_pLuaState);
 	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
@@ -100,6 +120,7 @@ void Scene::OnInit()
 
 void Scene::OnUpdate(TimeStep ts)
 {
+	m_BVEntries.clear();
 	entries.clear();
 	bounds.clear();
 	collisionPairs.clear();
@@ -123,49 +144,37 @@ void Scene::OnUpdate(TimeStep ts)
 	}
 
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
-	// use a callback
+	int scriptCounter{ 0 };
 	scriptView.each([&](const auto& script) 
 	{
 		scripting::ScriptMgr::ExecuteScriptFunction(m_pLuaState, script.data.c_str(), "onUpdate", ts);
+		scriptCounter++;
 	});
 
+	//std::cout << "Executed " << scriptCounter << " scripts" << std::endl;
+
 	auto phzxView = m_Registry.view<physics::PhysicsState>();
-	float minX{ -1.0f }, minY{ -1.0f }, minZ{ 0.0f };
-	float maxX{ +1.0f }, maxY{ +1.0f }, maxZ{ 1.0f };
-	float scale = 10.0f;
-	uint32_t bits = 21;
+
 	for (auto [entity, phzx_state] : phzxView.each())
 	{
-		phzx_state.velocity += phzx_state.linear_acceleration * (float)ts;
-		phzx_state.position += phzx_state.velocity * (float)ts;
-
-		auto& pos = phzx_state.position;
-		auto y = static_cast<uint64_t>(glm::floor((pos.x - minX) / (maxX - minX) * glm::pow(2, bits)));
-		auto z = static_cast<uint64_t>(glm::floor((pos.y - minY) / (maxY - minY) * glm::pow(2, bits)));
-		auto x = static_cast<uint64_t>(glm::floor((pos.z - minZ) / (maxZ - minZ) * glm::pow(2, bits)));
-		entries.push_back(BVEntry{ static_cast<uint64_t>(entity), morton_encode_3d32(x, y, z) });
-
-		BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(entity), pos, 1.0f);
-		auto& min = bbox.GetMin();
-		auto& max = bbox.GetMax();
-		bounds.push_back(Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z });
+		phzx_state.position += phzx_state.orientation * phzx_state.linear_acceleration * (float)ts;
+		AddBVBoundEntry(entity, phzx_state);
 	}
 
 	m_AccumulatedTime += (float)ts;
-	auto node = create_tree<Bound3D>(entries, bounds);
-
-	for (auto& bound : bounds)
+	auto node = create_tree<Bound3D>(m_BVEntries);
+	for (auto& bound : m_BVEntries)
 	{
 		auto collisions = detect_overlapping_bounds<Bound3D>(bound, node);
 		if (collisions.size() == 2)
 		{
 			uint64_t first = collisions[0];
 			uint64_t second = collisions[1];
+			if (first == second) continue;
 			if ((first <= m_Characters.size() - 1) && (second <= m_Characters.size() - 1))
 			{
 				std::pair<entt::entity, entt::entity> pair(m_Characters[first], m_Characters[second]);
 				collisionPairs.push_back(pair);
-				//print_tree<Bound3D>(node);
 			}
 		}
 	}
@@ -173,27 +182,27 @@ void Scene::OnUpdate(TimeStep ts)
 
 void Scene::Run()
 {
-	//m_State = SceneState::RUNNING;
+	m_State = SceneState::RUNNING;
 }
 
 void Scene::OnEnd()
 {
-	//m_State = SceneState::END;
+	m_State = SceneState::END;
 }
 
 void Scene::OnPause()
 {
-	//m_State = SceneState::PAUSED;
+	m_State = SceneState::PAUSED;
 }
 
 void Scene::OnStop()
 {
-	//m_State = SceneState::STOPPED;
+	m_State = SceneState::STOPPED;
 }
 
 void Scene::OnReload()
 {
-	//m_State = SceneState::LOADING;
+	m_State = SceneState::LOADING;
 }
 
 int Scene::LoadSceneFromFile()
@@ -260,12 +269,10 @@ int Scene::LoadSceneFromFile()
 			{
 				physics::PhysicsState ps = {};
 				auto n = luaL_len(pLuaState, -1);
-				std::vector<std::string> dynamic_keys = { "Mesh", "script", "name","orientation", "position", "mass" ,"velocity", "restitution","angular_acceleration" ,"inertia"};
+				std::vector<std::string> dynamic_keys = { "Mesh", "script", "name"};
 				for (auto i = 1; i <= n; i++)
 				{
-					auto b = 1;
 					auto member = lua_rawgeti(pLuaState, -i, i);
-					//while (member = lua_rawgeti(m_LuaEngine.m_pLuaState, -i, b))
 					{
 						for (auto& key : dynamic_keys)
 						{
@@ -288,57 +295,9 @@ int Scene::LoadSceneFromFile()
 								m_TempNames.push_back(str);
 								lua_pop(pLuaState, 1);
 							}
-							/**/
-							else if (!key.compare("position"))
-							{
-								m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-								ps.position = glm::vec3(vec3.x, vec3.y, vec3.z);
-								lua_pop(pLuaState, 1);
-
-							}
-							else if (!key.compare("orientation"))
-							{
-								m_LuaEngine.GetField4fv(pLuaState, vec4_keys, &vec4);
-								ps.orientation = glm::quat(vec4.w, vec4.x, vec4.y, vec4.z);
-								lua_pop(pLuaState, 1);
-							}
-							else if (!key.compare("mass"))
-							{
-								number = lua_tonumber(pLuaState, -1);
-								ps.mass = number;
-								lua_pop(pLuaState, 1);
-							}
-							else if (!key.compare("velocity"))
-							{
-								m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-								ps.velocity = glm::vec3(vec3.x, vec3.y, vec3.z);
-								lua_pop(pLuaState, 1);
-							}
-							else if (!key.compare("restitution"))
-							{
-								number = lua_tonumber(pLuaState, -1);
-								ps.restitution = number;
-								lua_pop(pLuaState, 1);
-							}
-							else if (!key.compare("angular_acceleration"))
-							{
-								m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-								ps.angular_acceleration = glm::vec3(vec3.x, vec3.y, vec3.z);
-								lua_pop(pLuaState, 1);
-
-							}
-							else if (!key.compare("inertia"))
-							{
-								m_LuaEngine.GetField3fv(pLuaState, vec3_keys, &vec3);
-								ps.inertia = glm::vec3(vec3.x, vec3.y, vec3.z);
-								lua_pop(pLuaState, 1);
-							}
-							/**/
 						}
 					}
-					//m_TempPhysicsStates.push_back(ps);
 				}
-
 			}
 			else if (var == "shader")
 			{

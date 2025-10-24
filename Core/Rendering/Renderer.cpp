@@ -34,18 +34,37 @@ void Renderer::SetUpForRendering()
     m_VAO.Bind();
     m_VAO.SetBufferLayout(layout);
 
-    CreateSkyboxCubeMap();
-    CreateOpenGLFrameBuffer();
+    //CreateSkyboxCubeMap();
+    //CreateOpenGLFrameBuffer();
 }
 
 void Renderer::UploadToOpenGL()
 {
+    glNamedBufferSubData(m_VertexBuffer, 0, m_LargeVertexBuffer.Size(), m_LargeVertexBuffer.m_Buffer.data());
+}
+
+void Renderer::UploadBuffer(const VertexBuffer& vertex_buffer) const
+{
+    glNamedBufferSubData(m_VertexBuffer, 0, vertex_buffer.Size(), vertex_buffer.m_Buffer.data());
+}
+
+void Renderer::ClearVertexBuffer()
+{
     m_LargeVertexBuffer.Clear();
+}
+
+void Renderer::UpdateVertexBuffer(std::vector<Vertex>& new_vertices)
+{
+    m_LargeVertexBuffer.UpdateBuffer(new_vertices);
+}
+
+void Renderer::LoadMeshRenderData()
+{
     auto meshView = m_ActiveScene->GetView<MeshInstance, RenderComponent>();
     for (auto [entity, meshInstance, renderComponent] : meshView.each())
     {
         auto handle = meshInstance.m_Handle;
-        auto& mesh = m_ActiveScene->m_AssetManager.GetMesh(handle);
+        auto& mesh = m_ActiveScene->m_AssetManager->GetMesh(handle);
         m_LargeVertexBuffer.UpdateBuffer(mesh.m_V);
         renderComponent.m_VertexBufferOffset = m_LargeVertexBuffer.m_BufferOffset;
         renderComponent.m_IndexBufferOffset = m_LargeVertexBuffer.m_BufferElementCount;
@@ -54,34 +73,13 @@ void Renderer::UploadToOpenGL()
         renderComponent.m_Size = static_cast<uint64_t>(currentSize);
         renderComponent.m_IndexCount = static_cast<uint64_t>(currentIndices);
     }
-    glNamedBufferSubData(m_VertexBuffer, 0, m_LargeVertexBuffer.Size(), m_LargeVertexBuffer.m_Buffer.data());
-}
-
-void Renderer::BeginCommandRecording()
-{
-    m_CommandBuffer.clear();
-    AssetHandle fakeShaderHandle{ 0,0 };
-    //auto& shader = m_ActiveScene->m_AssetManager.GetShader(fakeShaderHandle);
-    auto meshView = m_ActiveScene->GetView<MeshInstance, RenderComponent>();
-    for (auto [entity, meshInstance, renderComponent] : meshView.each())
-    {
-        auto& mesh = m_ActiveScene->m_AssetManager.GetMesh(meshInstance.m_Handle);
-        auto& material = m_ActiveScene->m_AssetManager.GetMaterial(meshInstance.m_Handle);
-        RenderCommand cmd;
-        cmd.m_EntityID = static_cast<uint64_t>(entity);
-        cmd.m_ShaderHandle = fakeShaderHandle;
-        cmd.m_MaterialHandle = meshInstance.m_Handle;
-        cmd.m_VertexBufferOffset = renderComponent.m_VertexBufferOffset;
-        cmd.m_IndexBufferOffset = renderComponent.m_IndexBufferOffset;
-        cmd.m_CommandSize = renderComponent.m_Size;
-        cmd.m_IndexCount = renderComponent.m_IndexCount;
-        m_CommandBuffer.push_back(cmd);
-    }
 }
 
 void Renderer::DrawSkyboxBackground()
 {
+    /*
     m_SkyboxShader.Bind();
+   
     glDisable(GL_CULL_FACE);
     glDepthFunc(GL_LEQUAL);
 
@@ -98,6 +96,7 @@ void Renderer::DrawSkyboxBackground()
 
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
+    */
 }
 
 void Renderer::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)
@@ -228,54 +227,22 @@ void Renderer::CreateOpenGLFrameBuffer()
     //glNamedFramebufferTexture(CustomFrameBuffer, GL_COLOR_ATTACHMENT0, CustomFrameBufferTexture.m_Texture, 0);
 }
 
-const glm::vec3 Renderer::UnProjectMouse(const glm::vec2& mouse_position) const
+void Renderer::Clear(GLbitfield flags) const
 {
-    glm::vec4 clipSpacePos{ mouse_position.x, mouse_position.y, 1.0, 1.0 };
-    auto invProj = glm::inverse(m_pActiveCamera->GetP());
-    auto viewSpacePos = invProj * clipSpacePos;
-
-    viewSpacePos.x /= viewSpacePos.w;
-    viewSpacePos.y /= viewSpacePos.w;
-    viewSpacePos.z /= viewSpacePos.w;
-    viewSpacePos.w /= viewSpacePos.w;
-
-    auto invView = glm::inverse(m_pActiveCamera->GetV());
-    auto worldSpacePos = invView * viewSpacePos;
-
-    return glm::vec3(worldSpacePos);
+    glClear(flags);
 }
 
-void Renderer::OnRender()
+void Renderer::Flush() const
 {
-    GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
-    glClear(flags);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    AssetHandle fake{ 0,0 };
-    auto& shader = m_ActiveScene->m_AssetManager.GetShader(fake);
-    shader.Bind();
-    for (auto& cmd : m_CommandBuffer)
-    {
-        Draw(cmd);
-        glDrawArrays(GL_TRIANGLES, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount);
-    }
     glFlush();
 }
-void Renderer::Draw(RenderCommand& cmd)
+
+void Renderer::Draw(const RenderCommand& cmd) const
 {
-    auto& shader = m_ActiveScene->m_AssetManager.GetShader(cmd.m_ShaderHandle);
+    auto& shader = m_ActiveScene->m_AssetManager->GetShader(cmd.m_ShaderHandle);
     auto shaderHandlePlatform = shader.GetHandle();
-
-    auto entity = static_cast<entt::entity>(cmd.m_EntityID);
-    auto ch = m_ActiveScene->GetSceneCharacter(entity);
-    auto& phyzx = ch.GetComponent<physics::PhysicsState>();
-
-    glm::mat4 view{ 1.0f };
-    glm::mat4 proj{ 1.0f };
-    m_UniformBuffer.m_Mat4Map["View"] = m_pActiveCamera->GetV();
-    m_UniformBuffer.m_Mat4Map["Projection"] =  m_pActiveCamera->GetP();
-    m_UniformBuffer.m_Float3Map["pos"] = phyzx.position;
-
-    auto& material = m_ActiveScene->m_AssetManager.GetMaterial(cmd.m_MaterialHandle);
+    shader.Bind();
+    auto& material = m_ActiveScene->m_AssetManager->GetMaterial(cmd.m_MaterialHandle);
     for (auto& materialComponent : material.m_Uniforms1f)
     {
         auto& name = materialComponent.first;
@@ -305,19 +272,19 @@ void Renderer::Draw(RenderCommand& cmd)
         glUniform4f(location, data.x, data.y, data.z, data.w);
     }
 
-    for (auto& uniformFloat : m_UniformBuffer.m_FloatMap)
+    for (auto& uniformFloat : cmd.m_UniformBuffer.m_FloatMap)
     {
         auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat.first.c_str());
         glUniform1f(uniformLocation, uniformFloat.second);
     }
-    for (auto& uniformFloat2 : m_UniformBuffer.m_Float2Map)
+    for (auto& uniformFloat2 : cmd.m_UniformBuffer.m_Float2Map)
     {
         auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat2.first.c_str());
         auto x = uniformFloat2.second.x;
         auto y = uniformFloat2.second.y;
         glUniform2f(uniformLocation, x, y);
     }
-    for (auto& uniformFloat3 : m_UniformBuffer.m_Float3Map)
+    for (auto& uniformFloat3 : cmd.m_UniformBuffer.m_Float3Map)
     {
         auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat3.first.c_str());
         auto x = uniformFloat3.second.x;
@@ -325,7 +292,7 @@ void Renderer::Draw(RenderCommand& cmd)
         auto z = uniformFloat3.second.z;
         glUniform3f(uniformLocation, x, y, z);
     }
-    for (auto& uniformFloat4 : m_UniformBuffer.m_Float4Map)
+    for (auto& uniformFloat4 : cmd.m_UniformBuffer.m_Float4Map)
     {
         auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat4.first.c_str());
         auto x = uniformFloat4.second.x;
@@ -334,13 +301,24 @@ void Renderer::Draw(RenderCommand& cmd)
         auto w = uniformFloat4.second.w;
         glUniform4f(uniformLocation, x, y, z, w);
     }
-    for (auto& uniformMat4 : m_UniformBuffer.m_Mat4Map)
+    for (auto& uniformMat4 : cmd.m_UniformBuffer.m_Mat4Map)
     {
         auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformMat4.first.c_str());
         auto mat = uniformMat4.second;
         glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(mat));
     }
+    glDrawArrays((GLenum)cmd.m_PrimitiveType, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount);
 }
+
+void Renderer::DrawBuffer(const std::vector<RenderCommand>& command_queue, const VertexBuffer& vertex_buffer) const
+{
+    UploadBuffer(vertex_buffer);
+    for (auto& cmd : command_queue)
+    {
+        Draw(cmd);
+    }
+}
+
 void Renderer::BindScene(std::shared_ptr<Scene> scene)
 {
     if (m_ActiveScene)
@@ -374,8 +352,6 @@ void Renderer::EnableTesselation()
 
 void Renderer::BeginFrame()
 {
-    vBuffer_offset = 0;
-    index_offset = 0;
 }
 
 void Renderer::EndFrame()

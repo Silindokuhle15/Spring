@@ -39,8 +39,8 @@ include_directories(
     "Dependencies/EnTT/"
     "Dependencies/GLEW/include/"
     "Dependencies/GLFW/include/"
-    "Dependencies/imgui/"
-    "Dependencies/imgui/backends/"
+    "Dependencies/imgui-docking/"
+    "Dependencies/imgui-docking/backends/"
     "Dependencies/ImGuizmo/"
     "Dependencies/GLM/"
     "Dependencies/Lua/include/"
@@ -81,20 +81,20 @@ set(SHARED_SOURCES
     "Dependencies/GLEW/src/glew.c"
 
     # ImGui
-    "Dependencies/ImGui/imgui.h"
-    "Dependencies/ImGui/imconfig.h"
-    "Dependencies/ImGui/imgui.cpp"
-    "Dependencies/ImGui/imgui_draw.cpp"
-    "Dependencies/ImGui/imgui_tables.cpp"
-    "Dependencies/ImGui/imgui_widgets.cpp"
-    "Dependencies/ImGui/imgui_internal.h"
-    "Dependencies/ImGui/backends/imgui_impl_opengl3.h"
-    "Dependencies/ImGui/backends/imgui_impl_opengl3_loader.h"
-    "Dependencies/ImGui/backends/imgui_impl_opengl3.cpp"
-    "Dependencies/ImGui/backends/imgui_impl_glfw.h"
-    "Dependencies/ImGui/backends/imgui_impl_glfw.cpp"
-    "Dependencies/ImGui/backends/imgui_impl_win32.h"
-    "Dependencies/ImGui/backends/imgui_impl_win32.cpp"
+    "Dependencies/imgui-docking/imgui.h"
+    "Dependencies/imgui-docking/imconfig.h"
+    "Dependencies/imgui-docking/imgui.cpp"
+    "Dependencies/imgui-docking/imgui_draw.cpp"
+    "Dependencies/imgui-docking/imgui_tables.cpp"
+    "Dependencies/imgui-docking/imgui_widgets.cpp"
+    "Dependencies/imgui-docking/imgui_internal.h"
+    "Dependencies/imgui-docking/backends/imgui_impl_opengl3.h"
+    "Dependencies/imgui-docking/backends/imgui_impl_opengl3_loader.h"
+    "Dependencies/imgui-docking/backends/imgui_impl_opengl3.cpp"
+    "Dependencies/imgui-docking/backends/imgui_impl_glfw.h"
+    "Dependencies/imgui-docking/backends/imgui_impl_glfw.cpp"
+    "Dependencies/imgui-docking/backends/imgui_impl_win32.h"
+    "Dependencies/imgui-docking/backends/imgui_impl_win32.cpp"
 
     "Dependencies/ImGuizmo/ImGuizmo.h"
     "Dependencies/ImGuizmo/ImGuizmo.cpp"
@@ -103,7 +103,6 @@ set(SHARED_SOURCES
     ${MSDF_XT_INC} ${MSDF_XT_SRC}
     ${MSDG_ATGN_INC} ${MSDG_ATGN_SRC}
 
-    # Your engine and editor source files...
     "Core/Common/Common.h" "Core/Common/Common.cpp"
     "Core/Engine/TimeStep.h" "Core/Engine/TimeStep.cpp"
     "Core/Engine/BaseWin32Window.h" "Core/Engine/BaseWin32Window.cpp"
@@ -142,7 +141,7 @@ set(SHARED_SOURCES
     "Core/Engine/BoundingVolume.h" "Core/Engine/BoundingVolume.cpp"
     "Core/Engine/BVH.h" "Core/Engine/BVH.cpp"
     "Core/Resources/AssetManager.h" "Core/Resources/AssetManager.cpp"
- "Core/Engine/UUID.h" "Core/Engine/UUID.cpp" "Core/Rendering/VertexBuffer.h" "Core/Rendering/VertexBuffer.cpp" "Core/Rendering/UniformBuffer.h")
+ "Core/Engine/UUID.h" "Core/Engine/UUID.cpp" "Core/Rendering/VertexBuffer.h" "Core/Rendering/VertexBuffer.cpp" "Core/Rendering/UniformBuffer.h" "Core/Rendering/RenderCommand.h" "Core/Rendering/RenderCommand.cpp")
 
 # Executable-specific files
 set(EDITOR_SOURCES

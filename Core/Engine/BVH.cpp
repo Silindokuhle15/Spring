@@ -60,35 +60,3 @@ uint32_t count_leading_zeros(uint32_t n)
 	return x ? __builtin_clz(n) : 32;
 #endif
 }
-
-uint64_t get_split_position(const BVEntry* list, uint64_t start, uint64_t end)
-{
-	if (start == end) return start;
-	uint64_t first_code = list[start].MORTON_CODE;
-	uint64_t last_code = list[end].MORTON_CODE;
-
-	if (first_code == last_code) return (start + end) / 2;
-
-	uint64_t common_prefix = count_leading_zeros(first_code ^ last_code);
-	uint64_t split = start;
-	uint64_t step = end - start;
-
-	while (step > 0)
-	{
-		uint64_t new_split = split + (step >> 1); //divides step by 2
-		if (new_split >= end)
-		{
-			step >>= 1;
-			continue;
-		}
-
-		uint64_t split_prefix = count_leading_zeros(first_code ^ list[new_split].MORTON_CODE);
-		
-		if (split_prefix > common_prefix)
-		{
-			split = new_split;
-		}
-		step >>= 1;
-	}
-	return split;
-}

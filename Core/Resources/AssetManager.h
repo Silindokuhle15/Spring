@@ -57,7 +57,7 @@ public:
 			{
 				Mesh mesh{ resource.m_Filepath.c_str() };
 				auto& material = mesh.m_Materials;
-				m_MaterialMap[assetHandle] = material[1];
+				m_MaterialMap[assetHandle] = material.front();
 				m_MeshMap[assetHandle] = mesh;
 				// Next is get the correct material handle and assign it
 				// auto materialHandle = GetMaterialHandle(what parameter??)   -\0 - 0/-

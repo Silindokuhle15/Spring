@@ -6,13 +6,6 @@
 
 namespace scripting {
 
-    namespace {
-        constexpr const char* SCENE_MT = "Scene";
-        constexpr const char* CHARACTER_MT = "Character";
-        constexpr const char* PHYSICSSTATE_MT = "PhysicsState";
-        constexpr const char* RENDERCOMPONENT_MT = "RenderComponent";
-    }
-
     std::string ScriptMgr::GetLuaFilenameWithoutExtension(const std::string& path)
     {
         auto lastOfIndex = path.find_last_of('/');
@@ -71,8 +64,14 @@ namespace scripting {
         lua_setglobal(L, name);
     }
 
+    void ScriptMgr::expose_scene_camera(lua_State* L, Camera* camera, const char* name)
+    {
+        lua_pushSceneCamera(L, camera);
+        lua_setglobal(L, name);
+    }
+
     int ScriptMgr::lua_Scene_GetTitle(lua_State* L) {
-        Scene* scene = *static_cast<Scene**>(luaL_checkudata(L, 1, SCENE_MT));
+        Scene* scene = *static_cast<Scene**>(luaL_checkudata(L, 1, MT::SCENE_MT));
         lua_pushstring(L, scene->GetTitle().c_str());
         return 1;
     }
@@ -83,11 +82,16 @@ namespace scripting {
     }
 
     Scene* ScriptMgr::lua_checkScene(lua_State* L, int index) {
-        return *static_cast<Scene**>(luaL_checkudata(L, index, SCENE_MT));
+        return *static_cast<Scene**>(luaL_checkudata(L, index, MT::SCENE_MT));
+    }
+
+    Camera* ScriptMgr::lua_checkSceneCamera(lua_State* L, int index)
+    {
+        return *static_cast<Camera**>(luaL_checkudata(L, index, MT::CAMERA_MT));
     }
 
     void ScriptMgr::register_scene(lua_State* L) {
-        luaL_newmetatable(L, SCENE_MT);
+        luaL_newmetatable(L, MT::SCENE_MT);
         lua_pushvalue(L, -1);
         lua_setfield(L, -2, "__index");
 
@@ -112,26 +116,61 @@ namespace scripting {
         lua_pop(L, 1);
     }
 
+    void ScriptMgr::register_scene_camera(lua_State* L)
+    {
+        luaL_newmetatable(L, MT::CAMERA_MT);
+        lua_pushvalue(L, -1);
+        lua_setfield(L, -2, "__index");
+
+        lua_pushcfunction(L, lua_Scene_CameraUnProject);
+        lua_setfield(L, -2, "UnProjectMouse");
+
+        lua_pop(L, 1);
+    }
+
     int ScriptMgr::lua_pushScene(lua_State* L, Scene* scene) {
         auto** userdata = static_cast<Scene**>(lua_newuserdata(L, sizeof(Scene*)));
         *userdata = scene;
-        luaL_getmetatable(L, SCENE_MT);
+        luaL_getmetatable(L, MT::SCENE_MT);
+        lua_setmetatable(L, -2);
+        return 1;
+    }
+
+    int ScriptMgr::lua_pushSceneCamera(lua_State* L, Camera* pcamera)
+    {
+        auto** userdata = static_cast<Camera**>(lua_newuserdata(L, sizeof(Camera*)));
+        *userdata = pcamera;
+        luaL_getmetatable(L, MT::CAMERA_MT);
         lua_setmetatable(L, -2);
         return 1;
     }
 
     int ScriptMgr::lua_Scene_CreateCharacter(lua_State* L) {
         Scene* scene = lua_checkScene(L, 1);
-        // Example:
         Character* character = scene->CreateSceneObject();
         return lua_pushCharacter(L, character);
-        return 0;
     }
 
     int ScriptMgr::lua_Scene_DestroyCharacter(lua_State* L) {
         Scene* scene = lua_checkScene(L, 1);
         // TODO: Implement actual logic
         return 0;
+    }
+
+    int ScriptMgr::lua_Scene_CameraUnProject(lua_State* L)
+    {
+        Camera* camera = lua_checkSceneCamera(L, 1);
+        POINT pt{};
+        GetCursorPos(&pt);
+        auto clipSpaceX = 2.0 * (pt.x / 1920.0) - 1.0;
+        auto clipSpaceY = 1.0 - 2.0 * (pt.y / 1080.0);
+        auto worldSpaceZPos = camera->UnProjectMouse(glm::vec2(clipSpaceX, clipSpaceY));
+        lua_newtable(L);
+        for (int i = 0; i < 3; ++i) {
+            lua_pushnumber(L, worldSpaceZPos[i]);
+            lua_rawseti(L, -2, i + 1);
+        }
+        return 1;
     }
 
     // --------------------- Character ---------------------
@@ -141,31 +180,25 @@ namespace scripting {
         lua_setglobal(L, name);
     }
 
-
-
     int ScriptMgr::lua_pushCharacter(lua_State* L, Character* character) {
         auto** userdata = static_cast<Character**>(lua_newuserdata(L, sizeof(Character*)));
         *userdata = character;
-        luaL_getmetatable(L, CHARACTER_MT);
+        luaL_getmetatable(L, MT::CHARACTER_MT);
         lua_setmetatable(L, -2);
         return 1;
     }
 
-
-
     Character* ScriptMgr::lua_checkCharacter(lua_State* L, int index) {
-        return *static_cast<Character**>(luaL_checkudata(L, index, CHARACTER_MT));
+        return *static_cast<Character**>(luaL_checkudata(L, index, MT::CHARACTER_MT));
     }
 
     int ScriptMgr::lua_Character_AddMesh(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
         const char* path = luaL_checkstring(L, 2);
-        PrintLuaStack(L);
         AssetResource meshResource{ AssetType::MeshResource, path };
         auto* activeScene = character->GetScenePointer();
-        auto assetHandle = activeScene->m_AssetManager.GetResourceHandle(meshResource);
-        //auto& mesh = activeScene->m_AssetManager.GetMesh(assetHandle);
+        auto assetHandle = activeScene->m_AssetManager->GetResourceHandle(meshResource);
         character->AddComponent<MeshInstance>(assetHandle);
         return 0;
     }
@@ -190,7 +223,7 @@ namespace scripting {
         auto** userdata = static_cast<RenderComponent**>(lua_newuserdata(L, sizeof(RenderComponent*)));
         *userdata = state;
 
-        luaL_getmetatable(L, RENDERCOMPONENT_MT);
+        luaL_getmetatable(L, MT::RENDERCOMPONENT_MT);
         lua_setmetatable(L, -2);
         return 0;
     }
@@ -211,7 +244,7 @@ namespace scripting {
         auto** userdata = static_cast<physics::PhysicsState**>(lua_newuserdata(L, sizeof(physics::PhysicsState*)));
         *userdata = state;
 
-        luaL_getmetatable(L, PHYSICSSTATE_MT);
+        luaL_getmetatable(L, MT::PHYSICSSTATE_MT);
         lua_setmetatable(L, -2);
         return 1;
     }
@@ -233,13 +266,77 @@ namespace scripting {
 
         glm::vec3 vt{ temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-        state->linear_acceleration = vt * 0.01667f;
+        glm::vec3 fLocal{ temp[0], temp[1], temp[2] };
+        glm::vec3 fWorld = state->orientation * fLocal;
+        state->position += fWorld * 0.016777f;
         // TO DO... Change this to not manipulate the object direct, but queue the application of the force into a physics tasks buffer maybe? anything better than this
         return 0;
     }
 
+    int ScriptMgr::lua_Character_ApplyRotation(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        float temp[] = { 0,0, -1, 0 };
+        if (lua_istable(L, 2))
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                lua_rawgeti(L, 2, i + 1);
+                if (lua_isnumber(L, -1))
+                {
+                    temp[i] = static_cast<float>(lua_tonumber(L, -1));
+                }
+                lua_pop(L, 1);
+            }
+        }
+        glm::quat rotation{ temp[3], temp[0], temp[1], temp[2] };
+        physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
+        state->orientation = glm::normalize(state->orientation * rotation);
+        return 0;
+    }
+
+    int ScriptMgr::lua_Character_GetLocalForward(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        if (!character->HasComponent<physics::PhysicsState>())
+        {
+            return luaL_error(L,"Character has no physics::PhysicsState!");
+        }
+        physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
+        auto& orientation = state->orientation;
+        glm::vec3 localForward{ 0.0, 0.0, 1.0 };
+        auto globalForward = orientation * localForward;
+
+        lua_newtable(L);
+        for (int i = 0; i < 3; ++i) {
+            lua_pushnumber(L, globalForward[i]);
+            lua_rawseti(L, -2, i + 1);
+        }
+        return 1;
+    }
+
+    int ScriptMgr::lua_Character_GetLocalRight(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        if (!character->HasComponent<physics::PhysicsState>())
+        {
+            return luaL_error(L, "Character has no physics::PhysicsState!");
+        }
+        physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
+        auto& orientation = state->orientation;
+        glm::vec3 localRight{ 1.0, 0.0, 0.0 };
+        auto globalRight = orientation * localRight;
+
+        lua_newtable(L);
+        for (int i = 0; i < 3; ++i) {
+            lua_pushnumber(L, globalRight[i]);
+            lua_rawseti(L, -2, i + 1);
+        }
+        return 1;
+    }
+
     void ScriptMgr::register_character(lua_State* L) {
-        luaL_newmetatable(L, CHARACTER_MT);
+        luaL_newmetatable(L, MT::CHARACTER_MT);
 
         lua_newtable(L);
         lua_pushcfunction(L, lua_Character_AddMesh);
@@ -262,6 +359,15 @@ namespace scripting {
 
         lua_pushcfunction(L, lua_Character_ApplyForce);
         lua_setfield(L, -2, "ApplyForce");
+
+        lua_pushcfunction(L, lua_Character_ApplyRotation);
+        lua_setfield(L, -2, "ApplyRotation");
+
+        lua_pushcfunction(L, lua_Character_GetLocalForward);
+        lua_setfield(L, -2, "GetForward");
+
+        lua_pushcfunction(L, lua_Character_GetLocalRight);
+        lua_setfield(L, -2, "GetRight");
 
         lua_setfield(L, -2, "__index");
         lua_pop(L, 1);
@@ -382,7 +488,7 @@ namespace scripting {
     // --------------------- PhysicsState ---------------------
 
     physics::PhysicsState* ScriptMgr::lua_checkPhysicsState(lua_State* L, int index) {
-        return *static_cast<physics::PhysicsState**>(luaL_checkudata(L, index, PHYSICSSTATE_MT));
+        return *static_cast<physics::PhysicsState**>(luaL_checkudata(L, index, MT::PHYSICSSTATE_MT));
     }
 
     int ScriptMgr::lua_PhysicsState_index(lua_State* L) {
@@ -532,7 +638,7 @@ namespace scripting {
     }
 
     void ScriptMgr::register_physicsstate(lua_State* L) {
-        luaL_newmetatable(L, PHYSICSSTATE_MT);
+        luaL_newmetatable(L, MT::PHYSICSSTATE_MT);
 
         lua_pushcfunction(L, lua_PhysicsState_index);
         lua_setfield(L, -2, "__index");

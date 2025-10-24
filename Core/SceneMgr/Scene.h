@@ -12,10 +12,10 @@
 #include "BoundingVolume.h"
 #include "AssetManager.h"
 
-typedef enum
+enum class SceneState
 {
-	LOADING, RUNNING, PAUSED, STOPPED, END
-} SceneState;
+	LOADING = 0, RUNNING, PAUSED, STOPPED, END
+};
 
 class Character;
 class Renderer;
@@ -41,6 +41,7 @@ public:
 	std::vector<Camera> m_Cameras;
 	std::vector<entt::entity> m_Characters;
 
+	std::vector<BVNode<Bound3D>> m_BVEntries;
 	std::vector<BVEntry> entries;
 	std::vector<Bound3D> bounds;
 	std::vector<std::pair<entt::entity, entt::entity>> collisionPairs;
@@ -50,7 +51,7 @@ public:
 	std::vector<std::string> m_TempControlScripts;
 	std::vector<std::string> m_TempNames;
 	virtual void OnCreateSceneObjects();
-	virtual bool CreateBoundingVolumeHierarchy(std::vector<physics::PhysicsState>& states);
+	virtual void AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state);
 	virtual void CreateShaders();
 	virtual void OnInit();
 	virtual void OnUpdate(TimeStep ts);
@@ -77,14 +78,16 @@ public:
 	template<typename... T>
 	auto GetView();
 
-	AssetManager& GetAssetManager() { return m_AssetManager; }
+	AssetManager* GetAssetManager() const { return m_AssetManager; }
+	void SetAssetManager(AssetManager* pAsset_manager) { m_AssetManager = pAsset_manager; }
+	SceneState GetSceneState() const { return m_State; }
 private:
 	SceneState m_State;
 	entt::registry m_Registry;
 	scripting::ControlScript m_Script;
 	lua_State* m_pLuaState = nullptr;
 	scripting::ScriptMgr scriptEngine;
-	AssetManager m_AssetManager;
+	AssetManager* m_AssetManager;
 };
 
 template<typename... T>

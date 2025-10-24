@@ -31,6 +31,12 @@ public:
 		wc.lpszClassName = CLASS_NAME;
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 
+		
+		RECT rect{};
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+
+		auto idth = GetSystemMetrics(SM_CXSCREEN);
+		auto eight = GetSystemMetrics(SM_CYSCREEN);
 		RegisterClass(&wc);
 		m_Hwnd = CreateWindowEx(
 			0, // Optional window styles.
@@ -38,7 +44,7 @@ public:
 			app_name, // Window text
 			WS_OVERLAPPEDWINDOW, // Window style
 			// Size and position
-			CW_USEDEFAULT, CW_USEDEFAULT, static_cast<int>(width), static_cast<int>(height),
+			0, 0, static_cast<int>(rect.right), static_cast<int>(rect.bottom),
 			NULL, // Parent window
 			NULL, // Menu
 			m_Handle, // Instance handle

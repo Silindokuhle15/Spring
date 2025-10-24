@@ -88,6 +88,17 @@ struct BVEntry
 {
 	uint64_t ID = 0;
 	uint64_t MORTON_CODE = 0xFFFFFFFFFFFFFFFFULL;
+public:
+	BVEntry(uint64_t id, uint64_t morton_code) :
+		ID{ id },
+		MORTON_CODE{ morton_code }
+	{
+
+	}
+	bool operator<(const BVEntry& other) const
+	{
+		return MORTON_CODE < other.MORTON_CODE;
+	}
 };
 
 struct Bound2D
@@ -151,26 +162,28 @@ struct Bound3D
 	}
 	static float unit_product(const Bound3D& a)
 	{
-		glm::vec3 xx{ a.xMax - a.xMin, 0.0f, 0.0f };
-		glm::vec3 yy{ 0.0f, a.yMax - a.yMin, 0.0f };
-		glm::vec3 zz{ 0.0f, 0.0f, a.zMax - a.zMin };
-		return glm::dot(xx, glm::cross(yy, zz));
+		//glm::vec3 xx{ a.xMax - a.xMin, 0.0f, 0.0f };
+		//glm::vec3 yy{ 0.0f, a.yMax - a.yMin, 0.0f };
+		//glm::vec3 zz{ 0.0f, 0.0f, a.zMax - a.zMin };
+		//return glm::dot(xx, glm::cross(yy, zz));
+	
+		float dx = std::max(0.0f, a.xMax - a.xMin);
+		float dy = std::max(0.0f, a.yMax - a.yMin);
+		float dz = std::max(0.0f, a.zMax - a.zMin);
+		return dx * dy * dz;
 	}
 	static bool AABBIntersection(const Bound3D& a, const Bound3D& b)
 	{
-		bool intersect_x = a.xMax >= b.xMin &&
-			a.xMin <= b.xMin;
-
-		bool intersect_y = a.yMax >= b.yMin &&
-			a.yMin <= b.yMax;
-
-		bool intersect_z = a.zMax >= b.zMin &&
-			a.zMin <= b.zMax;
+		bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
+		bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
+		bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
 
 		return intersect_x && intersect_y && intersect_z;
 	}
 	static Bound3D intersection(const Bound3D& a, const Bound3D& b)
 	{
+		if (!AABBIntersection(a, b))
+			return { 0,0,0,0,0,0 };
 		return
 		{
 			std::max(a.xMin, b.xMin),
@@ -193,12 +206,12 @@ template<typename T>
 class BVNode
 {
 public:
-	uint64_t m_Id;
+	BVEntry m_MortonCode;
 	T m_Bounds;
 	BVNode* m_Left;
 	BVNode* m_Right;
-	BVNode(const T& bounds, uint64_t id, BVNode* left, BVNode* right):
-		m_Id{id},
+	BVNode(uint64_t id, uint64_t morton_code, const T& bounds, BVNode* left, BVNode* right):
+		m_MortonCode{id, morton_code},
 		m_Bounds{bounds},
 		m_Left{left},
 		m_Right{right}
@@ -206,11 +219,43 @@ public:
 	}
 	static void print(const BVNode<T>* node)
 	{
-		std::cout << "Node ID: " << node->m_Id;
+		std::cout << "Node ID: " << node->m_MortonCode.ID;
 		T::print(node->m_Bounds);
 	}
 };
-uint64_t get_split_position(const BVEntry* list, uint64_t start, uint64_t end);
+
+template<typename U>
+uint64_t get_split_position(const BVNode<U>* list, uint64_t start, uint64_t end)
+{
+	if (start == end) return start;
+	uint64_t first_code = list[start].m_MortonCode.MORTON_CODE;
+	uint64_t last_code = list[end].m_MortonCode.MORTON_CODE;
+
+	if (first_code == last_code) return (start + end) / 2;
+
+	uint64_t common_prefix = count_leading_zeros(first_code ^ last_code);
+	uint64_t split = start;
+	uint64_t step = end - start;
+
+	while (step > 0)
+	{
+		uint64_t new_split = split + (step >> 1); //divides step by 2
+		if (new_split >= end)
+		{
+			step >>= 1;
+			continue;
+		}
+
+		uint64_t split_prefix = count_leading_zeros(first_code ^ list[new_split].m_MortonCode.MORTON_CODE);
+
+		if (split_prefix > common_prefix)
+		{
+			split = new_split;
+		}
+		step >>= 1;
+	}
+	return split;
+}
 
 template<typename U>
 void print_tree(const BVNode<U>* node, int depth = 0)
@@ -225,21 +270,19 @@ void print_tree(const BVNode<U>* node, int depth = 0)
 }
 
 template<typename U>
-BVNode<U>* create_sub_tree(const std::vector<BVEntry> list, const std::vector<U>& bounds, uint64_t start, uint64_t end)
+BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, uint64_t end)
 {
-	if (list.empty() || bounds.empty())
+	if (list.empty())
 	{
 		return nullptr;
 	}
 	if (start == end)
 	{
-		uint64_t id = list[start].ID;
-		if (id > start) return nullptr;
-		return new BVNode<U>(bounds[id], list[start].ID, nullptr, nullptr);
+		return new BVNode<U>(list[end].m_MortonCode.ID, list[end].m_MortonCode.MORTON_CODE, list[end].m_Bounds, nullptr, nullptr);
 	}
-	uint64_t mid = get_split_position(list.data(), start, end);
-	BVNode<U>* left = create_sub_tree(list, bounds, start, mid);
-	BVNode<U>* right = create_sub_tree(list, bounds, mid + 1, end);
+	uint64_t mid = get_split_position<U>(list.data(), start, end);
+	BVNode<U>* left = create_sub_tree(list, start, mid);
+	BVNode<U>* right = create_sub_tree(list, mid + 1, end);
 
 	if (right && left)
 	{
@@ -248,7 +291,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVEntry> list, const std::vector<U>
 
 		U merged = U::merge(lb, rb);
 
-		return new BVNode<U>(merged, static_cast<uint64_t>(-1), left, right);
+		return new BVNode<U>(static_cast<uint64_t>(-1), -1, merged, left, right);
 	}
 	else if (right && !left)
 	{
@@ -262,47 +305,40 @@ BVNode<U>* create_sub_tree(const std::vector<BVEntry> list, const std::vector<U>
 }
 
 template<typename U>
-BVNode<U>* create_tree(std::vector<BVEntry>& list, const std::vector<U>& bounds)
+BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 {
 	std::sort(
 		list.begin(), list.end(),
-		[](const BVEntry& u, const BVEntry& v) { return (u.MORTON_CODE == v.MORTON_CODE) ? (u.ID < v.ID) : (u.MORTON_CODE < v.MORTON_CODE); }
-	);
-	return create_sub_tree<U>(list, bounds, 0, static_cast<uint64_t>(list.size() - 1));
+		[&](const BVNode<U>& u, const BVNode<U>& v) { 
+			return (u.m_MortonCode < v.m_MortonCode);
+		});
+	return create_sub_tree<U>(list, 0, static_cast<uint64_t>(list.size() - 1));
 }
 
 template<typename U>
-std::vector<uint64_t> detect_overlapping_bounds(const U& bound, const BVNode<U>* tree_node)
+std::vector<uint64_t> detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node)
 {
 	if (!tree_node)
 		return std::vector<uint64_t>();
 
-	auto treeBounds = tree_node->m_Bounds;
-	auto merge = U::merge(bound, treeBounds);
-	auto intersection = U::intersection(bound, treeBounds);
-	auto mergeProduct = U::unit_product(merge);
-	auto intersectionProduct = U::unit_product(intersection);
-	float IoU = intersectionProduct / mergeProduct;
-
 	std::vector<uint64_t> totalIntersections;
-
-	if ((0.0f < IoU) && (IoU <= 1.0f) && U::AABBIntersection(bound, treeBounds))
+	if (U::AABBIntersection(leaf_node.m_Bounds, tree_node->m_Bounds))
 	{
 		if (tree_node->m_Left)
 		{
-			auto leftIntersections = detect_overlapping_bounds(bound, tree_node->m_Left);
+			auto leftIntersections = detect_overlapping_bounds(leaf_node, tree_node->m_Left);
 			totalIntersections.insert(totalIntersections.end(), leftIntersections.begin(), leftIntersections.end());
 		}
 
 		if (tree_node->m_Right)
 		{
-			auto rightIntersections = detect_overlapping_bounds(bound, tree_node->m_Right);
+			auto rightIntersections = detect_overlapping_bounds(leaf_node, tree_node->m_Right);
 			totalIntersections.insert(totalIntersections.end(), rightIntersections.begin(), rightIntersections.end());
 		}
 
 		if (!tree_node->m_Left && !tree_node->m_Right)
 		{
-			totalIntersections.push_back(tree_node->m_Id);
+			totalIntersections.push_back(tree_node->m_MortonCode.ID);
 		}
 	}
 	return totalIntersections;

@@ -4,26 +4,11 @@
 #include "FrameBuffer.h"
 #include "Shader.h"
 #include "VertexBuffer.h"
-#include "UniformBuffer.h"
-
-class RenderCommand
-{
-public:
-    uint64_t m_EntityID;
-    uint64_t m_TargetBuffer;
-    uint64_t m_VertexBufferOffset;
-    uint64_t m_IndexBufferOffset;
-    uint64_t m_CommandSize;
-    uint64_t m_IndexCount;
-    //std::vector<LayoutInfo> m_Uniforms;
-    AssetHandle m_ShaderHandle;
-    AssetHandle m_MaterialHandle;
-};
+#include "RenderCommand.h"
 
 class Renderer
 {
 public:
-    //Testing
     std::vector<LayoutInfo> uniforms
     {
         {ShaderDataType::Float, "delta"},
@@ -31,15 +16,11 @@ public:
         {ShaderDataType::Mat4,  "View"},
         {ShaderDataType::Mat4,  "Projection"}
     };
-
-    UniformBuffer m_UniformBuffer;
 public:
     TimeStep m_Ts;
     VertexBuffer m_LargeVertexBuffer;
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
-    GLuint index_offset = 0;
-    GLuint vBuffer_offset = 0;
 
     VertexArray m_VAO;
     FrameBuffer CustomFrameBuffer;
@@ -48,20 +29,6 @@ public:
     ShaderResource m_SkyboxShaderInfo;
     Shader m_SkyboxShader;
     Mesh m_SkyboxMesh;
-
-    int m_LightLocation;
-    int m_CameraEyeLocation;
-    int m_ModelLocation;
-    int m_VPLocation;
-    int m_VLocation;
-    int m_DeltaLocation;
-
-    unsigned int m_CurrentIndexCount = 0;
-    unsigned int m_LastIndexCount = 0;
-
-    bool m_PrimitiveModeWireFrame = false;
-
-    unsigned int m_IndexBufferSize = 0;
 
     std::shared_ptr<Scene> m_ActiveScene;
 
@@ -74,21 +41,24 @@ public:
     void CreateImage();
     void EnableTesselation();
 
-    void OnRender();
-    void Draw(RenderCommand& cmd);
+    void Draw(const RenderCommand& cmd) const;
+    void DrawBuffer(const std::vector<RenderCommand>& command_queue, const VertexBuffer& vertex_buffer) const;
     void OnUpdate(TimeStep delta);
 
     void EndFrame();
 
     void SetUpForRendering();
     void UploadToOpenGL();
-    void BeginCommandRecording();
+    void UploadBuffer(const VertexBuffer& vertex_buffer) const;
+    void ClearVertexBuffer();
+    void UpdateVertexBuffer(std::vector<Vertex>& new_vertices);
+    void LoadMeshRenderData();
     void DrawSkyboxBackground();
     void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
     void CreateSkyboxCubeMap();
     void CreateOpenGLFrameBuffer();
-
-    const glm::vec3 UnProjectMouse(const glm::vec2 & mouse_position) const;
+    void Clear(GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) const;
+    void Flush() const;
 
     Renderer():
         m_Ts{0},
@@ -103,10 +73,8 @@ public:
         m_SkyboxMesh{ "C:/dev/Spring/Assets/Objects/Cube/Cube.obj" },
         CustomFrameBuffer{}
     {
-        Material testMaterial(m_SkyboxShaderInfo);
     }
     ~Renderer() {}
-
     std::vector<RenderCommand> m_CommandBuffer;
 private:
     std::vector<TextureBase<GL_Texture>> m_Textures;

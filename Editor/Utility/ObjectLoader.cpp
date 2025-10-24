@@ -538,10 +538,11 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 
 	std::istringstream in(buffer);
 	std::string line;
-	uint64_t materialID = 0;
+	uint64_t numMaterials = 0;
 	char* endptr = nullptr;
 	std::vector<LayoutInfo> materialInfos;
 	Material tempMaterial{};
+	bool firstMaterial = true;
 	
 	while (std::getline(in, line)) {
 		auto words = getWords(line, " ");
@@ -552,8 +553,14 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 		bool materialComponent = false;
 
 		if (type == "newmtl" && words.size() >= 2) {
+			if (firstMaterial)
+			{
+				m_MaterialNames.push_back(words[1]);
+				firstMaterial = false;
+				continue;
+			}
+			m_Materials.push_back(tempMaterial);
 			m_MaterialNames.push_back(words[1]);
-			m_Materials.emplace_back(materialID++);
 		}
 		else if (type == "Ka" && words.size() >= 4) {
 			auto Ka = glm::vec3(

@@ -4,7 +4,6 @@
 
 class Material {
 private:
-    uint64_t m_MaterialID;
     std::vector<LayoutInfo> m_Uniforms;
 
 public:
@@ -20,6 +19,7 @@ public:
     void OnInit();
     void OnUpdate();
     void AddNewUniform(const LayoutInfo& uniform);
+    /*
     void SetUniformI(const std::string& uniform_name, int value) const;
     void SetUniform2I(const std::string& uniform_name, int i, int j) const;
     void SetUniform3I(const std::string& uniform_name, int i, int j, int k) const;
@@ -31,9 +31,8 @@ public:
     void SetUniform2FM(const std::string& uniform_name, float* matrix2) const;
     void SetUniform3FM(const std::string& uniform_name, float* matrix3) const;
     void SetUniform4FM(const std::string& uniform_name, float* matrix4) const;
-
-    Material(uint64_t id = 0xFFFFFFFF) : 
-        m_MaterialID(id),
+    */
+    Material() : 
         m_Uniforms{},
         m_Uniforms1f{},
         m_Uniforms2f{},

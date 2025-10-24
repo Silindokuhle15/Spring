@@ -94,5 +94,6 @@ public:
 	{
 	}
 	virtual glm::mat4 GetVP() const { return m_ProjectionMatrix * m_View; }
+	virtual const glm::vec3 UnProjectMouse(const glm::vec2& mouse_position) const;
 
 };

@@ -101,7 +101,7 @@ Win32Window::Win32Window(uint64_t width, uint64_t height, const char* name, bool
     m_Title{name}
 {
     CreateWin32Window(width, height, name);
-    show ? ShowWindow(m_Hwnd, 10) : 0;
+    show ? ShowWindow(m_Hwnd, SW_SHOWMAXIMIZED) : 0;
     SetUpForRendering();
 }
 

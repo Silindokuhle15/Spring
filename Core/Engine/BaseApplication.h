@@ -18,7 +18,6 @@ class Renderer;
 class BaseApplication : public event::IEventListener
 {	
 public:
-	//std::shared_ptr<Win32Window> m_AppWindow;
 	Win32Window m_AppWindow;
 	bool m_ExitWindow;
 	std::shared_ptr<Renderer> m_pActiveRenderer;
@@ -28,6 +27,7 @@ public:
 	void Run();
 	void ShutDown();
 	void OnMouseMove(event::MouseMoveEvent& mouse_move) override;
+	void DrawSceneCharacters();
 public:
 	BaseApplication(uint64_t width, uint64_t height, const char* title);
 	BaseApplication() = default;

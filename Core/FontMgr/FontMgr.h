@@ -1,3 +1,6 @@
+#ifndef _FONT_MGR_
+#define _FONT_MGR_
+
 #include "msdfgen.h"
 #include "msdfgen-ext.h"
 #include "msdf-atlas-gen.h"
@@ -122,3 +125,5 @@ private:
     std::vector<msdf_atlas::FontGeometry> m_FontGeometry;
     std::vector<msdf_atlas::GlyphGeometry> m_GlyphGeometry;
 };
+
+#endif

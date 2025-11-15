@@ -9,7 +9,7 @@
 #include <string>
 #include <set>
 #include "Scene.h"
-#include "Project.h"
+#include "Project/Project.h"
 
 class Panel
 {
@@ -410,16 +410,6 @@ inline void ComponentPanel<T>::Run()
 
 	if (ImGui::TreeNode("Scene Hierachy"))
 	{
-		for (auto nt : m_ActiveScene->m_Characters)
-		{
-			int t = static_cast<int>(nt);
-			std::string snt{ std::to_string(t) };
-			if (ImGui::TreeNode(snt.c_str()))
-			{
-				ImGui::TreePop();
-			}
-		}
-
 		ImGui::TreePop();
 	}
 

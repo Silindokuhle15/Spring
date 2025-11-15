@@ -7,7 +7,6 @@ Scene::Scene(const std::string& path)
 	m_Ts{0.0f},
 	m_AccumulatedTime{0.0},
 	m_Title{ path },
-	m_State{ SceneState::LOADING },
 	m_Script{ path },
 	m_pLuaState{ nullptr },
 	m_MousePosition{0.0f, 0.0f}
@@ -18,19 +17,17 @@ Scene::Scene(const std::string& path)
 
 Character* Scene::CreateSceneObject()
 {
-	Character* newCharacter{ new Character(m_Registry.create(), this) };
-	m_Characters.push_back(newCharacter->GetCharacterID());
+	static BVHArenaAllocator<Character> allocator;
+	auto newCharacter = allocator.allocate(Character(m_Registry.create(), this));
 	return newCharacter;
 }
 
 void Scene::DestroySceneObject(entt::entity id)
 {
 	auto isValidEntity = m_Registry.valid(id);
-	auto isValidCharacter = std::find(m_Characters.begin(), m_Characters.end(), id);
-	if ((isValidEntity && (isValidCharacter != m_Characters.end())))
+	if ((isValidEntity))
 	{
-		m_Registry.destroy(id);
-		m_Characters.erase(isValidCharacter);
+		m_Registry.emplace<DestructComponent>(id);
 	}
 }
 
@@ -81,13 +78,11 @@ void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsSt
 	auto z = static_cast<uint64_t>(glm::floor((pos.y - minY) / (maxY - minY) * glm::pow(2, bits)));
 	auto x = static_cast<uint64_t>(glm::floor((pos.z - minZ) / (maxZ - minZ) * glm::pow(2, bits)));
 	auto morton_code = morton_encode_3d32(x, y, z);
-	entries.push_back(BVEntry{ static_cast<uint64_t>(entity), morton_code});
 
 	BoundingVolume bbox = BoundingVolume::CreateBoundingVolume(static_cast<uint64_t>(entity), pos, 1.0f);
 	auto& min = bbox.GetMin();
 	auto& max = bbox.GetMax();
 	auto bound{ Bound3D{ min.x, min.y, min.z, max.x, max.y, max.z }};
-	bounds.push_back(bound);
 
 	m_BVEntries.push_back(BVNode<Bound3D>{static_cast<uint64_t>(entity), morton_code, bound, nullptr, nullptr});
 
@@ -105,63 +100,34 @@ void Scene::CreateShaders()
 
 void Scene::OnInit()
 {
-	m_State = SceneState::LOADING;
+	scripting::ScriptMgr::register_input(m_pLuaState);
 	scripting::ScriptMgr::register_scene(m_pLuaState);
 	scripting::ScriptMgr::register_scene_camera(m_pLuaState);
 	scripting::ScriptMgr::register_character(m_pLuaState);
 	scripting::ScriptMgr::register_vector3(m_pLuaState);
 	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
-
-	auto filename = scripting::ScriptMgr::GetLuaFilenameWithoutExtension(m_Title);
-	scripting::ScriptMgr::expose_scene(m_pLuaState, this, filename.c_str());
-
-	m_State = SceneState::RUNNING;
+	scripting::ScriptMgr::expose_scene(m_pLuaState, this, "Scene");
 }
 
 void Scene::OnUpdate(TimeStep ts)
 {
+	m_Ts = ts;
 	m_BVEntries.clear();
-	entries.clear();
-	bounds.clear();
 	collisionPairs.clear();
 
-	switch (m_State)
-	{
-	case SceneState::LOADING:
-		break;
-
-	case SceneState::RUNNING:
-		break;
-
-	case SceneState::PAUSED:
-		break;
-
-	case SceneState::END:
-		break;
-
-	case SceneState::STOPPED:
-		break;
-	}
-
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
-	int scriptCounter{ 0 };
 	scriptView.each([&](const auto& script) 
 	{
-		scripting::ScriptMgr::ExecuteScriptFunction(m_pLuaState, script.data.c_str(), "onUpdate", ts);
-		scriptCounter++;
+		scripting::ScriptMgr::ExecuteScriptFunction(m_pLuaState, script.data.c_str(), "onUpdate", m_Ts);
 	});
 
-	//std::cout << "Executed " << scriptCounter << " scripts" << std::endl;
-
-	auto phzxView = m_Registry.view<physics::PhysicsState>();
-
-	for (auto [entity, phzx_state] : phzxView.each())
+	auto physicsView = m_Registry.view<physics::PhysicsState>();
+	for (auto [entity, physics_state] : physicsView.each())
 	{
-		phzx_state.position += phzx_state.orientation * phzx_state.linear_acceleration * (float)ts;
-		AddBVBoundEntry(entity, phzx_state);
+		physics_state.position += physics_state.orientation * physics_state.linear_acceleration * (float)m_Ts * 5.0f;
+		AddBVBoundEntry(entity, physics_state);
 	}
 
-	m_AccumulatedTime += (float)ts;
 	auto node = create_tree<Bound3D>(m_BVEntries);
 	for (auto& bound : m_BVEntries)
 	{
@@ -171,38 +137,39 @@ void Scene::OnUpdate(TimeStep ts)
 			uint64_t first = collisions[0];
 			uint64_t second = collisions[1];
 			if (first == second) continue;
-			if ((first <= m_Characters.size() - 1) && (second <= m_Characters.size() - 1))
+			if (m_Registry.valid(static_cast<entt::entity>(first)) && (m_Registry.valid(static_cast<entt::entity>(second))))
 			{
-				std::pair<entt::entity, entt::entity> pair(m_Characters[first], m_Characters[second]);
+				std::pair<entt::entity, entt::entity> pair(static_cast<entt::entity>(first), static_cast<entt::entity>(second));
 				collisionPairs.push_back(pair);
 			}
 		}
 	}
+	m_AccumulatedTime += (float)m_Ts;
 }
 
 void Scene::Run()
 {
-	m_State = SceneState::RUNNING;
+	//m_State = SceneState::RUNNING;
 }
 
 void Scene::OnEnd()
 {
-	m_State = SceneState::END;
+	//m_State = SceneState::END;
 }
 
 void Scene::OnPause()
 {
-	m_State = SceneState::PAUSED;
+	//m_State = SceneState::PAUSED;
 }
 
 void Scene::OnStop()
 {
-	m_State = SceneState::STOPPED;
+	//m_State = SceneState::STOPPED;
 }
 
 void Scene::OnReload()
 {
-	m_State = SceneState::LOADING;
+	//m_State = SceneState::LOADING;
 }
 
 int Scene::LoadSceneFromFile()

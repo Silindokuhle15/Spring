@@ -11,11 +11,8 @@
 #include "BVH.h"
 #include "BoundingVolume.h"
 #include "AssetManager.h"
+#include "SceneState.h"
 
-enum class SceneState
-{
-	LOADING = 0, RUNNING, PAUSED, STOPPED, END
-};
 
 class Character;
 class Renderer;
@@ -39,11 +36,8 @@ public:
 	std::vector<Shader> m_Shaders;
 	std::vector<PointLight> m_Lights;
 	std::vector<Camera> m_Cameras;
-	std::vector<entt::entity> m_Characters;
 
 	std::vector<BVNode<Bound3D>> m_BVEntries;
-	std::vector<BVEntry> entries;
-	std::vector<Bound3D> bounds;
 	std::vector<std::pair<entt::entity, entt::entity>> collisionPairs;
 	const glm::vec2 GetMousePosition() const;
 	void SetMousePosition(const glm::vec2& mouse_position);
@@ -63,7 +57,6 @@ public:
 	void OnReload();
 
 	virtual int LoadSceneFromFile();
-
 	std::string GetTitle() const { return m_Title; }
 
 	lua_State* GetLuaState() const { return m_pLuaState; }
@@ -80,10 +73,9 @@ public:
 
 	AssetManager* GetAssetManager() const { return m_AssetManager; }
 	void SetAssetManager(AssetManager* pAsset_manager) { m_AssetManager = pAsset_manager; }
-	SceneState GetSceneState() const { return m_State; }
-private:
-	SceneState m_State;
+protected:
 	entt::registry m_Registry;
+private:
 	scripting::ControlScript m_Script;
 	lua_State* m_pLuaState = nullptr;
 	scripting::ScriptMgr scriptEngine;

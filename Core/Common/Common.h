@@ -52,12 +52,4 @@ struct LayoutInfo
 	std::string Name;
 };
 
-enum class GameState
-{
-	LOADING = 0,
-	RUNNING = 1,
-	PAUSED = 2,
-	EXIT = 3
-};
-
 std::vector<std::string> getWords(const std::string& s, const char* delim);

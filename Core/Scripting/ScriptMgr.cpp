@@ -57,6 +57,23 @@ namespace scripting {
         }
     }
 
+    void ScriptMgr::register_input(lua_State* L)
+    {
+        //luaL_newmetatable(L, MT::INPUT_MT);
+        //lua_pushvalue(L, -1);
+        //lua_setfield(L, -2, "__index");
+
+        lua_pushcfunction(L, PrintStack);
+        //lua_setfield(L, -2, "PrintStack");
+        lua_setglobal(L, "PrintStack");
+
+        lua_pushcfunction(L, IsKeyDown);
+        //lua_setfield(L, -2, "IsKeyDown");
+        lua_setglobal(L, "IsKeyDown");
+
+        //lua_pop(L, 1);
+    }
+
     // --------------------- Scene ---------------------
 
     void ScriptMgr::expose_scene(lua_State* L, Scene* scene, const char* name) {
@@ -106,12 +123,6 @@ namespace scripting {
 
         lua_pushcfunction(L, lua_Scene_DestroyCharacter);
         lua_setfield(L, -2, "DestroyCharacter");
-
-        lua_pushcfunction(L, PrintStack);
-        lua_setfield(L, -2, "PrintStack");
-
-        lua_pushcfunction(L, IsKeyDown);
-        lua_setfield(L, -2, "IsKeyDown");
 
         lua_pop(L, 1);
     }
@@ -268,7 +279,7 @@ namespace scripting {
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
         glm::vec3 fLocal{ temp[0], temp[1], temp[2] };
         glm::vec3 fWorld = state->orientation * fLocal;
-        state->position += fWorld * 0.016777f;
+        state->position += fWorld * 0.0167f;
         // TO DO... Change this to not manipulate the object direct, but queue the application of the force into a physics tasks buffer maybe? anything better than this
         return 0;
     }
@@ -291,7 +302,7 @@ namespace scripting {
         }
         glm::quat rotation{ temp[3], temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-        state->orientation = glm::normalize(state->orientation * rotation);
+        state->orientation = glm::normalize(state->orientation * rotation * 0.0167f);
         return 0;
     }
 
@@ -706,45 +717,57 @@ namespace scripting {
 
     int ScriptMgr::IsKeyDown(lua_State* L)
     {
-        Scene* scene = lua_checkScene(L, 1);
-        auto keyString = lua_tostring(L, 2);
+        //Scene* scene = lua_checkScene(L, 1);
+        //auto keyString = lua_tostring(L, 2);
+        auto keyString = lua_tostring(L, 1);
         std::string key{ keyString };
         if (key == "w" && (GetKeyState(0x57) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "a" && (GetKeyState(0x41) & 0x8000))
+        if (key == "a" && (GetKeyState(0x41) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "s" && (GetKeyState(0x53) & 0x8000))
+        if (key == "s" && (GetKeyState(0x53) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "d" && (GetKeyState(0x44) & 0x8000))
+        if (key == "d" && (GetKeyState(0x44) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "LMOUSE" && (GetKeyState(0x01) & 0x8000))
+
+        if (key == "q" && (GetKeyState(0x51) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "RMOUSE" && (GetKeyState(0x02) & 0x8000))
+        if (key == "z" && (GetKeyState(0x5A) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "MMOUSE" && (GetKeyState(0x04) & 0x8000))
+        if (key == "LMOUSE" && (GetKeyState(0x01) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        else if (key == "SPACE" && (GetKeyState(VK_SPACE) & 0x8000))
+        if (key == "RMOUSE" && (GetKeyState(0x02) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        if (key == "MMOUSE" && (GetKeyState(0x04) & 0x8000))
+        {
+            lua_pushboolean(L, 1);
+            return 1;
+        }
+        if (key == "SPACE" && (GetKeyState(VK_SPACE) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;

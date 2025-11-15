@@ -19,7 +19,7 @@ private:
 	size_t m_Size;
 
 public:
-	explicit BVHArenaAllocator(size_t initial_capacity = 1024) :
+	explicit BVHArenaAllocator(size_t initial_capacity = 32768) :
 		m_Capacity{initial_capacity},
 		m_Size{0}
 	{
@@ -37,14 +37,14 @@ public:
 	BVHArenaAllocator& operator=(const BVHArenaAllocator&) = delete;
 
 	template<typename... Args>
-	T* allocate(Args&... args)
+	T* allocate(Args&&... args)
 	{
 		if (m_Size >= m_Capacity)
 		{
 			grow();
 		}
 
-		void* addr = static_cast<char*>(m_CurrentBlock) + m_Size + sizeof(T);
+		void* addr = static_cast<T*>(m_CurrentBlock) + m_Size;
 		T* obj = new(addr)T(std::forward<Args>(args)...);
 		++m_Size;
 		return obj;
@@ -247,7 +247,6 @@ uint64_t get_split_position(const BVNode<U>* list, uint64_t start, uint64_t end)
 		}
 
 		uint64_t split_prefix = count_leading_zeros(first_code ^ list[new_split].m_MortonCode.MORTON_CODE);
-
 		if (split_prefix > common_prefix)
 		{
 			split = new_split;
@@ -270,7 +269,7 @@ void print_tree(const BVNode<U>* node, int depth = 0)
 }
 
 template<typename U>
-BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, uint64_t end)
+BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, uint64_t end, BVHArenaAllocator<BVNode<U>>& allocator)
 {
 	if (list.empty())
 	{
@@ -278,20 +277,18 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 	}
 	if (start == end)
 	{
-		return new BVNode<U>(list[end].m_MortonCode.ID, list[end].m_MortonCode.MORTON_CODE, list[end].m_Bounds, nullptr, nullptr);
+		return allocator.allocate<BVNode<U>>(BVNode<U>{ list[end].m_MortonCode.ID, list[end].m_MortonCode.MORTON_CODE, list[end].m_Bounds, nullptr, nullptr });
 	}
 	uint64_t mid = get_split_position<U>(list.data(), start, end);
-	BVNode<U>* left = create_sub_tree(list, start, mid);
-	BVNode<U>* right = create_sub_tree(list, mid + 1, end);
+	BVNode<U>* left = create_sub_tree(list, start, mid, allocator);
+	BVNode<U>* right = create_sub_tree(list, mid + 1, end, allocator);
 
 	if (right && left)
 	{
 		const U& lb = left->m_Bounds;
 		const U& rb = right->m_Bounds;
-
 		U merged = U::merge(lb, rb);
-
-		return new BVNode<U>(static_cast<uint64_t>(-1), -1, merged, left, right);
+		return allocator.allocate<BVNode<U>>(BVNode<U>(static_cast<uint64_t>(-1), -1, merged, left, right));
 	}
 	else if (right && !left)
 	{
@@ -307,12 +304,14 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 template<typename U>
 BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 {
+	static BVHArenaAllocator<BVNode<U>> allocator(65536);
+	allocator.reset();
 	std::sort(
 		list.begin(), list.end(),
 		[&](const BVNode<U>& u, const BVNode<U>& v) { 
 			return (u.m_MortonCode < v.m_MortonCode);
 		});
-	return create_sub_tree<U>(list, 0, static_cast<uint64_t>(list.size() - 1));
+	return create_sub_tree<U>(list, 0, static_cast<uint64_t>(list.size() - 1), allocator );
 }
 
 template<typename U>

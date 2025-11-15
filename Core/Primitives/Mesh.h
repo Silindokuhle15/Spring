@@ -41,6 +41,11 @@ public:
     {
     }
 };
+struct DestructComponent
+{
+    uint64_t HQWORD;
+    uint64_t LQWORD;
+};
 
 class MeshInstance
 {

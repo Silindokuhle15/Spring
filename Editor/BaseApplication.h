@@ -23,11 +23,12 @@ public:
 	std::shared_ptr<Renderer> m_pActiveRenderer;
 	UILayer<Win32Window> m_pUILayer;
 	std::shared_ptr<Scene> m_Scene;
+	AssetManager m_AssetManager;
 public:
 	void Run();
 	void ShutDown();
 	void OnMouseMove(event::MouseMoveEvent& mouse_move) override;
-	void DrawSceneCharacters();
+	void DrawSceneCharacters(AssetManager& asset_manager);
 public:
 	BaseApplication(uint64_t width, uint64_t height, const char* title);
 	BaseApplication() = default;

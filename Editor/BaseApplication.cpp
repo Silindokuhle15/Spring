@@ -2,8 +2,7 @@
 
 void BaseApplication::Run()
 {
-    AssetManager assetManager;
-    m_Scene->SetAssetManager(&assetManager);
+    m_Scene->SetAssetManager(&m_AssetManager);
     m_Scene->LoadSceneFromFile();
     m_Scene->OnInit();
     m_Scene->OnCreateSceneObjects();
@@ -11,7 +10,6 @@ void BaseApplication::Run()
     m_pUILayer.OnInit();
     
     m_pActiveRenderer = std::make_shared<Renderer>();
-    m_pActiveRenderer->BindScene(m_Scene);
 
     m_pUILayer.BindRenderer(m_pActiveRenderer);
     m_pUILayer.m_ActiveRenderer->SetUpForRendering();
@@ -31,9 +29,8 @@ void BaseApplication::Run()
  
         m_pActiveRenderer->ClearVertexBuffer();
         m_pActiveRenderer->Clear();
-        m_pActiveRenderer->LoadMeshRenderData();
         m_pActiveRenderer->UploadToOpenGL();
-        DrawSceneCharacters();
+        DrawSceneCharacters(m_AssetManager);
         m_pActiveRenderer->Flush();
         m_AppWindow.OnUpdate();
         m_Scene->OnUpdate(m_AppWindow.m_Ts);
@@ -56,28 +53,38 @@ void BaseApplication::OnMouseMove(event::MouseMoveEvent& event)
 {
 }
 
-void BaseApplication::DrawSceneCharacters()
+void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
 {
-    AssetHandle fakeShaderHandle{ 0,0 };
+    std::vector<RenderCommand> m_CommandQueue;
+    VertexBuffer m_GeometryBuffer;
+    AssetHandle fakeShaderHandle{ 0,1 };
     auto meshView = m_Scene->GetView<physics::PhysicsState, MeshInstance, RenderComponent>();
     for (auto [entity, phyzx, meshInstance, renderComponent] : meshView.each())
     {
+
         RenderCommand cmd;
-        auto& mesh = m_Scene->GetAssetManager()->GetMesh(meshInstance.m_Handle);
-        auto& material = m_Scene->GetAssetManager()->GetMaterial(meshInstance.m_Handle);
+        auto& mesh = m_AssetManager.GetMesh(meshInstance.m_Handle);
+        auto& material = m_AssetManager.GetMaterial(meshInstance.m_Handle);
+        m_GeometryBuffer.UpdateBuffer(mesh.m_V);
         cmd.m_EntityID = static_cast<uint64_t>(entity);
         cmd.m_ShaderHandle = fakeShaderHandle;
         cmd.m_MaterialHandle = meshInstance.m_Handle;
-        cmd.m_VertexBufferOffset = renderComponent.m_VertexBufferOffset;
-        cmd.m_IndexBufferOffset = renderComponent.m_IndexBufferOffset;
-        cmd.m_CommandSize = renderComponent.m_Size;
-        cmd.m_IndexCount = renderComponent.m_IndexCount;
+        cmd.m_VertexBufferOffset = m_GeometryBuffer.m_BufferOffset;
+        cmd.m_IndexBufferOffset = m_GeometryBuffer.m_BufferElementCount;
+        cmd.m_CommandSize = static_cast<uint64_t>(sizeof(Vertex) * mesh.m_V.size());
+        cmd.m_IndexCount = static_cast<uint64_t>(mesh.m_V.size());
         cmd.m_PrimitiveType = GL_TRIANGLES;
+        cmd.m_Viewport[0] = 0;
+        cmd.m_Viewport[1] = 0;
+        cmd.m_Viewport[2] = 1920;
+        cmd.m_Viewport[3] = 1080;
         cmd.m_UniformBuffer.m_Mat4Map["Model"] = glm::translate(glm::mat4(1.0f), phyzx.position) * glm::mat4_cast(phyzx.orientation);
         cmd.m_UniformBuffer.m_Mat4Map["View"] = m_pUILayer.m_pActiveCamera->GetV();
         cmd.m_UniformBuffer.m_Mat4Map["Projection"] = m_pUILayer.m_pActiveCamera->GetP();
-        m_pActiveRenderer->Draw(cmd);
+        m_CommandQueue.push_back(cmd);
     }
+
+    m_pActiveRenderer->DrawBuffer(m_CommandQueue, m_GeometryBuffer, asset_manager);
 }
 
 BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* title)
@@ -85,7 +92,8 @@ BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* ti
     m_AppWindow{width, height, title},
     m_ExitWindow{false},
     m_Scene{std::make_shared<Scene>("C:/dev/Spring/Assets/Projects/Lobby.lua")},
-    m_pUILayer{std::shared_ptr<Win32Window>(&m_AppWindow)}
+    m_pUILayer{std::shared_ptr<Win32Window>(&m_AppWindow)},
+    m_AssetManager{}
 {
     m_AppWindow.OnEvent = &event::Dispatcher::Dispatch;
     event::Dispatcher::RegisterListener(*this);

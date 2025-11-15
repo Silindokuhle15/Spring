@@ -13,6 +13,7 @@ class Character;
 namespace scripting
 {
 	namespace MT {
+		constexpr const char* INPUT_MT = "Input";
 		constexpr const char* SCENE_MT = "Scene";
 		constexpr const char* CAMERA_MT = "Camera";
 		constexpr const char* CHARACTER_MT = "Character";
@@ -35,6 +36,9 @@ namespace scripting
 		static std::string GetLuaFilenameWithoutExtension(const std::string& path);
 		static void ExecuteScript(lua_State* L, const char* script, size_t size, const char* name);
 		static void ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts);
+
+		// -------------------Input-------------------
+		static void register_input(lua_State* L);
 
 		// -------------------Scene-------------------
 		static Scene* lua_checkScene(lua_State* L, int index);

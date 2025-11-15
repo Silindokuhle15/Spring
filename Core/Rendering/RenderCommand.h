@@ -13,8 +13,11 @@ public:
     uint64_t m_CommandSize;
     uint64_t m_IndexCount;
     uint64_t m_PrimitiveType;
+    uint64_t m_Viewport[4];
     AssetHandle m_ShaderHandle;
     AssetHandle m_MaterialHandle;
+    AssetHandle m_TextureHandle;
+    AssetHandle m_FrameBufferHandle;
     UniformBuffer m_UniformBuffer;
 };
 

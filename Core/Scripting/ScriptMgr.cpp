@@ -210,7 +210,7 @@ namespace scripting {
         AssetResource meshResource{ AssetType::MeshResource, path };
         auto* activeScene = character->GetScenePointer();
         auto assetHandle = activeScene->m_AssetManager->GetResourceHandle(meshResource);
-        character->AddComponent<MeshInstance>(assetHandle);
+        character->AddComponent<primitives::MeshInstance>(assetHandle);
         return 0;
     }
 
@@ -221,17 +221,17 @@ namespace scripting {
     int ScriptMgr::lua_Character_AddRenderComponent(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
-        character->AddComponent<RenderComponent>();
+        character->AddComponent<primitives::RenderComponent>();
         return 0;
     }
     int ScriptMgr::lua_Character_GetRenderComponent(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
-        if (!character->HasComponent<RenderComponent>()){
+        if (!character->HasComponent<primitives::RenderComponent>()){
             return luaL_error(L, "Character hs no RenderComponent");
         }
-        RenderComponent* state = &character->GetComponent<RenderComponent>();
-        auto** userdata = static_cast<RenderComponent**>(lua_newuserdata(L, sizeof(RenderComponent*)));
+        primitives::RenderComponent* state = &character->GetComponent<primitives::RenderComponent>();
+        auto** userdata = static_cast<primitives::RenderComponent**>(lua_newuserdata(L, sizeof(primitives::RenderComponent*)));
         *userdata = state;
 
         luaL_getmetatable(L, MT::RENDERCOMPONENT_MT);

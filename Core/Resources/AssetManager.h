@@ -36,9 +36,9 @@ private:
 	//std::map<AssetHandle, FrameBuffer> m_FrameBufferMap;
 	std::map<AssetHandle, unsigned int> m_FrameBufferMap;
 	std::map<AssetHandle, Shader> m_ShaderMap;
-	std::map<AssetHandle, Material> m_MaterialMap;
+	std::map<AssetHandle, std::vector<Material>> m_MaterialMap;
 	std::map<AssetHandle, TextureBase<GL_Texture>> m_TextureMap;
-	std::map<AssetHandle, Mesh> m_MeshMap;
+	std::map<AssetHandle, primitives::Mesh> m_MeshMap;
 	std::map<AssetHandle, scripting::ControlScript> m_ScriptMap;
 	uint64_t m_CurrentAssetHandle;
 public:
@@ -67,9 +67,9 @@ public:
 	
 			if (resource.m_Type == AssetType::MeshResource)
 			{
-				Mesh mesh{ resource.m_Filepath.c_str() };
-				auto& material = mesh.m_Materials;
-				m_MaterialMap[assetHandle] = material.front();
+				 primitives::Mesh mesh{ resource.m_Filepath.c_str() };
+				auto& materialGroup = mesh.m_Materials;
+				m_MaterialMap[assetHandle] = materialGroup;
 				m_MeshMap[assetHandle] = mesh;
 				// Next is get the correct material handle and assign it
 				// auto materialHandle = GetMaterialHandle(what parameter??)   -\0 - 0/-
@@ -100,12 +100,12 @@ public:
 		return m_ShaderMap[handle];
 	}
 
-	Material& GetMaterial(const AssetHandle& handle)
+	std::vector<Material>& GetMaterial(const AssetHandle& handle)
 	{
 		return m_MaterialMap[handle];
 	}
 	
-	Mesh& GetMesh(const AssetHandle& handle)
+	primitives::Mesh& GetMesh(const AssetHandle& handle)
 	{
 		auto& mesh = m_MeshMap[handle];
 		return mesh;
@@ -128,7 +128,7 @@ inline const unsigned int& AssetManager::GetAsset(const AssetHandle& asset_handl
 }
 
 template<>
-inline const Mesh& AssetManager::GetAsset(const AssetHandle& asset_handle)
+inline const primitives::Mesh& AssetManager::GetAsset(const AssetHandle& asset_handle)
 {
 	return m_MeshMap[asset_handle];
 }
@@ -140,7 +140,7 @@ inline const Shader& AssetManager::GetAsset(const AssetHandle& asset_handle)
 }
 
 template<>
-inline const Material& AssetManager::GetAsset(const AssetHandle& asset_handle)
+inline const std::vector<Material>& AssetManager::GetAsset(const AssetHandle& asset_handle)
 {
 	return m_MaterialMap[asset_handle];
 }

@@ -19,7 +19,7 @@ private:
 	size_t m_Size;
 
 public:
-	explicit BVHArenaAllocator(size_t initial_capacity = 32768) :
+	explicit BVHArenaAllocator(size_t initial_capacity = 65535) :
 		m_Capacity{initial_capacity},
 		m_Size{0}
 	{
@@ -174,11 +174,19 @@ struct Bound3D
 	}
 	static bool AABBIntersection(const Bound3D& a, const Bound3D& b)
 	{
-		bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
-		bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
-		bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
+		//bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
+		//bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
+		//bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
+		//
+		//return intersect_x && intersect_y && intersect_z;
 
-		return intersect_x && intersect_y && intersect_z;
+		return 
+			((a.xMax - b.xMin) >= 0.0f) &
+			(((b.xMax - a.xMin) >= 0.0f)) &
+			((((a.yMax - b.yMin) >= 0.0f))) &
+			(((((b.yMax - a.yMin) >= 0.0f)))) &
+			((((((a.zMax - b.zMin) >= 0.0f))))) &
+			(((((((b.zMax - a.zMin) >= 0.0f))))));
 	}
 	static Bound3D intersection(const Bound3D& a, const Bound3D& b)
 	{
@@ -304,7 +312,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 template<typename U>
 BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 {
-	static BVHArenaAllocator<BVNode<U>> allocator(65536);
+	static BVHArenaAllocator<BVNode<U>> allocator(65536*2);
 	allocator.reset();
 	std::sort(
 		list.begin(), list.end(),
@@ -315,30 +323,43 @@ BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 }
 
 template<typename U>
-std::vector<uint64_t> detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node)
+void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint64_t>& total_intersections)
 {
-	if (!tree_node)
-		return std::vector<uint64_t>();
+	//if (!tree_node)
+	//	return;
+	//
+	//if (!U::AABBIntersection(leaf_node.m_Bounds, tree_node->m_Bounds))
+	//{
+	//	return;
+	//}
+	//if (!tree_node->m_Left && !tree_node->m_Right)
+	//{
+	//	total_intersections.push_back(tree_node->m_MortonCode.ID);
+	//}
+	//detect_overlapping_bounds(leaf_node, tree_node->m_Left, total_intersections);
+	//detect_overlapping_bounds(leaf_node, tree_node->m_Right, total_intersections);
 
-	std::vector<uint64_t> totalIntersections;
-	if (U::AABBIntersection(leaf_node.m_Bounds, tree_node->m_Bounds))
+	std::vector<const BVNode<U>*> stack;
+	stack.reserve(65536);
+	stack.push_back(tree_node);
+	while (!stack.empty())
 	{
-		if (tree_node->m_Left)
+		auto node = stack.back();
+		stack.pop_back();
+
+		if (!U::AABBIntersection(leaf_node.m_Bounds, node->m_Bounds)) continue;
+		if (!node->m_Left && !node->m_Right)
 		{
-			auto leftIntersections = detect_overlapping_bounds(leaf_node, tree_node->m_Left);
-			totalIntersections.insert(totalIntersections.end(), leftIntersections.begin(), leftIntersections.end());
+			total_intersections.push_back(node->m_MortonCode.ID);
 		}
 
-		if (tree_node->m_Right)
+		if (node-> m_Left)
 		{
-			auto rightIntersections = detect_overlapping_bounds(leaf_node, tree_node->m_Right);
-			totalIntersections.insert(totalIntersections.end(), rightIntersections.begin(), rightIntersections.end());
+			stack.push_back(node->m_Left);
 		}
-
-		if (!tree_node->m_Left && !tree_node->m_Right)
+		if (node->m_Right)
 		{
-			totalIntersections.push_back(tree_node->m_MortonCode.ID);
+			stack.push_back(node->m_Right);
 		}
 	}
-	return totalIntersections;
 }

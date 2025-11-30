@@ -7,7 +7,6 @@ Scene::Scene(const std::string& path)
 	m_Ts{0.0f},
 	m_AccumulatedTime{0.0},
 	m_Title{ path },
-	m_Script{ path },
 	m_pLuaState{ nullptr },
 	m_MousePosition{0.0f, 0.0f}
 {
@@ -27,7 +26,7 @@ void Scene::DestroySceneObject(entt::entity id)
 	auto isValidEntity = m_Registry.valid(id);
 	if ((isValidEntity))
 	{
-		m_Registry.emplace<DestructComponent>(id);
+		m_Registry.emplace<primitives::DestructComponent>(id);
 	}
 }
 
@@ -54,13 +53,13 @@ void Scene::OnCreateSceneObjects()
 	{
 		AssetResource meshR{ AssetType::MeshResource, dynamic_mesh_paths[index] };
 		auto meshHandle = m_AssetManager->GetResourceHandle(meshR);
-		MeshInstance meshInstance{ meshHandle };
+		primitives::MeshInstance meshInstance{ meshHandle };
 
 		auto* ch = CreateSceneObject();
-		ch->AddComponent<MeshInstance>(meshInstance);
+		ch->AddComponent<primitives::MeshInstance>(meshInstance);
 		scripting::ControlScript script{ m_TempControlScripts[index] };
 		ch->AddComponent<scripting::ControlScript>(script);
-		ch->AddComponent<RenderComponent>(RenderComponent{ 0, 0 });
+		ch->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{ 0, 0 });
 		auto name = m_TempNames[index].c_str();
 		scripting::ScriptMgr::expose_character(lua_state, ch, name);
 		scripting::ScriptMgr::ExecuteScript(lua_state, script.data.data(), script.data.size(), name);
@@ -113,7 +112,7 @@ void Scene::OnUpdate(TimeStep ts)
 {
 	m_Ts = ts;
 	m_BVEntries.clear();
-	collisionPairs.clear();
+	m_CollisionPairs.clear();
 
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
 	scriptView.each([&](const auto& script) 
@@ -131,16 +130,18 @@ void Scene::OnUpdate(TimeStep ts)
 	auto node = create_tree<Bound3D>(m_BVEntries);
 	for (auto& bound : m_BVEntries)
 	{
-		auto collisions = detect_overlapping_bounds<Bound3D>(bound, node);
-		if (collisions.size() == 2)
+		m_Collisions.clear();
+		m_Collisions.reserve(m_BVEntries.size());
+		detect_overlapping_bounds<Bound3D>(bound, node, m_Collisions);
+		if (m_Collisions.size() == 2)
 		{
-			uint64_t first = collisions[0];
-			uint64_t second = collisions[1];
+			uint64_t first = m_Collisions[0];
+			uint64_t second = m_Collisions[1];
 			if (first == second) continue;
 			if (m_Registry.valid(static_cast<entt::entity>(first)) && (m_Registry.valid(static_cast<entt::entity>(second))))
 			{
 				std::pair<entt::entity, entt::entity> pair(static_cast<entt::entity>(first), static_cast<entt::entity>(second));
-				collisionPairs.push_back(pair);
+				m_CollisionPairs.push_back(pair);
 			}
 		}
 	}
@@ -310,4 +311,3 @@ int Scene::LoadSceneFromFile()
 	}
 	return 0;
 }
-

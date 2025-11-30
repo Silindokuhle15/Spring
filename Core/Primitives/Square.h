@@ -1,8 +1,11 @@
 #pragma once
 #include "Mesh.h"
 
-class Square : public Mesh
+namespace primitives
 {
-public:
-    void OnInit();
-};
+    class Square : public Mesh
+    {
+    public:
+        Square();
+    };
+}

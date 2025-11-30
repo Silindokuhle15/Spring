@@ -24,7 +24,7 @@ struct SphereCollider
 
 };
 
-struct GenericCollider : public Mesh
+struct GenericCollider : public primitives::Mesh
 {
 public:
 
@@ -45,7 +45,7 @@ public:
 	double proj_z;
 
 	GenericCollider(Mesh& source):
-		::Mesh(source)
+		::primitives::Mesh(source)
 	{
 		if (m_SubMeshes.size() > 0)
 		{
@@ -107,7 +107,7 @@ class Collider<GenericCollider> : public GenericCollider
 public:
 	template<typename T>
 	bool Intersect(Collider<T>& other);
-	Collider(Mesh& source):
+	Collider(primitives::Mesh& source):
 		::GenericCollider{source}
 	{
 		m_Positions = source.m_Positions;

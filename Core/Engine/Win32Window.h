@@ -32,11 +32,13 @@ public:
 
 	void (*OnEvent)(event::Event& event);
 
-	void StartTimer() override {
-		m_StartTime = static_cast<float>(milliseconds_now());
+	uint64_t StartTimer() override {
+		m_StartTime = static_cast<uint64_t>(milliseconds_now());
+		return m_StartTime;
 	}
-	void EndTimer() override {
-		m_EndTime = static_cast<float>(milliseconds_now());
+	uint64_t EndTimer() override {
+		m_EndTime = static_cast<uint64_t>(milliseconds_now());
+		return m_EndTime;
 	}
 protected:
 	long long milliseconds_now();

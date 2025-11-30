@@ -11,11 +11,11 @@
 #include "Script.h"
 #include "FontMgr.h"
 #include "BVH.h"
-#include "Event.h"
+#include "Application.h"
 
 class Renderer;
 
-class BaseApplication : public event::IEventListener
+class BaseApplication : public Application
 {	
 public:
 	Win32Window m_AppWindow;
@@ -23,11 +23,13 @@ public:
 	std::shared_ptr<Renderer> m_pActiveRenderer;
 	UILayer<Win32Window> m_pUILayer;
 	std::shared_ptr<Scene> m_Scene;
+	AssetHandle m_LobbyMeshHandle;
 	AssetManager m_AssetManager;
 public:
-	void Run();
+	void Run() override;
 	void ShutDown();
 	void OnMouseMove(event::MouseMoveEvent& mouse_move) override;
+	void DrawLobby(AssetManager& asset_manager);
 	void DrawSceneCharacters(AssetManager& asset_manager);
 public:
 	BaseApplication(uint64_t width, uint64_t height, const char* title);

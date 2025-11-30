@@ -153,7 +153,6 @@ void Win32Window::OnUpdate()
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    m_Ts = 1.0f / 60.0f;
 }
 
 long long Win32Window::milliseconds_now() {

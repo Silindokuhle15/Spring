@@ -50,6 +50,7 @@ include_directories(
     "Dependencies/MSDF/msdfgen/ext/"
     "Dependencies/MSDF/msdf-atlas-gen/"
 
+    "Core/Audio/"
     "Core/Common/"
     "Core/Engine/"
     "Core/Event/"
@@ -201,6 +202,10 @@ set(SHARED_SOURCES
 
     "Core/Viewing/Camera.h" 
     "Core/Viewing/Camera.cpp"
+    "Core/Engine/Application.h"
+    "Core/Engine/Application.cpp" 
+    "Core/Audio/WAV.h"
+
 )
 
 # Executable-specific files

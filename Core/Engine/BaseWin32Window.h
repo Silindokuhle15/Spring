@@ -13,12 +13,12 @@ public:
 	HWND m_Hwnd;
 	HINSTANCE m_Handle;
 
-	TimeStep m_StartTime;
-	TimeStep m_EndTime;
+	uint64_t m_StartTime;
+	uint64_t m_EndTime;
 
 	virtual void OnUpdate() = 0;
-	virtual void StartTimer() = 0;
-	virtual void EndTimer() = 0;
+	virtual uint64_t StartTimer() = 0;
+	virtual uint64_t EndTimer() = 0;
 	virtual void SwapBuffer() = 0;
 
 	BOOL CreateWin32Window(uint64_t width, uint64_t height, const char* app_name)

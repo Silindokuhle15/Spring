@@ -159,7 +159,7 @@ void Label::GenerateGlyphBoxes()
 	double yScale = 3.0;
 	double z_offset = 0.1;
 
-	double spacingX = 0.2;
+	double spacingX = 0.1;
 	double spacingY = 0.1;
 
 	for (size_t row = 0; row < m_FormattedIndices.size(); row++)

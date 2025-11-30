@@ -20,6 +20,10 @@ void BaseApplication::Run()
 
     scripting::ScriptMgr::expose_scene_camera(m_Scene->GetLuaState(), m_pUILayer.m_pActiveCamera.get(), "camera");
 
+    m_LobbyMeshHandle = m_AssetManager.GetResourceHandle({ AssetType::MeshResource,"C:/dev/Spring/Assets/Objects/House/Room.obj" });
+    std::string sound{ "C:/dev/Spring/Assets/Sounds/pitch_sweep_wasapi.wav" };
+    //RenderAudioData(sound);
+
     while (!m_ExitWindow)
     {
         m_pUILayer.BeginFrame();
@@ -27,11 +31,8 @@ void BaseApplication::Run()
 
         m_pUILayer.Enable();
  
-        m_pActiveRenderer->ClearVertexBuffer();
-        m_pActiveRenderer->Clear();
-        m_pActiveRenderer->UploadToOpenGL();
+        DrawLobby(m_AssetManager);
         DrawSceneCharacters(m_AssetManager);
-        m_pActiveRenderer->Flush();
         m_AppWindow.OnUpdate();
         m_Scene->OnUpdate(m_AppWindow.m_Ts);
         m_pActiveRenderer->OnUpdate(m_AppWindow.m_Ts);
@@ -53,19 +54,55 @@ void BaseApplication::OnMouseMove(event::MouseMoveEvent& event)
 {
 }
 
+void BaseApplication::DrawLobby(AssetManager& asset_manager)
+{
+    std::vector<RenderCommand> m_CommandQueue;
+    VertexBuffer m_GeometryBuffer;
+    AssetHandle fakeShaderHandle{ 0,1 };
+    auto& mesh = asset_manager.GetAsset<primitives::Mesh>(m_LobbyMeshHandle);
+    {
+        RenderCommand cmd;
+        m_GeometryBuffer.UpdateBuffer(mesh.m_V);
+        uint64_t enableBits{ 0 };
+        enableBits |= (1ULL << 0); // Enable CULL_FACE
+        enableBits |= (1ULL << 4); // Enable DEPTH_TEST
+        cmd.m_EnableBits = enableBits;
+        cmd.m_ShaderHandle = fakeShaderHandle;
+        cmd.m_MaterialHandle = m_LobbyMeshHandle;
+        cmd.m_VertexBufferOffset = m_GeometryBuffer.m_BufferOffset;
+        cmd.m_IndexBufferOffset = m_GeometryBuffer.m_BufferElementCount;
+        cmd.m_CommandSize = static_cast<uint64_t>(sizeof(Vertex) * mesh.m_V.size());
+        cmd.m_IndexCount = static_cast<uint64_t>(mesh.m_V.size());
+        cmd.m_PrimitiveType = GL_TRIANGLES;
+        cmd.m_Viewport[0] = 0;
+        cmd.m_Viewport[1] = 0;
+        cmd.m_Viewport[2] = 1920;
+        cmd.m_Viewport[3] = 1080;
+        cmd.m_UniformBuffer.m_Mat4Map["Model"] = glm::mat4(1.0f);
+        cmd.m_UniformBuffer.m_Mat4Map["View"] = m_pUILayer.m_pActiveCamera->GetV();
+        cmd.m_UniformBuffer.m_Mat4Map["Projection"] = m_pUILayer.m_pActiveCamera->GetP();
+        m_CommandQueue.push_back(cmd);
+    }
+    m_pActiveRenderer->DrawBuffer(m_CommandQueue, m_GeometryBuffer, asset_manager);
+}
+
 void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
 {
     std::vector<RenderCommand> m_CommandQueue;
     VertexBuffer m_GeometryBuffer;
     AssetHandle fakeShaderHandle{ 0,1 };
-    auto meshView = m_Scene->GetView<physics::PhysicsState, MeshInstance, RenderComponent>();
-    for (auto [entity, phyzx, meshInstance, renderComponent] : meshView.each())
+    auto meshView = m_Scene->GetView<physics::PhysicsState, primitives::MeshInstance, primitives::RenderComponent>();
+    for (auto [entity, physicsComponent, meshInstance, renderComponent] : meshView.each())
     {
 
         RenderCommand cmd;
         auto& mesh = m_AssetManager.GetMesh(meshInstance.m_Handle);
         auto& material = m_AssetManager.GetMaterial(meshInstance.m_Handle);
         m_GeometryBuffer.UpdateBuffer(mesh.m_V);
+        uint64_t enableBits{ 0 };
+        enableBits |= (1ULL << 0); // Enable CULL_FACE
+        enableBits |= (1ULL << 4); // Enable DEPTH_TEST
+        cmd.m_EnableBits = enableBits;
         cmd.m_EntityID = static_cast<uint64_t>(entity);
         cmd.m_ShaderHandle = fakeShaderHandle;
         cmd.m_MaterialHandle = meshInstance.m_Handle;
@@ -78,7 +115,7 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
         cmd.m_Viewport[1] = 0;
         cmd.m_Viewport[2] = 1920;
         cmd.m_Viewport[3] = 1080;
-        cmd.m_UniformBuffer.m_Mat4Map["Model"] = glm::translate(glm::mat4(1.0f), phyzx.position) * glm::mat4_cast(phyzx.orientation);
+        cmd.m_UniformBuffer.m_Mat4Map["Model"] = glm::translate(glm::mat4(1.0f), physicsComponent.position) * glm::mat4_cast(physicsComponent.orientation);
         cmd.m_UniformBuffer.m_Mat4Map["View"] = m_pUILayer.m_pActiveCamera->GetV();
         cmd.m_UniformBuffer.m_Mat4Map["Projection"] = m_pUILayer.m_pActiveCamera->GetP();
         m_CommandQueue.push_back(cmd);
@@ -98,4 +135,5 @@ BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* ti
     m_AppWindow.OnEvent = &event::Dispatcher::Dispatch;
     event::Dispatcher::RegisterListener(*this);
     event::Dispatcher::RegisterListener(m_pUILayer);
+
 }

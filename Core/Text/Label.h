@@ -17,14 +17,13 @@ public:
 	GlyphBox() :
 		m_Transform{glm::mat4(1.0f)}
 	{
-		m_Box.OnInit();
 	}
 	
 	void SetGlyphID(float id);
 	void SetTransform(const glm::mat4& transform);
 
 	glm::mat4 m_Transform;
-	Square m_Box;
+	primitives::Square m_Box;
 };
 
 class Label

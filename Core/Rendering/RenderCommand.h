@@ -6,6 +6,7 @@
 class RenderCommand
 {
 public:
+    uint64_t m_EnableBits;
     uint64_t m_EntityID;
     uint64_t m_TargetBuffer;
     uint64_t m_VertexBufferOffset;

@@ -568,7 +568,8 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
-			tempMaterial.m_Uniforms3f.insert({ "Ka", Ka });
+			//tempMaterial.m_Uniforms3f.insert({ "Ka", Ka });
+			tempMaterial.m_Uniforms3f["Ka"] = Ka;
 			materialInfo.Name = "Ka";
 			materialInfo.Type = ShaderDataType::Float3;
 			materialComponent = true;
@@ -579,7 +580,8 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
-			tempMaterial.m_Uniforms3f.insert({ "Kd", Kd });
+			//tempMaterial.m_Uniforms3f.insert({ "Kd", Kd });
+			tempMaterial.m_Uniforms3f["Kd"] = Kd;
 			materialInfo.Name = "Kd";
 			materialInfo.Type = ShaderDataType::Float3;
 			materialComponent = true;
@@ -590,35 +592,40 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 				strtof(words[2].c_str(), &endptr),
 				strtof(words[3].c_str(), &endptr)
 			);
-			tempMaterial.m_Uniforms3f.insert({ "Ks", Ks });
+			//tempMaterial.m_Uniforms3f.insert({ "Ks", Ks });
+			tempMaterial.m_Uniforms3f["Ks"] = Ks;
 			materialInfo.Name = "Ks";
 			materialInfo.Type = ShaderDataType::Float3;
 			materialComponent = true;
 		}
 		else if (type == "Ns" && words.size() >= 2) {
 			auto Ns = strtof(words[1].c_str(), &endptr);
-			tempMaterial.m_Uniforms1f.insert({ "Ns", glm::vec1(Ns) });
+			//tempMaterial.m_Uniforms1f.insert({ "Ns", glm::vec1(Ns) });
+			tempMaterial.m_Uniforms1f["Ns"] = glm::vec1(Ns);
 			materialInfo.Name = "Ns";
 			materialInfo.Type = ShaderDataType::Float;
 			materialComponent = true;
 		}
 		else if (type == "Ni" && words.size() >= 2) {
 			auto Ni = strtof(words[1].c_str(), &endptr);
-			tempMaterial.m_Uniforms1f.insert({ "Ni", glm::vec1(Ni) });
+			//tempMaterial.m_Uniforms1f.insert({ "Ni", glm::vec1(Ni) });
+			tempMaterial.m_Uniforms1f["Ni"] = glm::vec1(Ni);
 			materialInfo.Name = "Ni";
 			materialInfo.Type = ShaderDataType::Float;
 			materialComponent = true;
 		}
 		else if (type == "d" && words.size() >= 2) {
 			auto d = strtof(words[1].c_str(), &endptr);
-			tempMaterial.m_Uniforms1f.insert({ "d", glm::vec1(d) });
+			//tempMaterial.m_Uniforms1f.insert({ "d", glm::vec1(d) });
+			tempMaterial.m_Uniforms1f["d"] = glm::vec1(d);
 			materialInfo.Name = "d";
 			materialInfo.Type = ShaderDataType::Float;
 			materialComponent = true;
 		}
 		else if (type == "illum" && words.size() >= 2) {
 			auto illum = strtof(words[1].c_str(), &endptr);
-			tempMaterial.m_Uniforms1f.insert({ "illum", glm::vec1(illum) });
+			//tempMaterial.m_Uniforms1f.insert({ "illum", glm::vec1(illum) });
+			tempMaterial.m_Uniforms1f["illum"] = glm::vec1(illum);
 			materialInfo.Name = "illum";
 			materialInfo.Type = ShaderDataType::Float;
 			materialComponent = true;

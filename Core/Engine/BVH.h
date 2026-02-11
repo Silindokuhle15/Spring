@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <glm/glm.hpp>
+#include "Bound.h"
 
 template<typename T>
 class BVHArenaAllocator
@@ -101,114 +102,121 @@ public:
 	}
 };
 
-struct Bound2D
+/*
+static Bound2D merge(const Bound2D& u, const Bound2D& v)
 {
-	uint64_t xMin{ 0 },  yMin{ 0 }, xMax{ 0 }, yMax{ 0 };
-	static Bound2D merge(const Bound2D& u, const Bound2D& v)
+	return
 	{
-		return
-		{
-			std::min(u.xMin, v.xMin),
-			std::min(u.yMin, v.yMin),
-			std::max(u.xMax, v.xMax),
-			std::max(u.yMax, v.yMax),
-		};
-	}
-	static float unit_product(const Bound2D& u)
-	{
-		return static_cast<float>((u.xMax - u.xMin) * (u.yMax - u.yMin ));
-	}
-	static bool AABBIntersection(const Bound2D& a, const Bound2D& b)
-	{
-		bool intersect_x = a.xMax >= b.xMin &&
-			a.xMin <= b.xMin;
-
-		bool intersect_y = a.yMax >= b.yMin &&
-			a.yMin <= b.yMax;
-		return intersect_x && intersect_y;
-	}
-	static Bound2D intersection(const Bound2D& a, const Bound2D& b)
-	{
-		return
-		{
-			std::max(a.xMin, b.xMin),
-			std::max(a.yMin, b.yMin),
-			std::min(a.xMax, b.xMax),
-			std::min(a.yMax, b.yMax)
-		};
-	}
-	static void print(const Bound2D& bound)
-	{
-		std::cout
-			<< "| Bounds: [" << bound.xMin << "," << bound.yMin
-			<< "] - [" << bound.xMax << "," << bound.yMax << "]\n";
-	}
-};
-struct Bound3D
+		std::min(u.xMin, v.xMin),
+		std::min(u.yMin, v.yMin),
+		std::max(u.xMax, v.xMax),
+		std::max(u.yMax, v.yMax),
+	};
+}
+static float unit_product(const Bound2D& u)
 {
-	float xMin{ 0 }, yMin{ 0 }, zMin{ 0 };
-	float xMax{ 0 }, yMax{ 0 }, zMax{ 0 };
-	static Bound3D merge(const Bound3D& u, const Bound3D& v)
-	{
-		return
-		{
-			std::min(u.xMin, v.xMin),
-			std::min(u.yMin, v.yMin),
-			std::min(u.zMin, v.zMin),
-			std::max(u.xMax, v.xMax),
-			std::max(u.yMax, v.yMax),
-			std::max(u.zMax, v.zMax)
-		};
-	}
-	static float unit_product(const Bound3D& a)
-	{
-		//glm::vec3 xx{ a.xMax - a.xMin, 0.0f, 0.0f };
-		//glm::vec3 yy{ 0.0f, a.yMax - a.yMin, 0.0f };
-		//glm::vec3 zz{ 0.0f, 0.0f, a.zMax - a.zMin };
-		//return glm::dot(xx, glm::cross(yy, zz));
-	
-		float dx = std::max(0.0f, a.xMax - a.xMin);
-		float dy = std::max(0.0f, a.yMax - a.yMin);
-		float dz = std::max(0.0f, a.zMax - a.zMin);
-		return dx * dy * dz;
-	}
-	static bool AABBIntersection(const Bound3D& a, const Bound3D& b)
-	{
-		//bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
-		//bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
-		//bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
-		//
-		//return intersect_x && intersect_y && intersect_z;
+	return static_cast<float>((u.xMax - u.xMin) * (u.yMax - u.yMin ));
+}
+static bool AABBIntersection(const Bound2D& a, const Bound2D& b)
+{
+	bool intersect_x = a.xMax >= b.xMin &&
+		a.xMin <= b.xMin;
 
-		return 
-			((a.xMax - b.xMin) >= 0.0f) &
-			(((b.xMax - a.xMin) >= 0.0f)) &
-			((((a.yMax - b.yMin) >= 0.0f))) &
-			(((((b.yMax - a.yMin) >= 0.0f)))) &
-			((((((a.zMax - b.zMin) >= 0.0f))))) &
-			(((((((b.zMax - a.zMin) >= 0.0f))))));
-	}
-	static Bound3D intersection(const Bound3D& a, const Bound3D& b)
+	bool intersect_y = a.yMax >= b.yMin &&
+		a.yMin <= b.yMax;
+	return intersect_x && intersect_y;
+}
+static Bound2D intersection(const Bound2D& a, const Bound2D& b)
+{
+	return
 	{
-		if (!AABBIntersection(a, b))
-			return { 0,0,0,0,0,0 };
-		return
-		{
-			std::max(a.xMin, b.xMin),
-			std::max(a.yMin, b.yMin),
-			std::max(a.zMin, b.zMin),
-			std::min(a.xMax, b.xMax),
-			std::min(a.yMax, b.yMax),
-			std::min(a.zMax, b.zMax)
-		};
-	}
-	static void print(const Bound3D& bound)
+		std::max(a.xMin, b.xMin),
+		std::max(a.yMin, b.yMin),
+		std::min(a.xMax, b.xMax),
+		std::min(a.yMax, b.yMax)
+	};
+}
+static void print(const Bound2D& bound)
+{
+	std::cout
+		<< "| Bounds: [" << bound.xMin << "," << bound.yMin
+		<< "] - [" << bound.xMax << "," << bound.yMax << "]\n";
+}
+*/
+
+
+template<typename U>
+float unit_product(const U& u);
+
+template<typename U>
+bool AABBIntersection(const U& u, const U& v);
+
+template<typename U>
+U merge(const U& u, const U& v);
+
+template<typename U>
+U intersection(const U& u, const U& v);
+
+/* 
+static float unit_product(const Bound3D& a)
+{
+	float dx = std::max(0.0f, a.xMax - a.xMin);
+	float dy = std::max(0.0f, a.yMax - a.yMin);
+	float dz = std::max(0.0f, a.zMax - a.zMin);
+	return dx * dy * dz;
+}
+static Bound3D merge(const Bound3D& u, const Bound3D& v)
+{
+	return
 	{
-		std::cout
-			<< "| Bounds: [" << bound.xMin << "," << bound.yMin << "," << bound.zMin
-			<< "] - [" << bound.xMax << "," << bound.yMax << ","  << bound.zMax << "]\n";
-	}
-};
+		std::min(u.xMin, v.xMin),
+		std::min(u.yMin, v.yMin),
+		std::min(u.zMin, v.zMin),
+		std::max(u.xMax, v.xMax),
+		std::max(u.yMax, v.yMax),
+		std::max(u.zMax, v.zMax)
+	};
+}
+
+static bool AABBIntersection(const Bound3D& a, const Bound3D& b)
+{
+	//bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
+	//bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
+	//bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
+	//
+	//return intersect_x && intersect_y && intersect_z;
+
+	return 
+		((a.xMax - b.xMin) >= 0.0f) &
+		(((b.xMax - a.xMin) >= 0.0f)) &
+		((((a.yMax - b.yMin) >= 0.0f))) &
+		(((((b.yMax - a.yMin) >= 0.0f)))) &
+		((((((a.zMax - b.zMin) >= 0.0f))))) &
+		(((((((b.zMax - a.zMin) >= 0.0f))))));
+}
+
+static Bound3D intersection(const Bound3D& a, const Bound3D& b)
+{
+	if (!AABBIntersection(a, b))
+		return { 0,0,0,0,0,0 };
+	return
+	{
+		std::max(a.xMin, b.xMin),
+		std::max(a.yMin, b.yMin),
+		std::max(a.zMin, b.zMin),
+		std::min(a.xMax, b.xMax),
+		std::min(a.yMax, b.yMax),
+		std::min(a.zMax, b.zMax)
+	};
+}
+
+static void print(const Bound3D& bound)
+{
+	std::cout
+		<< "| Bounds: [" << bound.xMin << "," << bound.yMin << "," << bound.zMin
+		<< "] - [" << bound.xMax << "," << bound.yMax << ","  << bound.zMax << "]\n";
+}
+*/
 
 template<typename T>
 class BVNode
@@ -295,7 +303,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 	{
 		const U& lb = left->m_Bounds;
 		const U& rb = right->m_Bounds;
-		U merged = U::merge(lb, rb);
+		U merged = merge<U>(lb, rb);
 		return allocator.allocate<BVNode<U>>(BVNode<U>(static_cast<uint64_t>(-1), -1, merged, left, right));
 	}
 	else if (right && !left)
@@ -323,7 +331,7 @@ BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 }
 
 template<typename U>
-void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint64_t>& total_intersections)
+void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint64_t>& total_intersections, std::vector<const BVNode<U>*>& buffer)
 {
 	//if (!tree_node)
 	//	return;
@@ -339,27 +347,49 @@ void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree
 	//detect_overlapping_bounds(leaf_node, tree_node->m_Left, total_intersections);
 	//detect_overlapping_bounds(leaf_node, tree_node->m_Right, total_intersections);
 
-	std::vector<const BVNode<U>*> stack;
-	stack.reserve(65536);
-	stack.push_back(tree_node);
-	while (!stack.empty())
-	{
-		auto node = stack.back();
-		stack.pop_back();
+	//std::vector<const BVNode<U>*> stack;
+	//stack.reserve(65536*2);
+	//stack.push_back(tree_node);
+	//while (!stack.empty())
+	//{
+	//	auto node = stack.back();
+	//	stack.pop_back();
+	//
+	//	if (!U::AABBIntersection(leaf_node.m_Bounds, node->m_Bounds)) continue;
+	//	if (!node->m_Left && !node->m_Right)
+	//	{
+	//		total_intersections.push_back(node->m_MortonCode.ID);
+	//	}
+	//
+	//	if (node-> m_Left)
+	//	{
+	//		stack.push_back(node->m_Left);
+	//	}
+	//	if (node->m_Right)
+	//	{
+	//		stack.push_back(node->m_Right);
+	//	}
+	//}
 
-		if (!U::AABBIntersection(leaf_node.m_Bounds, node->m_Bounds)) continue;
+	buffer.push_back(tree_node);
+	while (!buffer.empty())
+	{
+		auto node = buffer.back();
+		buffer.pop_back();
+	
+		if (!AABBIntersection<U>(leaf_node.m_Bounds, node->m_Bounds)) continue;
 		if (!node->m_Left && !node->m_Right)
 		{
 			total_intersections.push_back(node->m_MortonCode.ID);
 		}
-
+	
 		if (node-> m_Left)
 		{
-			stack.push_back(node->m_Left);
+			buffer.push_back(node->m_Left);
 		}
 		if (node->m_Right)
 		{
-			stack.push_back(node->m_Right);
+			buffer.push_back(node->m_Right);
 		}
 	}
 }

@@ -60,6 +60,7 @@ namespace scripting
 		static void expose_character(lua_State* L, Character* character, const char* name);
 		static void register_character(lua_State* L);
 		static int lua_pushCharacter(lua_State* L, Character* character);
+		static int lua_Character_AddBound(lua_State* L);
 		static int lua_Character_AddMesh(lua_State* L);
 		static int lua_Character_GetMesh(lua_State* L);
 		static int lua_Character_AddRenderComponent(lua_State* L);

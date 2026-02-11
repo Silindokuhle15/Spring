@@ -5,6 +5,11 @@
 #include "Renderer.h"
 #include <Commdlg.h>
 #include "Event.h"
+#include "ComponentsPanel.h"
+#include "ContentBrowserPanel.h"
+#include "MenuBarPanel.h"
+#include "RenderPanel.h"
+#include "StatisticsPanel.h"
 
 #define IMPORT_FROM_EDITBOX 1003
 
@@ -95,12 +100,15 @@ public:
     virtual void OnUpdate(TimeStep ts) override
     {
         m_Delta = ts;
-        glm::vec2 deltaMouse = m_MousePosition - m_ActiveScene->GetMousePosition();
-        glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * m_MouseSpeedScale.x * ts, deltaMouse.x * m_MouseSpeedScale.y * ts, 0.0f));
-        m_pActiveCamera->SetOrientation(glm::normalize(deltaQuat * m_pActiveCamera->m_orientation));
-        m_pActiveCamera->Present();
-        m_pActiveCamera->OnUpdate(m_Delta);
-        m_ActiveScene->SetMousePosition(m_MousePosition);
+        if (m_ActiveScene != nullptr)
+        {
+            glm::vec2 deltaMouse = m_MousePosition - m_ActiveScene->GetMousePosition();
+            glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * m_MouseSpeedScale.x * ts, deltaMouse.x * m_MouseSpeedScale.y * ts, 0.0f));
+            m_pActiveCamera->SetOrientation(glm::normalize(deltaQuat * m_pActiveCamera->m_orientation));
+            m_pActiveCamera->Present();
+            m_pActiveCamera->OnUpdate(m_Delta);
+            m_ActiveScene->SetMousePosition(m_MousePosition);
+        }
     }
 
     std::shared_ptr<Camera>& GetLayerCamera()

@@ -13,16 +13,25 @@ void BaseApplication::Run()
 
     m_pUILayer.BindRenderer(m_pActiveRenderer);
     m_pUILayer.m_ActiveRenderer->SetUpForRendering();
-    m_pUILayer.m_pActiveCamera->SetEye(glm::vec3(0, 2, -2));
-    m_pUILayer.m_pActiveCamera->SetCenter(glm::vec3(0, 0, 2));
-    m_pUILayer.m_pActiveCamera->SetOrientation(glm::quat(0, -1, 0, 0));
+    m_pUILayer.m_pActiveCamera->SetEye(glm::vec3(0, 0, 20));
+    m_pUILayer.m_pActiveCamera->SetCenter(glm::vec3(0, 0, 0));
+    m_pUILayer.m_pActiveCamera->SetOrientation(glm::quat(0, 0, 0, -1));
     m_pUILayer.m_pActiveCamera->OnInit();
 
     scripting::ScriptMgr::expose_scene_camera(m_Scene->GetLuaState(), m_pUILayer.m_pActiveCamera.get(), "camera");
 
+    std::string combinedShaderPaths{ m_Scene->shader_paths[0] + "\n" + m_Scene->shader_paths[1]};
+
+    m_LobbyGraphicsShaderHandle = m_AssetManager.GetResourceHandle({ AssetType::GraphicsShaderResource, combinedShaderPaths.c_str() });
     m_LobbyMeshHandle = m_AssetManager.GetResourceHandle({ AssetType::MeshResource,"C:/dev/Spring/Assets/Objects/House/Room.obj" });
-    std::string sound{ "C:/dev/Spring/Assets/Sounds/pitch_sweep_wasapi.wav" };
-    //RenderAudioData(sound);
+    std::ifstream sound{ "C:/dev/Spring/Assets/Sounds/pitch_sweep_wasapi.wav", std::ios::binary };
+    WAVHEADER header{};    
+    LoadWAVFromDisk(sound, header);
+    //RenderAudioData(header);
+    //ReleaseAudioBuffer();
+    std::string combinedParticleGraphicsShaderPaths{ "C:/dev/Rocket Launch Simulator/assets/Shaders/VertexShader.glsl\nC:/dev/Rocket Launch Simulator/assets/Shaders/fragShader.glsl" };
+    AssetResource particleShaderGraphicsResource{ AssetType::GraphicsShaderResource, combinedParticleGraphicsShaderPaths };
+    m_ParticleGraphicsShaderHandle = m_AssetManager.GetResourceHandle(particleShaderGraphicsResource);
 
     while (!m_ExitWindow)
     {
@@ -30,13 +39,13 @@ void BaseApplication::Run()
         m_pActiveRenderer->BeginFrame();
 
         m_pUILayer.Enable();
- 
-        DrawLobby(m_AssetManager);
+        OnUpdate();
+        //DrawLobby(m_AssetManager);
         DrawSceneCharacters(m_AssetManager);
-        m_AppWindow.OnUpdate();
-        m_Scene->OnUpdate(m_AppWindow.m_Ts);
-        m_pActiveRenderer->OnUpdate(m_AppWindow.m_Ts);
-        m_pUILayer.OnUpdate(m_AppWindow.m_Ts);
+        DrawParticleSystems(m_AssetManager);
+
+        m_pActiveRenderer->OnUpdate(1.0f / 6.0f);
+        m_pUILayer.OnUpdate(0.0f / 6.0f);
 
         m_pActiveRenderer->EndFrame();
         m_pUILayer.EndFrame();
@@ -46,6 +55,46 @@ void BaseApplication::Run()
     ShutDown();
 }
 
+void BaseApplication::OnUpdate()
+{
+    m_AppWindow.OnUpdate();
+
+    if (m_Scene != nullptr)
+    {
+        m_Scene->OnUpdate(0.01667f);
+
+        for (auto& particleSystem : m_Scene->m_ParticleSystems)
+        {
+            if (particleSystem.m_IsEnabled)
+            {
+                GLuint numPts = particleSystem.m_NumParticles;
+                auto& shader = m_AssetManager.GetAsset<Shader>(particleSystem.m_ShaderHandle);
+                shader.Bind();
+                auto platformHandle = shader.GetHandle();
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSystem.PositionBuffer);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, particleSystem.PositionBuffer);
+
+                glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSystem.VelocityBuffer);
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, particleSystem.VelocityBuffer);
+
+                GLuint deltaLoc = glGetUniformLocation(platformHandle, "delta");
+                GLuint uTimeLoc = glGetUniformLocation(platformHandle, "uTime");
+                GLuint numPtsLoc = glGetUniformLocation(platformHandle, "numParticles");
+                glUniform1f(deltaLoc, particleSystem.m_Ts);
+                glUniform1f(uTimeLoc, particleSystem.m_AccumulatedTime);
+                glUniform1ui(numPtsLoc, numPts);
+                GLuint nx = 32;
+                GLuint ny = 32;
+                GLuint nz = 16;
+                glDispatchCompute(nx, ny, nz);
+                glMemoryBarrier(GL_ALL_BARRIER_BITS);
+                particleSystem.m_Ts = 1.0f / 60.0f;
+                particleSystem.m_AccumulatedTime += particleSystem.m_Ts;
+            }
+        }
+    }
+}
 void BaseApplication::ShutDown()
 {
 }
@@ -54,11 +103,14 @@ void BaseApplication::OnMouseMove(event::MouseMoveEvent& event)
 {
 }
 
+void BaseApplication::OnKeyPress(event::KeyPressEvent& key_press)
+{
+}
+
 void BaseApplication::DrawLobby(AssetManager& asset_manager)
 {
     std::vector<RenderCommand> m_CommandQueue;
     VertexBuffer m_GeometryBuffer;
-    AssetHandle fakeShaderHandle{ 0,1 };
     auto& mesh = asset_manager.GetAsset<primitives::Mesh>(m_LobbyMeshHandle);
     {
         RenderCommand cmd;
@@ -67,7 +119,7 @@ void BaseApplication::DrawLobby(AssetManager& asset_manager)
         enableBits |= (1ULL << 0); // Enable CULL_FACE
         enableBits |= (1ULL << 4); // Enable DEPTH_TEST
         cmd.m_EnableBits = enableBits;
-        cmd.m_ShaderHandle = fakeShaderHandle;
+        cmd.m_ShaderHandle = m_LobbyGraphicsShaderHandle;
         cmd.m_MaterialHandle = m_LobbyMeshHandle;
         cmd.m_VertexBufferOffset = m_GeometryBuffer.m_BufferOffset;
         cmd.m_IndexBufferOffset = m_GeometryBuffer.m_BufferElementCount;
@@ -90,9 +142,8 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
 {
     std::vector<RenderCommand> m_CommandQueue;
     VertexBuffer m_GeometryBuffer;
-    AssetHandle fakeShaderHandle{ 0,1 };
-    auto meshView = m_Scene->GetView<physics::PhysicsState, primitives::MeshInstance, primitives::RenderComponent>();
-    for (auto [entity, physicsComponent, meshInstance, renderComponent] : meshView.each())
+    auto meshView = m_Scene->GetView<physics::PhysicsState, primitives::MeshInstance>();
+    for (auto [entity, physicsComponent, meshInstance] : meshView.each())
     {
 
         RenderCommand cmd;
@@ -104,7 +155,7 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
         enableBits |= (1ULL << 4); // Enable DEPTH_TEST
         cmd.m_EnableBits = enableBits;
         cmd.m_EntityID = static_cast<uint64_t>(entity);
-        cmd.m_ShaderHandle = fakeShaderHandle;
+        cmd.m_ShaderHandle = m_LobbyGraphicsShaderHandle;
         cmd.m_MaterialHandle = meshInstance.m_Handle;
         cmd.m_VertexBufferOffset = m_GeometryBuffer.m_BufferOffset;
         cmd.m_IndexBufferOffset = m_GeometryBuffer.m_BufferElementCount;
@@ -122,6 +173,35 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
     }
 
     m_pActiveRenderer->DrawBuffer(m_CommandQueue, m_GeometryBuffer, asset_manager);
+}
+
+void BaseApplication::DrawParticleSystems(AssetManager& asset_manager)
+{
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    for (auto& particleSystem : m_Scene->m_ParticleSystems)
+    {
+        if (particleSystem.m_IsEnabled)
+        {
+            auto numPts = particleSystem.m_NumParticles;
+            auto& graphics_shader = asset_manager.GetAsset<Shader>(m_ParticleGraphicsShaderHandle);
+            graphics_shader.Bind();
+            auto graphicsHandle = graphics_shader.GetHandle();
+            GLuint viewLoc = glGetUniformLocation(graphicsHandle, "View");
+            GLuint projLoc = glGetUniformLocation(graphicsHandle, "Proj");
+
+            glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(m_pUILayer.m_pActiveCamera->GetV()));
+            glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(m_pUILayer.m_pActiveCamera->GetP()));
+
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSystem.PositionBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, particleSystem.PositionBuffer);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleSystem.VelocityBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, particleSystem.VelocityBuffer);
+
+            //glBindTextureUnit(0, texture.m_Texture);
+            glDrawArraysInstanced(GL_POINTS, 0, 1, numPts);
+        }
+    }
+    glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* title)

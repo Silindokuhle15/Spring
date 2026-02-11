@@ -12,7 +12,8 @@
 enum class AssetType
 {
 	None = 0,
-	ShaderResource,
+	ComputeShaderResource,
+	GraphicsShaderResource,
 	Texture2D,
 	Material,
 	MeshResource,
@@ -32,19 +33,16 @@ public:
 class AssetManager
 {
 private:
-	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
-	//std::map<AssetHandle, FrameBuffer> m_FrameBufferMap;
 	std::map<AssetHandle, unsigned int> m_FrameBufferMap;
 	std::map<AssetHandle, Shader> m_ShaderMap;
 	std::map<AssetHandle, std::vector<Material>> m_MaterialMap;
 	std::map<AssetHandle, TextureBase<GL_Texture>> m_TextureMap;
 	std::map<AssetHandle, primitives::Mesh> m_MeshMap;
 	std::map<AssetHandle, scripting::ControlScript> m_ScriptMap;
-	uint64_t m_CurrentAssetHandle;
 public:
+	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
 	AssetManager() :
-		m_AssetResourceAndHandleMap{},
-		m_CurrentAssetHandle{ 0 }
+		m_AssetResourceAndHandleMap{}
 	{
 
 	}
@@ -63,19 +61,17 @@ public:
 		auto& assetHandle = m_AssetResourceAndHandleMap[resource];
 		if ((assetHandle.m_HWORD == 0) && (assetHandle.m_LWORD == 0))
 		{
-			assetHandle.m_LWORD = ++m_CurrentAssetHandle;
-	
-			if (resource.m_Type == AssetType::MeshResource)
+			if (resource.m_Type == AssetType::ComputeShaderResource)
 			{
-				 primitives::Mesh mesh{ resource.m_Filepath.c_str() };
-				auto& materialGroup = mesh.m_Materials;
-				m_MaterialMap[assetHandle] = materialGroup;
-				m_MeshMap[assetHandle] = mesh;
-				// Next is get the correct material handle and assign it
-				// auto materialHandle = GetMaterialHandle(what parameter??)   -\0 - 0/-
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+				ShaderResource r{ ShaderInfo{resource.m_Filepath, ShaderType::COMPUTE} };
+				Shader shader{ r };
+				m_ShaderMap[assetHandle] = shader;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
 			}
-			if (resource.m_Type == AssetType::ShaderResource)
+			if (resource.m_Type == AssetType::GraphicsShaderResource)
 			{
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
 				auto& combinedPaths = resource.m_Filepath;
 				auto path1 = combinedPaths.substr(0, combinedPaths.find('\n'));
 				auto path2 = combinedPaths.substr(combinedPaths.find('\n') + 1);
@@ -84,12 +80,30 @@ public:
 					ShaderInfo{ path2, ShaderType::PIXEL } };
 				Shader shader{ r };
 				m_ShaderMap[assetHandle] = shader;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
+			}
+			if (resource.m_Type == AssetType::MeshResource)
+			{
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+				primitives::Mesh mesh{ resource.m_Filepath.c_str() };
+				auto& materialGroup = mesh.m_Materials;
+				m_MaterialMap[assetHandle] = materialGroup;
+				m_MeshMap[assetHandle] = mesh;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
+			}
+			if (resource.m_Type == AssetType::ScriptResource)
+			{
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+				//m_ScriptMap[assetHandle] = scripting::ControlScript{ resource.m_Filepath.c_str() };
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
 			}
 			if (resource.m_Type == AssetType::Texture2D)
 			{
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
 				auto& filepath = resource.m_Filepath;
 				auto glTexture = LoadTextureFromFile(filepath);
 				m_TextureMap[assetHandle] = glTexture;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
 			}
 		}
 		return assetHandle;
@@ -110,9 +124,8 @@ public:
 		auto& mesh = m_MeshMap[handle];
 		return mesh;
 	}
-
-
 };
+
 
 /*
 template<typename T>
@@ -126,6 +139,7 @@ inline const unsigned int& AssetManager::GetAsset(const AssetHandle& asset_handl
 {
 	return m_FrameBufferMap[asset_handle];
 }
+
 
 template<>
 inline const primitives::Mesh& AssetManager::GetAsset(const AssetHandle& asset_handle)

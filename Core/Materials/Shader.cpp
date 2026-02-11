@@ -14,6 +14,9 @@ Shader::Shader(const ShaderResource& shader_resource)
         GLenum glShader_type{ 0 };
         switch (shader_type)
         {
+            case ShaderType::COMPUTE:
+                glShader_type = GL_COMPUTE_SHADER;
+                break;
             case ShaderType::VERTEX:
                 glShader_type = GL_VERTEX_SHADER;
                 break;

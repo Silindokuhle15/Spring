@@ -21,7 +21,6 @@ struct SphereCollider
 
 	double m_Radius;
 	glm::vec3 m_Pos;
-
 };
 
 struct GenericCollider : public primitives::Mesh

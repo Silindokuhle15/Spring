@@ -1,6 +1,7 @@
 #pragma once
 #include "UUID.h"
 #include "Utility/ObjectLoader.h"
+#include "Bound.h"
 namespace primitives
 {
     class Mesh
@@ -69,4 +70,6 @@ namespace primitives
 
         }
     };
+
+    Bound3D FindMinMax(const Mesh& mesh);
 }

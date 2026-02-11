@@ -4,10 +4,9 @@ class TimeStep
 private:
 	float m_CurrentTime;
 
-	
 public:
 
-	TimeStep(float ts = 0.0f) : m_CurrentTime{0} {}
+	TimeStep(float ts = 0.0f) : m_CurrentTime{ts} {}
 	operator float()  { return m_CurrentTime; }
 
 	float& operator=(const float& val) {

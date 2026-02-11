@@ -199,6 +199,21 @@ namespace scripting {
         return 1;
     }
 
+    int ScriptMgr::lua_Character_AddBound(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        if (!character->HasComponent<primitives::MeshInstance>())
+        {
+            return luaL_error(L, "Character has no MeshInstance");
+        }
+        auto& meshInstance = character->GetComponent<primitives::MeshInstance>();
+        auto activeScene = character->GetScenePointer();
+        auto& mesh = activeScene->m_AssetManager->GetAsset<primitives::Mesh>(meshInstance.m_Handle);
+        primitives::Bound3D bounds{ primitives::FindMinMax(mesh) };
+        character->AddComponent<primitives::Bound3D>(bounds);
+        return 0;
+    }
+
     Character* ScriptMgr::lua_checkCharacter(lua_State* L, int index) {
         return *static_cast<Character**>(luaL_checkudata(L, index, MT::CHARACTER_MT));
     }
@@ -208,7 +223,7 @@ namespace scripting {
         Character* character = lua_checkCharacter(L, 1);
         const char* path = luaL_checkstring(L, 2);
         AssetResource meshResource{ AssetType::MeshResource, path };
-        auto* activeScene = character->GetScenePointer();
+        auto activeScene = character->GetScenePointer();
         auto assetHandle = activeScene->m_AssetManager->GetResourceHandle(meshResource);
         character->AddComponent<primitives::MeshInstance>(assetHandle);
         return 0;
@@ -300,7 +315,7 @@ namespace scripting {
                 lua_pop(L, 1);
             }
         }
-        glm::quat rotation{ temp[3], temp[0], temp[1], temp[2] };
+        glm::quat rotation{ temp[0], temp[1], temp[2],temp[3] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
         state->orientation = glm::normalize(state->orientation * rotation * 0.0167f);
         return 0;
@@ -350,6 +365,9 @@ namespace scripting {
         luaL_newmetatable(L, MT::CHARACTER_MT);
 
         lua_newtable(L);
+        lua_pushcfunction(L, lua_Character_AddBound);
+        lua_setfield(L, -2, "AddBound");
+
         lua_pushcfunction(L, lua_Character_AddMesh);
         lua_setfield(L, -2, "AddMesh");
 
@@ -721,53 +739,53 @@ namespace scripting {
         //auto keyString = lua_tostring(L, 2);
         auto keyString = lua_tostring(L, 1);
         std::string key{ keyString };
-        if (key == "w" && (GetKeyState(0x57) & 0x8000))
+        if (key == "w" && (GetAsyncKeyState(0x57) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "a" && (GetKeyState(0x41) & 0x8000))
+        if (key == "a" && (GetAsyncKeyState(0x41) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "s" && (GetKeyState(0x53) & 0x8000))
+        if (key == "s" && (GetAsyncKeyState(0x53) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "d" && (GetKeyState(0x44) & 0x8000))
+        if (key == "d" && (GetAsyncKeyState(0x44) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
 
-        if (key == "q" && (GetKeyState(0x51) & 0x8000))
+        if (key == "q" && (GetAsyncKeyState(0x51) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "z" && (GetKeyState(0x5A) & 0x8000))
+        if (key == "z" && (GetAsyncKeyState(0x5A) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "LMOUSE" && (GetKeyState(0x01) & 0x8000))
+        if (key == "LMOUSE" && (GetAsyncKeyState(0x01) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "RMOUSE" && (GetKeyState(0x02) & 0x8000))
+        if (key == "RMOUSE" && (GetAsyncKeyState(0x02) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "MMOUSE" && (GetKeyState(0x04) & 0x8000))
+        if (key == "MMOUSE" && (GetAsyncKeyState(0x04) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;
         }
-        if (key == "SPACE" && (GetKeyState(VK_SPACE) & 0x8000))
+        if (key == "SPACE" && (GetAsyncKeyState(VK_SPACE) & 0x8000))
         {
             lua_pushboolean(L, 1);
             return 1;

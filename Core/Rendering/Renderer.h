@@ -40,13 +40,15 @@ public:
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
     unsigned int m_MaterialBuffer;
+    unsigned int m_ModelMatrixInstanceBuffer;
     VertexArray m_VAO;
 
     void BeginFrame();
     void SetActiveCamera(std::shared_ptr<Camera> camera);
 
-    void Draw(const RenderCommand& cmd, AssetManager& asset_manager) const;
-    void DrawBuffer(const std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const;
+    void DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint64_t instance_count = 1) const;
+    void DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const;
+    void DrawBufferInstanced(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager);
     void UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const;
     void UploadUniformData(const RenderCommand& cmd, AssetManager& asset_manager) const;
     void OnUpdate(TimeStep delta);
@@ -62,7 +64,11 @@ public:
         m_Ts{0},
         m_VertexBuffer{0},
         m_IndexBuffer{0},
-        m_MaterialBuffer{0}
+        m_MaterialBuffer{0},
+        m_ModelMatrixInstanceBuffer{0},
+        m_InstanceGroups{},
+        m_InstanceGroupKeys{},
+        m_InstanceGroupsMap{}
     {
     }
     ~Renderer() {}
@@ -72,6 +78,12 @@ private:
     std::vector<glm::mat4> m_ActiveTransforms;
     std::vector<Shader> m_ActiveShaders;
     std::shared_ptr<Camera> m_pActiveCamera;
+
+    std::vector<std::vector<RenderCommand>> m_InstanceGroups;
+    std::map<int, std::vector<RenderCommand>> m_InstanceGroupsMap;
+    std::vector<int> m_InstanceGroupKeys;
+    std::vector<glm::mat4> m_ModelMatrices;
+
 };
 
 class RenderManager

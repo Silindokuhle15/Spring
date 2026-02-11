@@ -15,6 +15,40 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             event::MouseMoveEvent event(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
             OnEvent(event);
         }break;
+        case WM_KEYDOWN:
+        {
+            if (wParam == VK_SPACE)
+            {
+                event::KeyPressEvent spaceEvent(event::EventID::SPACE);
+                OnEvent(spaceEvent);
+                break;
+            }
+
+            if (wParam == VK_LEFT)
+            {
+                event::KeyPressEvent leftEvent(event::EventID::LEFT);
+                OnEvent(leftEvent);
+                break;
+            }
+            if(wParam == VK_UP)
+            {
+                event::KeyPressEvent upEvent(event::EventID::UP);
+                OnEvent(upEvent);
+                break;
+            }
+            if(wParam == VK_RIGHT)
+            {
+                event::KeyPressEvent rightEvent(event::EventID::RIGHT);
+                OnEvent(rightEvent);
+                break;
+            }
+            if(wParam == VK_DOWN)
+            {
+                event::KeyPressEvent downEvent(event::EventID::DOWN);
+                OnEvent(downEvent);
+                break;
+            }
+        }break;
         default:
             return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);
     }

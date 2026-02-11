@@ -1,5 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
+#include "Bound.h"
 
 class BoundingVolume
 {
@@ -19,4 +20,5 @@ public:
 
 public:
 	static BoundingVolume CreateBoundingVolume(uint64_t id, const glm::vec3& centroid, float size);
+	static BoundingVolume CreateBoundingVolume(uint64_t id, const primitives::Bound3D& bound);
 };

@@ -118,9 +118,13 @@ AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& im
     stbi_image_free(front);
     stbi_image_free(behind);
 
-    AssetHandle assetHandle{ 0, m_CurrentAssetHandle };
+    std::string flatPath{ "" };
+    for (auto& string : image_file_paths)
+    {
+        flatPath += string + "\n";
+    }
+    AssetHandle assetHandle = CreateAssetHandleFromPath(flatPath.c_str());
     m_TextureMap[assetHandle] = cubeMap;
-    ++m_CurrentAssetHandle;
     return assetHandle;
 }
 
@@ -129,16 +133,12 @@ AssetHandle AssetManager::CreateOpenGLFrameBuffer(TextureBase<GL_Texture>& tex_b
     GLuint platformHandle{ 0 };
     glCreateFramebuffers(1, &platformHandle);
     glBindFramebuffer(GL_FRAMEBUFFER, platformHandle);
-    //FrameBuffer frameBuffer;
-    //frameBuffer.Bind();
     CreateOpenGLTexture(tex_base);
-    //frameBuffer.SetTexture(GL_COLOR_ATTACHMENT0, tex_base.m_Texture, 0);
     glNamedFramebufferTexture(platformHandle, GL_COLOR_ATTACHMENT0, tex_base.m_Texture, 0);
-    AssetHandle assetHandle{ 0, m_CurrentAssetHandle };
+    std::string frameBufferString = "OpenGL_FrameBuffer" + platformHandle + tex_base.m_Texture;
+    AssetHandle assetHandle = CreateAssetHandleFromPath(frameBufferString.c_str());
     m_TextureMap[assetHandle] = tex_base;
-    //m_FrameBufferMap[assetHandle] = frameBuffer;
     m_FrameBufferMap[assetHandle] = platformHandle;
-    ++m_CurrentAssetHandle;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return assetHandle;
 }

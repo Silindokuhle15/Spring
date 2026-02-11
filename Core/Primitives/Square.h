@@ -6,6 +6,6 @@ namespace primitives
     class Square : public Mesh
     {
     public:
-        Square();
+        Square(float size = 1.0f);
     };
 }

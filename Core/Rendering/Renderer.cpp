@@ -1,4 +1,4 @@
-    #include "Renderer.h"
+#include "Renderer.h"
 
 void Renderer::SetUpForRendering()
 {
@@ -19,6 +19,11 @@ void Renderer::SetUpForRendering()
     glCreateBuffers(1, &m_MaterialBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_MaterialBuffer);
     glNamedBufferData(m_MaterialBuffer, material_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    unsigned int modelMatrix_buffer_size = sizeof(glm::mat4) * 10000;
+    glCreateBuffers(1, &m_ModelMatrixInstanceBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
+    glNamedBufferData(m_ModelMatrixInstanceBuffer, modelMatrix_buffer_size, nullptr, GL_DYNAMIC_DRAW);
 
     BufferLayout layout{
         {ShaderDataType::Float3, "Position"},
@@ -46,7 +51,7 @@ void Renderer::Flush() const
     glFlush();
 }
 
-void Renderer::Draw(const RenderCommand& cmd , AssetManager& asset_manager) const
+void Renderer::DrawInstanced(const RenderCommand& cmd , AssetManager& asset_manager, uint64_t instance_count) const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
@@ -72,7 +77,7 @@ void Renderer::Draw(const RenderCommand& cmd , AssetManager& asset_manager) cons
         auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(cmd.m_TextureHandle);
         glBindTextureUnit(0, texture.m_Texture);
     }
-    glDrawArrays((GLenum)cmd.m_PrimitiveType, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount);
+    glDrawArraysInstanced((GLenum)cmd.m_PrimitiveType, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount, instance_count);
 }
 
 void Renderer::UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const
@@ -192,11 +197,12 @@ void Renderer::UploadUniformData(const RenderCommand& cmd, AssetManager& asset_m
     }
 }
 
-void Renderer::DrawBuffer(const std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const
+void Renderer::DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const
 {
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     UploadBuffer(vertex_buffer);
+
     for (auto& cmd : command_queue)
     {
         glEnable(GL_CULL_FACE);
@@ -212,7 +218,83 @@ void Renderer::DrawBuffer(const std::vector<RenderCommand>& command_queue, Verte
         {
             glDisable(GL_DEPTH_TEST);
         }
-        Draw(cmd, asset_manager);
+        DrawInstanced(cmd, asset_manager);
+    }
+}
+
+void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager)
+{
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+    UploadBuffer(vertex_buffer);
+    m_InstanceGroups.clear();
+    m_InstanceGroups.reserve(command_queue.size());
+    m_InstanceGroupKeys.clear();
+    m_InstanceGroupsMap.clear();
+
+    for (auto& renderCommand : command_queue)
+    {
+        /*
+        uint64_t indexCount = renderCommand.m_IndexCount;
+        size_t index = 0;
+        while (index < m_InstanceGroupKeys.size() && m_InstanceGroupKeys[index] != indexCount)
+        {
+            ++index;
+        }
+        
+        if (index == m_InstanceGroupKeys.size())
+        {
+            m_InstanceGroupKeys.push_back(indexCount);
+            m_InstanceGroups.emplace_back();
+        }
+        m_InstanceGroups[index].reserve(command_queue.size());
+        m_InstanceGroups[index].push_back(std::move(renderCommand));
+        */
+        m_InstanceGroupsMap[renderCommand.m_IndexCount].push_back(
+            std::move(renderCommand)
+        );
+    }
+
+    for (auto& group : m_InstanceGroupsMap)
+    {
+        m_ModelMatrices.clear();
+        m_ModelMatrices.reserve(131072);
+        uint64_t glDisableBits{ 0 };
+        AssetHandle shaderHandle{ 0,0 };
+        AssetHandle materialHandle{ 0, 0 };
+        for (auto& cmd : group.second)
+        {
+            shaderHandle = cmd.m_ShaderHandle;
+            materialHandle = cmd.m_MaterialHandle;
+            auto& uniformBuffer = cmd.m_UniformBuffer;
+            auto& modelMatrix = uniformBuffer.m_Mat4Map["Model"];
+            m_ModelMatrices.push_back(modelMatrix);
+            glDisableBits = cmd.m_EnableBits;
+        }
+
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+
+        if (glDisableBits & 0x1)
+        {
+            glDisable(GL_CULL_FACE);
+        }
+        if (glDisableBits & 0x10)
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+        auto& shader = asset_manager.GetShader(shaderHandle);
+        auto& materialGroup = asset_manager.GetMaterial(materialHandle);
+        auto shaderHandlePlatform = shader.GetHandle();
+        shader.Bind();
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_ModelMatrixInstanceBuffer);
+        glNamedBufferSubData(m_ModelMatrixInstanceBuffer, 0, sizeof(glm::mat4) * m_ModelMatrices.size(), m_ModelMatrices.data());
+        auto& front = group.second.front();
+        uint64_t instanceCount = static_cast<uint64_t>(group.second.size());
+        DrawInstanced(front, asset_manager, instanceCount);
     }
 }
 

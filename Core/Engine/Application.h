@@ -2,9 +2,9 @@
 #define _APPLICATION_
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
-#include <fstream>
 #include "Event.h"
-#include "WAV.h"
+#include "Sound.h"
+#include <stdexcept>
 
 class Application : public event::IEventListener
 {
@@ -29,12 +29,8 @@ public:
 	Application();
 	~Application();
 	
-	virtual int ReadWAVHeader(std::ifstream& ifs, WAVHEADER& wave_header);
-	virtual int LoadWAVFromDisk(std::ifstream& file_path, WAVHEADER& wave_header);
-	virtual int RenderAudioData(const WAVHEADER& header);
-	virtual uint32_t UploadDataToAudioBuffer(BYTE * audio_data, uint32_t bytes_to_write, uint32_t block_align);
+	virtual int RenderAudioData(Sound& sound);
 	virtual void Run() = 0;
 };
-
 
 #endif

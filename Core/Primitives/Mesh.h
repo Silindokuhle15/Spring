@@ -1,7 +1,9 @@
 #pragma once
 #include "UUID.h"
-#include "Utility/ObjectLoader.h"
+#include "Material.h"
+#include "Vertex.h"
 #include "Bound.h"
+#include "entt.hpp"
 namespace primitives
 {
     class Mesh
@@ -11,32 +13,17 @@ namespace primitives
             m_MaterialGroupHandle{ AssetHandle{0,0} }
         {
         }
-        Mesh(std::string file_path);
         Mesh(
-            const std::vector<glm::vec3>& positions,
-            const std::vector<glm::vec2>& texcoords,
-            const std::vector<float>& ids,
-            const std::vector<glm::vec3>& normals,
             const std::vector<Vertex>& vertices,
-            const std::vector<uint64_t>& vertex_indices,
-            const std::vector<uint64_t>& texture_indices,
-            const std::vector<uint64_t>& normal_indices,
-            const std::vector<Material>& materials
+            const std::vector<uint64_t>& vertex_indices
+            //const std::vector<Material>& materials
         );
 
-        std::vector<glm::vec3 > m_Positions;
-        std::vector<glm::vec2 > m_TexCoords;
-        std::vector<float> m_VertexIDs;
-        std::vector<glm::vec3 > m_Normals;
         std::vector<Vertex> m_V;
         std::vector<uint64_t> m_VertexIndices;
-        std::vector<uint64_t> m_TextureIndices;
-        std::vector<uint64_t> m_NormalIndices;
         std::vector<Material> m_Materials;
         AssetHandle m_MaterialGroupHandle;
         std::vector<Mesh> m_SubMeshes;
-    private:
-        std::string m_OBJFilePath;
     };
 
     struct RenderComponent
@@ -69,6 +56,20 @@ namespace primitives
         {
 
         }
+    };
+
+    struct Parent
+    {
+        entt::entity ParentEntity;
+        bool Active[4];
+        uint64_t NumChildren;
+    };
+
+    struct PlaySoundRequest
+    {
+        entt::entity ParentEntity;
+        bool Active[4];
+        AssetHandle SoundID;
     };
 
     Bound3D FindMinMax(const Mesh& mesh);

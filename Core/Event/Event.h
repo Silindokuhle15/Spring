@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include "UUID.h"
+
 namespace event
 {
 	enum class EventID
@@ -57,11 +59,13 @@ namespace event
 		W = 0x57,
 		X = 0x58,
 		Y = 0x59,
-		Z = 0x5A
+		Z = 0x5A,
+		PLAY_SOUND
 	};
 
 	class Event
 	{
+	protected:
 		EventID  m_ID;
 	public:
 		bool m_Handled;
@@ -129,6 +133,7 @@ namespace event
 		{
 		}
 	};
+
 	class WindowCloseEvent : public Event
 	{
 	public:
@@ -137,6 +142,7 @@ namespace event
 		{
 		}
 	};
+
 	class KeyPressEvent : public Event
 	{
 	public:

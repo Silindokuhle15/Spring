@@ -6,15 +6,6 @@
 
 namespace scripting {
 
-    std::string ScriptMgr::GetLuaFilenameWithoutExtension(const std::string& path)
-    {
-        auto lastOfIndex = path.find_last_of('/');
-        auto fullFilename = path.substr(++lastOfIndex);
-        lastOfIndex = fullFilename.find_last_of('.');
-        auto filename = fullFilename.substr(0, lastOfIndex);
-        return filename;
-    }
-
     void ScriptMgr::ExecuteScript(lua_State* L, const char* script, size_t size, const char* name)
     {
         int status = luaL_loadbuffer(L, script, size, name);
@@ -38,6 +29,8 @@ namespace scripting {
             // Execute onInit function of the object
             return;
         }
+
+
     }
 
     void ScriptMgr::ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts)
@@ -54,6 +47,121 @@ namespace scripting {
         if (lua_pcall(L, 1, 0, 0) != LUA_OK)
         {
             assert("Failed to execute script function");
+        }
+    }
+
+    void ScriptMgr::InitScript(lua_State* L, Character * character, ControlScript& script)
+    {
+        auto& scriptData = script.m_Data;
+        int validLuaChunk = luaL_loadbuffer(L, scriptData.c_str(), scriptData.size(), "ScriptChunk");
+        if (validLuaChunk != LUA_OK)
+        {
+            luaL_error(L, "Failed to Load Lua Chunk !!!");
+            return;
+        }
+
+        validLuaChunk = lua_pcall(L, 0, 1, 0); 
+        if (validLuaChunk != LUA_OK)
+        {
+            luaL_error(L, "Failed to Execute Lua Chunk !!!");
+            return;
+        }
+
+        if (!lua_istable(L, -1))
+        {
+            return;
+        }
+
+        lua_pushvalue(L, -1);
+        lua_setfield(L, -2, "__index");
+
+        lua_newtable(L);
+        lua_pushvalue(L, -2);
+        lua_setmetatable(L, -2);
+
+        lua_remove(L, -2);
+
+        lua_pushCharacter(L, character);
+
+        lua_setfield(L, -2, "character");
+
+        script.m_LuaTableRef = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+
+    int ScriptMgr::lua_ScenePushEntity(lua_State* L, entt::entity entity)
+    {
+        auto* userdata = static_cast<entt::entity*>(lua_newuserdata(L, sizeof(entt::entity)));
+        *userdata = entity;
+        luaL_getmetatable(L, MT::ENTITY_MT);
+        lua_setmetatable(L, -2);
+        return 1;
+    }
+
+    entt::entity ScriptMgr::lua_checkEntity(lua_State* L, int index)
+    {
+        return *static_cast<entt::entity*>(luaL_checkudata(L, index, MT::ENTITY_MT));
+    }
+
+    void ScriptMgr::CallOnInit(lua_State* L, entt::entity entity, ControlScript& script)
+    {
+        if (script.m_LuaTableRef == LUA_NOREF)
+        {
+            return;
+        }
+        lua_rawgeti(L, LUA_REGISTRYINDEX, script.m_LuaTableRef);
+        if (!lua_istable(L, -1))
+        {
+            lua_pop(L, 1);
+            return;
+        }
+        lua_getfield(L, -1, "onInit");
+        if (lua_isfunction(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            if (lua_pcall(L, 1, 0, 0) != LUA_OK)
+            {
+                luaL_error(L, "failed to execute onInit()");
+            }
+        }
+        else
+        {
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 1);
+    }
+
+    void ScriptMgr::CallOnUpdate(lua_State* L, entt::entity entity, ControlScript& script, float dt)
+    {
+        if (script.m_LuaTableRef == LUA_NOREF)
+        {
+            return;
+        }
+        lua_rawgeti(L, LUA_REGISTRYINDEX, script.m_LuaTableRef);
+        if (!lua_istable(L, -1))
+        {
+            lua_pop(L, 1);
+            return;
+        }
+        lua_getfield(L, -1, "onUpdate");
+        if (lua_isfunction(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            lua_pushnumber(L, dt);
+
+            if (lua_pcall(L, 2, 0, 0) != LUA_OK)
+            {
+                luaL_error(L, "failed to execute onUpdate()");
+            }
+        }
+        lua_pop(L, 1);
+    }
+
+    void ScriptMgr::CallOnDestroy(lua_State* L, entt::entity entity, ControlScript& script)
+    {
+        if (script.m_LuaTableRef != LUA_NOREF)
+        {
+            luaL_unref(L, LUA_REGISTRYINDEX, script.m_LuaTableRef);
+            script.m_LuaTableRef = LUA_NOREF;
         }
     }
 
@@ -124,6 +232,9 @@ namespace scripting {
         lua_pushcfunction(L, lua_Scene_DestroyCharacter);
         lua_setfield(L, -2, "DestroyCharacter");
 
+        lua_pushcfunction(L, lua_Scene_FindCharacterByTag);
+        lua_setfield(L, -2, "FindCharacterByTag");
+
         lua_pop(L, 1);
     }
 
@@ -165,6 +276,24 @@ namespace scripting {
     int ScriptMgr::lua_Scene_DestroyCharacter(lua_State* L) {
         Scene* scene = lua_checkScene(L, 1);
         // TODO: Implement actual logic
+        return 0;
+    }
+
+    int ScriptMgr::lua_Scene_FindCharacterByTag(lua_State* L)
+    {
+        Scene* scene = lua_checkScene(L, 1);
+        const char* tagName = lua_tostring(L, 2);
+
+        auto tagView = scene->GetView<std::string>();
+        for (auto [entity, tag] : tagView.each())
+        {
+            if (tag == tagName)
+            {
+                auto character = scene->GetSceneCharacter(entity);
+                lua_pushCharacter(L, &character);
+                return 1;
+            }
+        }
         return 0;
     }
 
@@ -233,12 +362,14 @@ namespace scripting {
     {
         return 0;
     }
+
     int ScriptMgr::lua_Character_AddRenderComponent(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
         character->AddComponent<primitives::RenderComponent>();
         return 0;
     }
+
     int ScriptMgr::lua_Character_GetRenderComponent(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
@@ -253,6 +384,7 @@ namespace scripting {
         lua_setmetatable(L, -2);
         return 0;
     }
+
     int ScriptMgr::lua_Character_AddPhysicsState(lua_State* L) {
         Character* character = lua_checkCharacter(L, 1);
         character->AddComponent<physics::PhysicsState>();
@@ -315,9 +447,15 @@ namespace scripting {
                 lua_pop(L, 1);
             }
         }
-        glm::quat rotation{ temp[0], temp[1], temp[2],temp[3] };
-        physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-        state->orientation = glm::normalize(state->orientation * rotation * 0.0167f);
+        float sq = sqrt(temp[0] * temp[0] + temp[1] * temp[1] + temp[2] * temp[2] + temp[3] * temp[3]);
+        if (sq > 1e-6)
+        {
+            glm::quat rotation{ temp[0]/sq, temp[1]/sq, temp[2]/sq,temp[3]/sq };
+            physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
+            //state->orientation = glm::lerp(state->orientation,  state->orientation * rotation, 0.0166f);
+            state->orientation = glm::slerp(state->orientation,  state->orientation * rotation, 0.0166f);
+            //state->orientation = glm::normalize(state->orientation * rotation);
+        }
         return 0;
     }
 
@@ -330,7 +468,7 @@ namespace scripting {
         }
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
         auto& orientation = state->orientation;
-        glm::vec3 localForward{ 0.0, 0.0, 1.0 };
+        glm::vec3 localForward{ 0.0, 0.0, -1.0 };
         auto globalForward = orientation * localForward;
 
         lua_newtable(L);

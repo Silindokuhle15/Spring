@@ -8,6 +8,7 @@
 #include "ComponentsPanel.h"
 #include "ContentBrowserPanel.h"
 #include "MenuBarPanel.h"
+#include "ParticleSystemPanel.h"
 #include "RenderPanel.h"
 #include "StatisticsPanel.h"
 
@@ -30,6 +31,7 @@ public:
     TimeStep m_Delta{ 0.0f };
     ComponentPanel<UILayer> m_ComponentPanel;
     MenuBar<UILayer> m_FileMenuBar;
+    ParticleSystemPanel m_ParticleSystemPanel;
     RenderPanel m_RenderPanel;
     StatsPanel m_StatsPanel;
     ContentBrowser m_ContentBrowser;
@@ -48,8 +50,9 @@ public:
         m_ComponentPanel.Run();
         m_ContentBrowser.Run();
         m_RenderPanel.Run();
+        m_ParticleSystemPanel.Run();
         m_StatsPanel.Run();
-        m_FileMenuBar.Run();
+        //m_FileMenuBar.Run();
     }
 
     void BindRenderer(std::shared_ptr<Renderer> renderer)
@@ -68,6 +71,9 @@ public:
         if (m_ComponentPanel.m_ActiveScene)
             m_ComponentPanel.m_ActiveScene.reset();
         m_ComponentPanel.m_ActiveScene = m_ActiveScene;
+        if (m_ParticleSystemPanel.m_ActiveScene)
+            m_ParticleSystemPanel.m_ActiveScene.reset();
+        m_ParticleSystemPanel.m_ActiveScene = m_ActiveScene;
         if (m_RenderPanel.m_ActiveScene)
             m_RenderPanel.m_ActiveScene.reset();
         m_RenderPanel.m_ActiveScene = m_ActiveScene;
@@ -97,17 +103,30 @@ public:
         };
         SetMousePosition(mousePos);
     }
+
+    void OnKeyPress(event::KeyPressEvent& event) override
+    {
+        auto camPos = m_pActiveCamera->GetEye();
+        if (event.GetID() == event::EventID::W)
+        {
+            camPos += glm::vec3(0, 0, 1);
+        }
+        if (event.GetID() == event::EventID::S)
+        {
+            camPos += glm::vec3(0, 0, -1);
+        }
+        m_pActiveCamera->SetEye(camPos);
+    }
     virtual void OnUpdate(TimeStep ts) override
     {
         m_Delta = ts;
         if (m_ActiveScene != nullptr)
         {
-            glm::vec2 deltaMouse = m_MousePosition - m_ActiveScene->GetMousePosition();
-            glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * m_MouseSpeedScale.x * ts, deltaMouse.x * m_MouseSpeedScale.y * ts, 0.0f));
-            m_pActiveCamera->SetOrientation(glm::normalize(deltaQuat * m_pActiveCamera->m_orientation));
+            //glm::vec2 deltaMouse = m_MousePosition - m_ActiveScene->GetMousePosition();
+            //glm::quat deltaQuat = glm::quat(glm::vec3(deltaMouse.y * m_MouseSpeedScale.x * ts, deltaMouse.x * m_MouseSpeedScale.y * ts, 0.0f));
+            //m_pActiveCamera->SetOrientation(glm::normalize(deltaQuat * m_pActiveCamera->m_orientation));
             m_pActiveCamera->Present();
             m_pActiveCamera->OnUpdate(m_Delta);
-            m_ActiveScene->SetMousePosition(m_MousePosition);
         }
     }
 
@@ -164,6 +183,7 @@ public:
         m_pActiveCamera{ new Camera{ 1920, 1080, 0.01f, 10000.0f } },
         m_ComponentPanel{ this,  m_pActiveCamera },
         m_ContentBrowser{ this },
+        m_ParticleSystemPanel{this},
         m_RenderPanel{ this },
         m_StatsPanel{ this },
         m_FileMenuBar{ this }

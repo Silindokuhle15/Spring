@@ -31,7 +31,6 @@ namespace physics
 
 		CollisionPairDescription(const AssetHandle& first, const AssetHandle& second);
 	};
-
 }
 
 #endif

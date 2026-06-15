@@ -30,12 +30,12 @@ public :
 	}
 
 	template<typename T>
-	T& RemoveComponent()
+	auto RemoveComponent()
 	{
 		return m_pScene->m_Registry.remove<T>(m_Entity);
 	}
 
-	entt::entity GetCharacterID() const { return m_Entity; }
+	entt::entity& GetCharacterID() { return m_Entity; }
 	static Character GetCharacterPtr(entt::entity id, Scene* pscene);
 
 	Scene* GetScenePointer() const { return m_pScene; }

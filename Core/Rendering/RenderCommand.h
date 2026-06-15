@@ -22,4 +22,13 @@ public:
     UniformBuffer m_UniformBuffer;
 };
 
+class ParticleCommand
+{
+public:
+    uint64_t m_BufferOffset;
+    uint64_t m_NumParticles;
+    AssetHandle m_ShaderHandle;
+    UniformBuffer m_UniformBuffer;
+};
+
 #endif

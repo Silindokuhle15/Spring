@@ -1,6 +1,4 @@
 #include "Application.h"
-#include <iostream>
-#include <vector>
 
 Application::Application():
 	m_IMMDeviceEnumerator{nullptr},
@@ -29,10 +27,40 @@ Application::Application():
 		(void**)&m_AudioClient
 	);
 
-	auto defaultWAVMixFormat = m_AudioClient->GetMixFormat(&m_DefaultWAVMixFormat);
-	if (FAILED(defaultWAVMixFormat)) {
-		std::cout << "AudioClient:GetMixFormat failed: " << std::hex << defaultWAVMixFormat << "\n";
+	auto hr = m_AudioClient->GetMixFormat(&m_DefaultWAVMixFormat);
+	if (FAILED(hr)) 
+	{
+		throw std::runtime_error("AudioClient:GetMixFormat failed: !!!");
 	}
+
+	DWORD streamFlags{ 0 };
+	REFERENCE_TIME bufferDuration{ 0 };
+	REFERENCE_TIME periodicity{ 0 };
+
+	hr = m_AudioClient->Initialize(
+		AUDCLNT_SHAREMODE_SHARED,
+		streamFlags,
+		bufferDuration,
+		periodicity,
+		m_DefaultWAVMixFormat,
+		nullptr);
+	if (FAILED(hr))
+	{
+		throw std::runtime_error("AudioClient:Initialize failed: !!!");
+	}
+
+	hr = m_AudioClient->GetBufferSize(&m_AudioBufferFrameCount);
+	if (FAILED(hr)) 
+	{
+		throw std::runtime_error("AudioClient:GetBufferSize failed: !!!");
+	}
+
+	hr = m_AudioClient->GetService(IID_PPV_ARGS(&m_AudioRenderClient));
+	if (FAILED(hr)) 
+	{
+		throw std::runtime_error("AudioClient:GetService(IAudioRenderClient) failed: !!!");
+	}
+	m_AudioClient->Start();
 }
 
 Application::~Application()
@@ -42,96 +70,64 @@ Application::~Application()
 	CoUninitialize();
 }
 
-int Application::ReadWAVHeader(std::ifstream& ifs, WAVHEADER& wave_header)
+int Application::RenderAudioData(Sound& sound)
 {
-	if (!ifs) return -1;
-	ZeroMemory(&wave_header, sizeof(WAVHEADER));
-	ifs.read((char*)&wave_header, sizeof(WAVHEADER));
-	if (strncmp(wave_header.RIFF, "RIFF", 4) != 0 ||
-		strncmp(wave_header.WAVE, "WAVE", 4) != 0 ||
-		wave_header.audioFormat != 1) return -1;
-	return 0;
-}
-
-int Application::LoadWAVFromDisk(std::ifstream& file_input_stream, WAVHEADER& wave_header)
-{
-	if (ReadWAVHeader(file_input_stream, wave_header) == -1) return -1;
-	m_AudioData = new BYTE[wave_header.dataSize];
-	file_input_stream.read((char*)m_AudioData, wave_header.dataSize);
-	return 0;
-}
-
-int Application::RenderAudioData(const WAVHEADER& header)
-{
-	const WAVEFORMATEX f{
-		WAVE_FORMAT_PCM,
-		header.numChannels,
-		header.sampleRate,
-		header.byteRate,
-		header.blockAlign,
-		header.bitsPerSample,
-		0
-	};
-
-	DWORD streamFlags{ 0 };
-	REFERENCE_TIME bufferDuration{ 0 };
-	REFERENCE_TIME periodicity{ 0 };
-	HRESULT hr;
-	hr = m_AudioClient->Initialize(
-		AUDCLNT_SHAREMODE_SHARED,
-		streamFlags,
-		bufferDuration,
-		periodicity,
-		&f,
-		nullptr);
-	if (FAILED(hr)) {
-		std::cout << "AudioClient:Initialize failed: " << std::hex << hr << "\n";
-		return -1;
-	}
-
-	hr = m_AudioClient->GetBufferSize(&m_AudioBufferFrameCount);
-	if (FAILED(hr)) {
-		std::cout << "AudioClient:GetBufferSize failed: " << std::hex << hr << "\n";
-		return -1;
-	}
-
-	hr = m_AudioClient->GetService(IID_PPV_ARGS(&m_AudioRenderClient));
-	if (FAILED(hr)) {
-		std::cout << "AudioClient:GetService(IAudioRenderClient) failed: " << std::hex << hr << "\n";
-		return -1;
-	}
-
-	m_AudioClient->Start();
-	BYTE* audioPtr = m_AudioData;
-	uint32_t remainingBytes = header.dataSize;
-	while (remainingBytes > 0 && (!m_ExitApplication))
+	size_t sampleCount = sound.frameCount * sound.numChannels;
+	std::vector<float> audioBuffer(sampleCount);
+	if (sound.numChannels == 1) // mono audio
 	{
-		auto bytesWritten = UploadDataToAudioBuffer(audioPtr, remainingBytes, header.blockAlign);
-		audioPtr += bytesWritten;
-		remainingBytes -= bytesWritten;
-		Sleep(1);
+		audioBuffer.resize(sampleCount * 2);
 	}
-	audioPtr = nullptr;
-	m_AudioClient->Stop();
-	m_AudioRenderClient->Release();
-	m_AudioClient->Release();
+	// Will be used later for mixing multiple audio sources
+	for (size_t index = 0; index < sampleCount; index++)
+	{
+		if (sound.bitsPerSample == 16)
+		{
+			int16_t* s = reinterpret_cast<int16_t*>(sound.PCMData);
+
+			if (sound.numChannels == 1)
+			{
+				audioBuffer[2 * index + 0] = s[index];
+				audioBuffer[2 * index + 1] = s[index];
+			}
+			if (sound.numChannels == 2)
+			{
+				audioBuffer[index] = s[index] / 32768.0f;
+			}
+		}
+		if (sound.bitsPerSample == 32)
+		{
+			float* s = reinterpret_cast<float*> (sound.PCMData);
+
+			if (sound.numChannels == 1)
+			{
+				audioBuffer[2 * index + 0] = 0.25 * (min(1.0f, max(s[index], -1.0f)));
+				audioBuffer[2 * index + 1] = 0.25 * (min(1.0f, max(s[index], -1.0f)));
+			}
+			if (sound.numChannels == 2)
+			{
+				audioBuffer[index] = s[index] / 32768.0f;
+			}
+		}
+	}
+	uint32_t remainingFrames = sound.frameCount - sound.currentFrame;
+	while (remainingFrames > 0 && sound.playing && !m_ExitApplication)
+	{
+		float* src = audioBuffer.data() + sound.currentFrame * sound.numChannels;
+		uint32_t padding{ 0 };
+		uint32_t framesAvailable{ 0 };
+		uint32_t framesToWrite{ 0 };
+		BYTE* physicalAudioBuffer{ nullptr };
+		m_AudioClient->GetCurrentPadding(&padding);
+		framesAvailable = m_AudioBufferFrameCount - padding;
+		framesToWrite = min(framesAvailable, remainingFrames);
+		m_AudioRenderClient->GetBuffer(framesToWrite, &physicalAudioBuffer);
+		memcpy(physicalAudioBuffer, src, framesToWrite * m_DefaultWAVMixFormat->nChannels * sizeof(float));
+		m_AudioRenderClient->ReleaseBuffer(framesToWrite, 0);
+		remainingFrames -= framesToWrite;
+		sound.currentFrame += framesToWrite;
+	}
+	sound.currentFrame = 0;
+	sound.playing = false;
 	return 0;
-}
-
-uint32_t Application::UploadDataToAudioBuffer(BYTE* audio_data, uint32_t bytes_to_write, uint32_t block_align)
-{
-	uint32_t padding{ 0 };
-	uint32_t framesAvailable{ 0 };
-	uint32_t bytesAvailable{ 0 };
-	uint32_t bytesToWrite{ 0 };
-	BYTE* physicalAudioBuffer{ nullptr };
-
-	m_AudioClient->GetCurrentPadding(&padding);
-	framesAvailable = m_AudioBufferFrameCount - padding;
-	bytesAvailable = framesAvailable * block_align;
-	bytesToWrite = min(bytesAvailable, bytes_to_write);
-	m_AudioRenderClient->GetBuffer(framesAvailable, &physicalAudioBuffer);
-	memcpy(physicalAudioBuffer, audio_data, bytesToWrite);
-	m_AudioRenderClient->ReleaseBuffer(framesAvailable, 0);
-	return bytesToWrite;
 }

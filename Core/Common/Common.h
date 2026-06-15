@@ -16,14 +16,6 @@
 
 typedef struct
 {
-	glm::vec3 pos;
-	glm::vec2 tex;
-	float  ID;
-	glm::vec3 norm;
-} Vertex;
-
-typedef struct
-{
 	double x;
 	double y;
 	double z;
@@ -52,4 +44,3 @@ struct LayoutInfo
 	std::string Name;
 };
 
-std::vector<std::string> getWords(const std::string& s, const char* delim);

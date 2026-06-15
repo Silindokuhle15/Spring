@@ -25,9 +25,10 @@ namespace event
 			{
 				listener->OnMouseMove(*(MouseMoveEvent*)&event);
 			}
-			if (event::Event::GetType(event) == EventID::SPACE)
+			if (event::Event::GetType(event) == EventID::PLAY_SOUND)
 			{
 				listener->OnKeyPress(*(KeyPressEvent*)&event);
+
 			}
 		}
 	}
@@ -57,5 +58,4 @@ namespace event
 	void event::IEventListener::OnKeyPress(KeyPressEvent& key_press)
 	{
 	}
-
 }

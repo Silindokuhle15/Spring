@@ -1,17 +1,9 @@
 #pragma once
-#include "Common.h"
-#include "Material.h"
-#include <fbxsdk.h>
+#include "Mesh.h"
+#include "Sound.h"
+#include "Allocator.h"
+#include "StringUtils.h"
 
-
-std::string GetDirectoryFromPath(const std::string& filepath);
-
-struct PerVertex
-{
-	glm::vec3 Position;
-	glm::vec2 TexCoord;
-	glm::vec3 Normal;
-};
 class ObjectLoader
 {
 private:
@@ -31,7 +23,13 @@ public:
 	virtual int LoadObjectFromFile(const char* file_path);
 	virtual int LoadMaterialFromFile(const char* file_path);
 
-	void ExtractDump(const std::string& dump, uint64_t object_index);
+	static void ExtractDump(
+		const std::string& dump, 
+		uint64_t object_index, 
+		std::vector<std::vector<unsigned int>>& vertex_indices,
+		std::vector<std::vector<unsigned int>>& texture_indices,
+		std::vector<std::vector<unsigned int>>& normal_indices
+	);
 
 public:
 	virtual void LoadObject(const char* file_path);
@@ -40,43 +38,141 @@ public:
 class OBJObjectLoader : public ObjectLoader
 {
 public:
-	int LoadObjectFromFile(const char* file_path) override;
-	int LoadMaterialFromFile(const char* file_path) override;
+	//int LoadObjectFromFile(const char* file_path) override;
+	static primitives::Mesh LoadObjectFromFile(const char* file_path, bool flag);
+	//int LoadMaterialFromFile(const char* file_path) override;
+	static int LoadMaterialFromFile(const char* file_path, std::vector<std::string>& material_names, std::vector<Material>& materials);
 
 };
 
-class FBXObjectLoader : public ObjectLoader
+struct DDS_PIXELFORMAT
 {
-	FbxManager* m_pManager;
-	FbxScene* m_pScene;
-	std::string m_Title;
+	uint32_t dwSize;
+	uint32_t dwFlags;
+	uint32_t dwFourCC;
+	uint32_t dwRGBBitCount;
+	uint32_t dwRBitMask;
+	uint32_t dwGBitMask;
+	uint32_t dwBBitMask;
+	uint32_t dwABitMask;
+};
 
-	const int TRIANGLE_VERTEX_COUNT = 3;
-	// Four floats for every position.
-	const int VERTEX_STRIDE = 4;
-	// Three floats for every normal.
-	const int NORMAL_STRIDE = 3;
-	// Two floats for every UV.
-	const int UV_STRIDE = 2;
+struct DDS_HEADER
+{
+	uint32_t dwSize;
+	uint32_t dwFlags;
+	uint32_t dwHeight;
+	uint32_t dwWidth;
+	uint32_t dwPitchOrLinearSize;
+	uint32_t dwDepth;
+	uint32_t dwMipMapCount;
+	uint32_t dwReserved1[11];
+	DDS_PIXELFORMAT ddspf;
+	uint32_t dwCaps;
+	uint32_t dwCaps2;
+	uint32_t dwCaps3;
+	uint32_t dwCaps4;
+	uint32_t dwReserved2;
+};
 
-	enum
-	{
-		VERTEX_VBO,
-		NORMAL_VBO,
-		UV_VBO,
-		INDEX_VBO,
-		VBO_COUNT,
-	};
+struct DDS_HEADER_DX10
+{
+	uint32_t dxgiFormat;
+	uint32_t resourceDimension;
+	uint32_t miscFlag;
+	uint32_t arraySize;
+	uint32_t miscFlags2;
+};
 
-	// For every material, record the offsets in every VBO and triangle counts
-	struct SubMesh
-	{
-		SubMesh() : IndexOffset(0), TriangleCount(0) {}
-
-		int IndexOffset;
-		int TriangleCount;
-	};
+struct PakHeader
+{
 public:
-	std::vector<Vertex> m_MeshData;
-	int LoadObjectFromFile(const char* file_path) override;
+	uint32_t magic = 0x4B434150; //"PACK"
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+	uint32_t itemCount = 0;
+};
+
+struct MaterialGroupHeader
+{
+public:
+	uint32_t magic = 0x5047544D; //"MTGP"
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+	uint32_t materialCount = 0;
+};
+
+struct MaterialFileHeader
+{
+public:
+	uint32_t magic = 0x4C52544D; //"MTRL"
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+};
+
+struct MeshFileHeader
+{
+public:
+	uint32_t magic = 0x4853454D; //"MESH"
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+	uint32_t subMeshCount = 0;
+	uint32_t vertexCount = 0;
+	uint32_t indexCount = 0;
+};
+
+class MaterialWriter
+{
+public:
+	static int WriteMaterialToFile(const char* file_path, const MTLMaterial& material);
+	static int WriteMaterialToFile(std::ofstream& ofs, const MTLMaterial& material);
+};
+
+class MaterialReader
+{
+public:
+	static MTLMaterial ReadMaterialFromFile(const char* file_path);
+	static MTLMaterial ReadMaterialFromFile(std::ifstream& ifs);
+};
+
+class MeshWriter
+{
+public:
+	static int WriteMeshToFile(const char* file_path, const primitives::Mesh& mesh);
+	static int WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh);
+};
+
+class MeshReader
+{
+public:
+	static primitives::Mesh ReadMeshFromFile(const char* file_path);
+	static primitives::Mesh ReadMeshFromFile(std::ifstream& ifs);
+};
+
+class SoundReader
+{
+public:
+	static Sound ReadSoundClipFromFile(const char* file_path, BlockAllocator<BYTE>& sound_allocator);
+	static Sound ReadSoundClipFromFile(std::ifstream& ifs, BlockAllocator<BYTE>& sound_allocator);
+
+private:
+	static WAVHEADER ReadWAVHeaderFromFile(std::ifstream& ifs);
+};
+
+class TextureWriter
+{
+public:
+	static int WriteDDSTextureToFile(const char* pak_name, const char* dds_file_path);
+	static int WriteDDSTextureToFile(std::ofstream& ofs, const char* dds_file_path);
+};
+
+class TextureReader 
+{
+public:
+	static DDS_HEADER ReadDDSHeader(std::ifstream& ifs);
+	static void LoadDDSTextureIntoMemory(std::ifstream& ifs, uint32_t size, byte* buffer);
 };

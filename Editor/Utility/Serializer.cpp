@@ -15,10 +15,10 @@ void Serializer::Serialize(Scene* scene)
 	{
 		auto& particleSystem = scene->m_ParticleSystems[index];
 		ofs << "\t{" << std::endl;
-		ofs << "\t\t" << particleSystem.m_IsEnabled << "," << std::endl;
+		ofs << "\t\t" << particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled << "," << std::endl;
 		ofs << "\t\t" << particleSystem.m_NumParticles << "," << std::endl;
-		ofs << "\t\t{" << particleSystem.m_EmitterPosition.x << ", " << particleSystem.m_EmitterPosition.y << ", " << particleSystem.m_EmitterPosition.z << ", " << particleSystem.m_EmitterPosition.w << "}," << std::endl;
-		ofs << "\t\t{" << particleSystem.m_EmitterOrientation.x << ", " << particleSystem.m_EmitterOrientation.y << ", " << particleSystem.m_EmitterOrientation.z << ", " << particleSystem.m_EmitterOrientation.w << "}," << std::endl;
+		ofs << "\t\t{" << particleSystem.m_EmitterInfo.m_VectorOne.x << ", " << particleSystem.m_EmitterInfo.m_VectorOne.y << ", " << particleSystem.m_EmitterInfo.m_VectorOne.z << ", " << particleSystem.m_EmitterInfo.m_VectorOne.w << "}," << std::endl;
+		ofs << "\t\t{" << particleSystem.m_EmitterInfo.m_VectorTwo.x << ", " << particleSystem.m_EmitterInfo.m_VectorTwo.y << ", " << particleSystem.m_EmitterInfo.m_VectorTwo.z << ", " << particleSystem.m_EmitterInfo.m_VectorTwo.w << "}," << std::endl;
 		ofs << "\t\t{" << particleSystem.m_ShaderHandle.m_HWORD << ", " << particleSystem.m_ShaderHandle.m_LWORD << "}," << std::endl;
 		ofs << "\t\t" << particleSystem.m_Ts << "," << std::endl;
 		ofs << "\t\t" << particleSystem.m_AccumulatedTime << "," << std::endl;

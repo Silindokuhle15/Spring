@@ -6,30 +6,6 @@ Material::Material(const std::initializer_list<LayoutInfo>& uniforms):
 {
 }
 
-Material::Material(const ShaderResource& resource)
-{
-	auto& shader_sources = resource.GetShaderSources();
-	for (auto& shader_resource : shader_sources)
-	{
-		std::istringstream iss{ shader_resource };
-		std::string line{};
-		while (std::getline(iss, line))
-		{
-			auto words = getWords(line, " ");
-			if (words.empty()) continue;
-			if (words.front() == "uniform")
-			{
-				
-				// Process whole line here
-			}
-			else {
-				continue;
-			}
-		}
-	}
-
-}
-
 Material::~Material()
 {
 }

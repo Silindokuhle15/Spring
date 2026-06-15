@@ -109,11 +109,12 @@ public:
 	Collider(primitives::Mesh& source):
 		::GenericCollider{source}
 	{
-		m_Positions = source.m_Positions;
+		//m_Positions = source.m_Positions;
 	}
 
 	void FindMinMax(physics::PhysicsState& state)
 	{
+		/*/
 		double a = state.position.x;
 		double b = state.position.y;
 		double c = state.position.z;
@@ -132,6 +133,7 @@ public:
 		proj_x = max_x - min_x;
 		proj_y = max_y - min_y;
 		proj_z = max_z - min_z;
+		/**/
 		
 	}
 };

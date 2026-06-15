@@ -1,26 +1,22 @@
 #ifndef _SCENE_
 #define _SCENE_
+#include <entt.hpp>
 #include "LightAndShadow/PointLight.h"
 #include "Camera.h"
-#include "ComponentUtils.h"
-#include "Texture.h"
-#include "Shader.h"
-#include "Material.h"
-#include <entt.hpp>
-#include "ScriptMgr.h"
 #include "BVH.h"
 #include "BoundingVolume.h"
+#include "ScriptMgr.h"
 #include "AssetManager.h"
 #include "SceneState.h"
 #include "ParticleSystem.h"
-
+#include "StringUtils.h"
+#include "Event.h"
 class Character;
 class Renderer;
 
 class Scene
 {
 private:
-	glm::vec2 m_MousePosition;
 	std::string m_Title;
 public:
 	friend class Character;
@@ -29,6 +25,12 @@ public:
 
 	float m_Ts;
 	float m_AccumulatedTime;
+	std::string asset_pack;
+	std::string scene_blob;
+	std::string meshPack;
+	std::string materialPack;
+	std::string texturePack;
+
 	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;
 	std::vector<std::string> dynamic_mesh_paths;
@@ -45,21 +47,18 @@ public:
 
 	virtual void OnCreateSceneObjects();
 	virtual void AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound);
-	virtual void CreateShaders();
 	virtual void OnInit();
 	virtual void OnUpdate(float ts);
 	virtual int LoadSceneFromFile();
 
 	const std::string GetTitle() const { return m_Title; }
 
-	const glm::vec2 GetMousePosition() const;
-	void SetMousePosition(const glm::vec2& mouse_position);
-
 	lua_State* GetLuaState() const { return m_pLuaState; }
 
-	Character* CreateSceneObject();
+	Character* CreateSceneObject(uint32_t hint = 0);
 	void DestroySceneObject(entt::entity id);
 	Character GetSceneCharacter(entt::entity& id);
+	Character* GetSceneCharacterPtr(entt::entity& id);
 
 	template<typename... T>
 	inline auto GetView() { return m_Registry.view<T...>(); }
@@ -70,6 +69,9 @@ public:
 	const BVNode<primitives::Bound3D>* GetBVHRoot() const { return m_BVHTreeRoot; }
 
 	Scene(const std::string& path = "");
+
+	virtual bool Serialize();
+	virtual bool Deserialize();
 
 protected:
 	entt::registry m_Registry;

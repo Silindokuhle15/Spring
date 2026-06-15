@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cstddef>
 #include <cstdlib>
 #include <vector>
@@ -9,71 +8,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include "Bound.h"
-
-template<typename T>
-class BVHArenaAllocator
-{
-private:
-	std::vector<void*> m_Blocks;
-	void* m_CurrentBlock = nullptr;
-	size_t m_Capacity;
-	size_t m_Size;
-
-public:
-	explicit BVHArenaAllocator(size_t initial_capacity = 65535) :
-		m_Capacity{initial_capacity},
-		m_Size{0}
-	{
-		allocate_block(m_Capacity);
-	}
-	~BVHArenaAllocator()
-	{
-		for (void* block : m_Blocks)
-		{
-			std::free(block);
-		}
-	}
-
-	BVHArenaAllocator(const BVHArenaAllocator&) = delete;
-	BVHArenaAllocator& operator=(const BVHArenaAllocator&) = delete;
-
-	template<typename... Args>
-	T* allocate(Args&&... args)
-	{
-		if (m_Size >= m_Capacity)
-		{
-			grow();
-		}
-
-		void* addr = static_cast<T*>(m_CurrentBlock) + m_Size;
-		T* obj = new(addr)T(std::forward<Args>(args)...);
-		++m_Size;
-		return obj;
-	}
-
-	void reset()
-	{
-		m_Size = 0;
-		m_CurrentBlock = m_Blocks.front();
-	}
-
-private:
-	void allocate_block(size_t capacity)
-	{
-		void* block = std::malloc(sizeof(T) * capacity);
-		assert(block && "BVHArenaAllocator: Allocation failed");
-
-		m_Blocks.push_back(block);
-		m_CurrentBlock = block;
-	}
-
-	void grow()
-	{
-		m_Capacity *= 2;
-		allocate_block(m_Capacity);
-		m_Size = 0;
-	}
-};
+#include "Allocator.h"
 
 // UTILITY FUNCTIONS
 
@@ -285,7 +220,7 @@ void print_tree(const BVNode<U>* node, int depth = 0)
 }
 
 template<typename U>
-BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, uint64_t end, BVHArenaAllocator<BVNode<U>>& allocator)
+BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, uint64_t end, ArenaAllocator<BVNode<U>>& allocator)
 {
 	if (list.empty())
 	{
@@ -320,7 +255,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 template<typename U>
 BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 {
-	static BVHArenaAllocator<BVNode<U>> allocator(65536*2);
+	static ArenaAllocator<BVNode<U>> allocator(65536*2);
 	allocator.reset();
 	std::sort(
 		list.begin(), list.end(),

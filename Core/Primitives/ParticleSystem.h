@@ -6,26 +6,46 @@
 
 namespace primitives
 {
-	struct ParticleSystem
+	enum class EmitterShape
+	{
+		POINT,
+		CIRCLE,
+		CYLINDER,
+		CONE,
+		SPHERE,
+		PRISM
+	};
+
+	struct EmitterFlags
 	{
 		bool m_IsEnabled;
-		uint64_t m_NumParticles;
-		glm::vec4 m_EmitterPosition;
-		glm::quat m_EmitterOrientation;
-		AssetHandle m_ShaderHandle;
+		bool m_Fill;
+		bool m_Unused1;
+		bool m_Unused2;
+	};
+
+	struct EmitterInfo
+	{
+		EmitterShape m_Shape;
+		EmitterFlags m_Flags;
+		glm::vec4 m_VectorOne;								//{{x, y, z}, {radius/half-angle/length}}
+		glm::vec4 m_VectorTwo;								//{{dx, dy, dz}, height}
+	};
+
+	struct ParticleSystem
+	{
+		EmitterInfo m_EmitterInfo;
+		uint32_t m_BufferOffset;
+		uint32_t m_NumParticles;
+		uint32_t m_MaxNumParticles;
+		uint32_t m_ParticleRate;
+
 		float m_Ts;
 		float m_AccumulatedTime;
 		float m_Duration;
+		float m_Unused1;
 
-		uint32_t LifetimeAndSizeBuffer;
-		uint32_t PositionBuffer;
-		uint32_t VelocityBuffer;
-		uint32_t ColorBuffer;
-
-		glm::vec4* LifetimeAndSize = nullptr;
-		glm::vec4* Positions = nullptr;
-		glm::vec4* Velocities = nullptr;
-		glm::vec4* Color = nullptr;
+		AssetHandle m_ShaderHandle;
 	};
 }
 

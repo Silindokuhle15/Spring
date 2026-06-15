@@ -44,8 +44,8 @@ inline void MenuBar<T>::Run()
 			if (ImGui::MenuItem("Open", "..."))
 			{
 				const char* filter = ".lua";
-				parent->m_ActiveScene.reset();
 				std::string file_name = parent->GetFileName(filter);
+				//parent->m_ActiveScene.reset();
 				//parent->m_ActiveScene = std::shared_ptr<Scene>(new Scene(file_name));
 				//parent->m_ActiveRenderer->BindScene(parent->m_ActiveScene);
 				//parent->LoadScene(parent->m_ActiveScene);
@@ -60,8 +60,6 @@ inline void MenuBar<T>::Run()
 			ImGui::Separator();
 			if (ImGui::MenuItem("Save Selected", "crtl+s"))
 			{
-				Serializer serializer;
-				serializer.Serialize(parent->m_ActiveScene.get());
 			}
 			if (ImGui::MenuItem("Save All", "crtl+shift+s"))
 			{
@@ -86,13 +84,11 @@ inline void MenuBar<T>::Run()
 				}
 				if (ImGui::MenuItem("Wavefront (.obj)"))
 				{
-					//if (ImGui::IsItemClicked())
-					{
-						const char* filter = ".obj";
-						std::string obj_path = parent->GetFileName(filter);
-						//parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(obj_path));
-
-					}
+					const char* filter = ".obj";
+					std::string obj_path = parent->GetFileName(filter);
+					OBJObjectLoader loader;
+					auto mesh = loader.LoadObjectFromFile(obj_path.c_str(), true);
+					//parent->m_ActiveScene->AddNewItem<Mesh>(Mesh(obj_path));
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Filmbox (.fbx)"))

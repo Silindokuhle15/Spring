@@ -1,51 +1,51 @@
 #pragma once
 #include <map>
-#include <string>
-#include "UUID.h"
-#include "Mesh.h"
 #include "Shader.h"
-#include "Material.h"
 #include "Texture.h"
-#include "Script.h"
 #include "FrameBuffer.h"
+#include "ComponentUtils.h" // asset, mesh , physicState, script
+#include "ObjectLoader.h"
+#include "Sound.h"
+#include "Allocator.h"
 
-enum class AssetType
-{
-	None = 0,
-	ComputeShaderResource,
-	GraphicsShaderResource,
-	Texture2D,
-	Material,
-	MeshResource,
-	ScriptResource
-};
-
-struct AssetResource
-{
-public:
-	AssetType m_Type;
-	std::string m_Filepath;
-	bool operator<(const AssetResource& other) const
-	{
-		return (m_Filepath < other.m_Filepath);
-	}
-};
 class AssetManager
 {
 private:
+	BlockAllocator<BYTE> soundBlockAllocator;
+private:
+	friend class BaseApplication;
 	std::map<AssetHandle, unsigned int> m_FrameBufferMap;
 	std::map<AssetHandle, Shader> m_ShaderMap;
-	std::map<AssetHandle, std::vector<Material>> m_MaterialMap;
+	std::map<AssetHandle, std::vector<Material>> m_MaterialGroupMap;
+	std::map<AssetHandle, std::vector<MTLMaterial>> m_NewMaterialGroupMap;
 	std::map<AssetHandle, TextureBase<GL_Texture>> m_TextureMap;
 	std::map<AssetHandle, primitives::Mesh> m_MeshMap;
-	std::map<AssetHandle, scripting::ControlScript> m_ScriptMap;
+	std::map<AssetHandle, std::string> m_ScriptMap;
+	std::map<AssetHandle, Sound> m_SoundMap;
 public:
 	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
 	AssetManager() :
-		m_AssetResourceAndHandleMap{}
+		m_AssetResourceAndHandleMap{},
+		m_FrameBufferMap{},
+		m_ShaderMap{},
+		m_MaterialGroupMap{},
+		m_NewMaterialGroupMap{},
+		m_TextureMap{},
+		m_MeshMap{},
+		m_ScriptMap{},
+		m_SoundMap{}
 	{
 
 	}
+	bool Serialize(const std::string& filename);
+	bool SerializeMaterialPack(const std::string& filename);
+	bool SerializeMeshPack(const std::string& filename);
+	bool SerializeTexturePack(const std::string& filename);
+	bool Deserialize(const std::string& filename);
+	bool DeserializeMaterialPack(const std::string filepath);
+	bool DeserializeMeshPack(const std::string& filepath);
+	bool DeserializeTexturePack(const std::string& filepath);
+	
 
 	void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
 	AssetHandle CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths);
@@ -55,6 +55,7 @@ public:
 	const T& GetAsset(const AssetHandle& asset_handle);
 
 	TextureBase<GL_Texture> LoadTextureFromFile(const std::string& image_path, bool flip_vertically = false);
+	TextureBase<GL_Texture> LoadDDSTextureFromFile(const std::string& file_path);
 
 	AssetHandle GetResourceHandle(const AssetResource& resource)
 	{
@@ -84,17 +85,34 @@ public:
 			}
 			if (resource.m_Type == AssetType::MeshResource)
 			{
-				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
-				primitives::Mesh mesh{ resource.m_Filepath.c_str() };
-				auto& materialGroup = mesh.m_Materials;
-				m_MaterialMap[assetHandle] = materialGroup;
-				m_MeshMap[assetHandle] = mesh;
-				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				auto& path = resource.m_Filepath;
+				auto extension = path.substr(path.find('.'));
+				if (extension == ".obj")
+				{
+					// load .obj 
+					assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+					primitives::Mesh mesh = OBJObjectLoader::LoadObjectFromFile(resource.m_Filepath.c_str(), true);
+					auto& materialGroup = mesh.m_Materials;
+					mesh.m_MaterialGroupHandle = assetHandle;
+					m_MaterialGroupMap[assetHandle] = materialGroup;
+					m_MeshMap[assetHandle] = mesh;
+					m_AssetResourceAndHandleMap[resource] = assetHandle;
+				}
+				if (extension == ".mesh")
+				{
+					// or load .mesh file
+					auto mesh = MeshReader::ReadMeshFromFile(resource.m_Filepath.c_str());
+					auto assetHandle = mesh.m_MaterialGroupHandle;
+					mesh.m_Materials = m_MaterialGroupMap[assetHandle];
+					m_MeshMap[assetHandle] = mesh;
+					m_AssetResourceAndHandleMap[resource] = assetHandle;
+				}
 			}
 			if (resource.m_Type == AssetType::ScriptResource)
 			{
 				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
-				//m_ScriptMap[assetHandle] = scripting::ControlScript{ resource.m_Filepath.c_str() };
+				auto scriptData = ReadLuaScriptFromDisk(resource.m_Filepath);
+				m_ScriptMap[assetHandle] = scriptData;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
 			}
 			if (resource.m_Type == AssetType::Texture2D)
@@ -103,6 +121,17 @@ public:
 				auto& filepath = resource.m_Filepath;
 				auto glTexture = LoadTextureFromFile(filepath);
 				m_TextureMap[assetHandle] = glTexture;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
+			}
+			if (resource.m_Type == AssetType::CubeMap)
+			{
+
+			}
+			if (resource.m_Type == AssetType::SoundClipResource)
+			{
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+				auto sound = SoundReader::ReadSoundClipFromFile(resource.m_Filepath.c_str(), soundBlockAllocator);
+				m_SoundMap[assetHandle] = sound;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
 			}
 		}
@@ -116,7 +145,12 @@ public:
 
 	std::vector<Material>& GetMaterial(const AssetHandle& handle)
 	{
-		return m_MaterialMap[handle];
+		return m_MaterialGroupMap[handle];
+	}
+
+	std::vector<MTLMaterial>& GetNewMaterial(const AssetHandle& handle)
+	{
+		return m_NewMaterialGroupMap[handle];
 	}
 	
 	primitives::Mesh& GetMesh(const AssetHandle& handle)
@@ -124,15 +158,16 @@ public:
 		auto& mesh = m_MeshMap[handle];
 		return mesh;
 	}
+
+	Sound& GetSound(const AssetHandle& handle)
+	{
+		return m_SoundMap[handle];
+	}
+
+private:
+		byte* LoadDDSIntoMemory(std::ifstream& ifs, size_t& size);
+
 };
-
-
-/*
-template<typename T>
-inline const T& AssetManager::GetAsset(const AssetHandle& asset_handle)
-{
-	// TODO: insert return statement here
-}*/
 
 template<>
 inline const unsigned int& AssetManager::GetAsset(const AssetHandle& asset_handle)
@@ -156,11 +191,16 @@ inline const Shader& AssetManager::GetAsset(const AssetHandle& asset_handle)
 template<>
 inline const std::vector<Material>& AssetManager::GetAsset(const AssetHandle& asset_handle)
 {
-	return m_MaterialMap[asset_handle];
+	return m_MaterialGroupMap[asset_handle];
 }
 
 template<>
 inline const TextureBase<GL_Texture>& AssetManager::GetAsset(const AssetHandle& asset_handle)
 {
 	return m_TextureMap[asset_handle];
+}
+template<>
+inline const std::string& AssetManager::GetAsset(const AssetHandle& asset_handle)
+{
+	return m_ScriptMap[asset_handle];
 }

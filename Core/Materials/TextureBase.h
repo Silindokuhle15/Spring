@@ -10,6 +10,7 @@ enum class _TextureFormat
 	RGB32F,
 	RGBA8,
 	RGBA32F,
+	RGBA_BPTC_UNORM
 };
 enum class _TextureSource
 {

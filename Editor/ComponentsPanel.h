@@ -2,6 +2,8 @@
 #define _COMPONENTS_PANEH_H_
 #include "Panel.h"
 #include "ComponentUtils.h"
+#include <entt.hpp>
+
 
 template<class T>
 class ComponentPanel : public Panel
@@ -9,6 +11,13 @@ class ComponentPanel : public Panel
 public:
 	int32_t create_handle = 0;
 	int selectedCharacter = -1;
+	bool showAddCharacterMenu = false;
+	bool showCharacterEditor = false;
+	bool showEditCharacterMenu = false;
+
+	bool characterAddComponent = false;
+	bool characterRemoveComponent = false;
+	std::string createNewCharacterMeshPath = "";
 	// SETTING VARIABLES
 	int m_EnableLighting = 1;
 	bool m_EnableTexture = 0;
@@ -252,58 +261,24 @@ inline void ComponentPanel<T>::Run()
 	if (ImGui::Button("Create Asset Registry"))
 	{
 		auto& activeScene = m_ActiveScene;
-		auto assetManager = activeScene->GetAssetManager();
-		std::ofstream ofs("Lobby.pak", std::ios::out);
-		if (!ofs.is_open())
-		{
-			std::cerr << "Failed to open Lobby.pak" << std::endl;
-		}
-
-		for (auto& arp : assetManager->m_AssetResourceAndHandleMap)
-		{
-			ofs << "{" << std::endl;
-			ofs << "\tAssetHandle : (" << arp.second.m_HWORD << " , " << arp.second.m_LWORD << ") " << std::endl;
-			ofs << "\tAssetResource: { " << std::endl;
-			ofs << "\t\tType : " << (int)arp.first.m_Type << std::endl;
-			ofs << "\t\tPaths : {" << std::endl;
-			ofs << arp.first.m_Filepath << std::endl;
-			ofs << "\t}" << std::endl;
-			ofs << "}" << std::endl;
-		}
-		ofs.close();
-		std::cout << "Lobby.pak created!!!" << std::endl;
+		auto assetManager = m_ActiveScene->GetAssetManager();
+		auto title = GetFilenameWithoutExtension(activeScene->GetTitle());
+		title += "_asset.pak";
+		assetManager->Serialize(title);
 	}
 
 	if (ImGui::Button("Create Character Registry"))
 	{
 		auto& activeScene = m_ActiveScene;
-		std::ofstream ofs("CharacterRegistry.pak", std::ios::out);
-		if (!ofs.is_open())
-		{
-			std::cerr << "Failed to Open CharacterRegistry.pak" << std::endl;
-			return;
-		}
-
-		auto physicsView = activeScene->GetView<primitives::MeshInstance, physics::PhysicsState, scripting::ControlScript>();
-		for (auto [entity, meshInstance, physicsState, controlScript] : physicsView.each())
-		{
-			ofs << "Character {\n"
-				<< "id : " << (int)entity << '\n'
-				<< meshInstance << '\n'
-				<< controlScript << '\n'
-				<< physicsState << '\n'
-				<< "}\n";
-		}
-		ofs.close();
-		std::cout << "CharacterRegistry.pak creted!!!" << std::endl;
+		activeScene->Serialize();
 	}
 	// ---------- Character list ----------
 	if (m_ActiveScene != nullptr)
 	{
 		auto& activeScene = m_ActiveScene;
-		auto view = activeScene->GetView<physics::PhysicsState>();
+		auto view = activeScene->GetView<entt::entity>();
 		ImGui::TextUnformatted("Scene Characters");
-		for (auto [entity, physicsState] : view.each())
+		for (auto [entity] : view.each())
 		{
 			int i = static_cast<int>(entity);
 			ImGui::PushID(i);
@@ -312,7 +287,8 @@ inline void ComponentPanel<T>::Run()
 			if (ImGui::Selectable(identifier, selectedCharacter == i))
 			{
 				selectedCharacter = i;
-				//	showCharacterEditor = true;
+				showEditCharacterMenu = true;
+				showCharacterEditor = true;
 			}
 			ImGui::PopID();
 		}
@@ -320,6 +296,7 @@ inline void ComponentPanel<T>::Run()
 
 
 	// ---------- Right-click trigger (no popup body here) ----------
+	/*/
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
 		ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 	{
@@ -327,44 +304,461 @@ inline void ComponentPanel<T>::Run()
 	}
 	if (ImGui::BeginPopup("AddCharacter"))
 	{
-		auto& activeScene = m_ActiveScene;
-		auto assetManager = activeScene->GetAssetManager();
 		char buffer[512] = "";
-		std::string filePath{ "" };
-		bool onCreateNewCharacter = false;
 		if (ImGui::InputText("pathToFile", buffer, 512))
 		{
-			filePath = std::string(buffer);
-			std::ifstream ifs(filePath);
+			createNewCharacterMeshPath = std::string(buffer);
+			std::ifstream ifs(createNewCharacterMeshPath);
 			if (!ifs.is_open())
 			{
-				std::cerr << "Unable to import " << filePath << std::endl;
+				std::cerr << "Unable to import " << createNewCharacterMeshPath  << std::endl;
 				return;
 			}
 			ifs.close();
-			onCreateNewCharacter = true;
+			showAddCharacterMenu = true;
 		}
-		if (onCreateNewCharacter)
-		{
-			onCreateNewCharacter = false;
-			AssetResource meshResource{ AssetType::MeshResource, filePath };
-			auto meshHandle = assetManager->GetResourceHandle(meshResource);
-			auto character = activeScene->CreateSceneObject();
-			character->AddComponent<primitives::MeshInstance>(meshHandle);
-			physics::PhysicsState ps{};
-			ps.orientation = glm::quat(0.0, 0.0, 0.0, -1.0);
-			ps.position = glm::vec3(0, 0, -10);
-			character->AddComponent<physics::PhysicsState>(ps);
-			character->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{});
-		}
+
 		ImGui::SameLine();
 		if (ImGui::SmallButton("+"))
 		{
 
 		}
-
 		ImGui::EndPopup();
 	}
+	/**/
+
+	if (showAddCharacterMenu && ! createNewCharacterMeshPath.empty())
+	{
+		auto& activeScene = m_ActiveScene;
+		auto assetManager = activeScene->GetAssetManager();
+		ImGui::Begin("Add Character");
+
+		static float rotBuffer[4] = {0, 0, 0, -1};
+		static float posBuffer[4] = {0, 0, 0, 1};
+		static char tagBuffer[32] = "";
+		if (ImGui::InputFloat4("Position", posBuffer));
+		if (ImGui::InputFloat4("Orientation", rotBuffer));
+		if (ImGui::InputText("character tag", tagBuffer, 32));
+		ImGui::Separator();
+		ImGui::TextUnformatted(createNewCharacterMeshPath.c_str());
+		ImGui::SameLine();
+		if (ImGui::SmallButton("x"))
+		{
+			createNewCharacterMeshPath.clear();
+		}
+		ImGui::Separator();
+		if (ImGui::Button("Add to Scene"))
+		{
+			AssetResource meshResource{ AssetType::MeshResource, createNewCharacterMeshPath };
+			auto meshHandle = assetManager->GetResourceHandle(meshResource);
+			auto character = activeScene->CreateSceneObject();
+			character->AddComponent<primitives::MeshInstance>(meshHandle);
+			physics::PhysicsState ps{};
+			ps.orientation = glm::quat(rotBuffer[0], rotBuffer[1], rotBuffer[2], rotBuffer[3]);
+			ps.position = glm::vec3(posBuffer[0], posBuffer[1], posBuffer[2]);
+			character->AddComponent<physics::PhysicsState>(ps);
+			character->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{});
+		}
+
+		ImGui::End();
+	}
+
+	if (showCharacterEditor && selectedCharacter >= 0)
+	{
+		auto& activeScene = m_ActiveScene;
+		auto entity = entt::entity((uint32_t)selectedCharacter);
+		auto character = activeScene->GetSceneCharacter(entity);
+		ImGui::Begin("Character Editor");
+		if (character.HasComponent<physics::PhysicsState>())
+		{
+			auto& physicsState = character.GetComponent<physics::PhysicsState>();
+			ImGui::TextUnformatted("Physics Component");
+			float orientation[] = { physicsState.orientation.w, physicsState.orientation.x , physicsState.orientation.y , physicsState.orientation.z };
+			float position[] = { physicsState.position.x , physicsState.position.y , physicsState.position.z , 1.0f };
+			if (ImGui::InputFloat4("orientation", orientation))
+			{
+				
+				physicsState.orientation = glm::quat(orientation[0], orientation[1], orientation[2], orientation[3]);
+
+				//physicsState.orientation.w = orientation[0];
+				//physicsState.orientation.x = orientation[1];
+				//physicsState.orientation.y = orientation[2];
+				//physicsState.orientation.z = orientation[3];
+			}
+			if (ImGui::InputFloat4("position", position))
+			{
+				physicsState.position.x = position[0];
+				physicsState.position.y = position[1];
+				physicsState.position.z = position[2];
+			}
+			if (ImGui::InputFloat("mass", &physicsState.mass));
+		}
+
+		if (character.HasComponent<primitives::MeshInstance>())
+		{
+			char buffer[256] = "";
+			auto& meshInstance = character.GetComponent<primitives::MeshInstance>();
+			ImGui::TextUnformatted("Mesh Instance");
+			ImGui::Separator();
+			sprintf(buffer, "HWORD: %d LWORD %d", (int)meshInstance.m_Handle.m_HWORD, (int)meshInstance.m_Handle.m_LWORD);
+			ImGui::TextUnformatted(buffer);
+		}
+
+		if (character.HasComponent<scripting::ControlScript>())
+		{
+			char buffer[256] = "";
+			auto& scriptInstance = character.GetComponent<scripting::ControlScript>();
+			ImGui::TextUnformatted("Script Instance");
+			ImGui::Separator();
+			sprintf(buffer, "HWORD: %d LWORD %d", (int)scriptInstance.m_Handle.m_HWORD, (int)scriptInstance.m_Handle.m_LWORD);
+			ImGui::TextUnformatted(buffer);
+		}
+
+		if (character.HasComponent<Character*>())
+		{
+			ImGui::TextUnformatted("Children");
+		}
+
+		if (character.HasComponent<primitives::Parent>())
+		{
+			ImGui::TextUnformatted("Parent");
+			auto& parent = character.GetComponent<primitives::Parent>();
+			char buffer[256] = "";
+			sprintf(buffer, "Character %d", (int)parent.ParentEntity);
+			ImGui::TextUnformatted(buffer);
+			if (character.HasComponent<primitives::ParticleSystem>())
+			{
+				bool showParticleEditor = false;
+				ImGui::TextUnformatted("Particle System");
+				ImGui::Checkbox("Open Editor", &showParticleEditor);
+				//if (showParticleEditor)
+				{
+					auto& ps = character.GetComponent<primitives::ParticleSystem>();
+					int numParticles = ps.m_NumParticles;
+					int maxNumParticles = ps.m_MaxNumParticles;
+					int particleRate = ps.m_ParticleRate;
+					float emitterPosition[] = { ps.m_EmitterInfo.m_VectorOne.x, ps.m_EmitterInfo.m_VectorOne.y , ps.m_EmitterInfo.m_VectorOne.z };
+					float emitterOrientation[] = { ps.m_EmitterInfo.m_VectorTwo.x, ps.m_EmitterInfo.m_VectorTwo.y, ps.m_EmitterInfo.m_VectorTwo.z };
+					float w1 = ps.m_EmitterInfo.m_VectorOne.w;
+					float w2 = ps.m_EmitterInfo.m_VectorTwo.w;
+
+					ImGui::Begin("Particle System Editor", &showParticleEditor);
+					ImGui::Checkbox("Enabled", &ps.m_EmitterInfo.m_Flags.m_IsEnabled);
+
+					ImGui::Separator();
+					ImGui::TextUnformatted("Compute Handle");
+					ImGui::DragScalar("HWORD", ImGuiDataType_U64, &ps.m_ShaderHandle.m_HWORD);
+					ImGui::DragScalar("LWORD", ImGuiDataType_U64, &ps.m_ShaderHandle.m_LWORD);
+
+					static std::vector<std::string> emitterShapes = { "Point", "Circle",  "Cylinder", "Cone", "Sphere", "Prism" };
+					static int selectedShape = 0;
+
+					ImGui::Separator();
+					if (ImGui::Button("Emitter"));
+					ImGui::SameLine();
+					if (ImGui::Button(emitterShapes[selectedShape].c_str()))
+					{
+						ImGui::OpenPopup("Emitter Shape");
+					}
+					if (ImGui::BeginPopup("Emitter Shape"))
+					{
+						for (auto index = 0; index < emitterShapes.size(); index++)
+						{
+							if (ImGui::Selectable(emitterShapes[index].c_str()))
+							{
+								//selectedShape = index;
+								ps.m_EmitterInfo.m_Shape = (primitives::EmitterShape)index;
+
+							}
+						}
+						ImGui::EndPopup();
+					}
+
+					selectedShape = (int)ps.m_EmitterInfo.m_Shape;
+
+					if (selectedShape == 0)														// Point Emitter
+					{
+						ImGui::InputFloat3("Position", emitterPosition);
+						ImGui::Checkbox("Random Orientation", &ps.m_EmitterInfo.m_Flags.m_Unused1);
+						if (ps.m_EmitterInfo.m_Flags.m_Unused1)
+						{
+							ImGui::SliderFloat3("Ranges", emitterOrientation, 0.0f, 1.0f);
+						}
+						else
+						{
+							ImGui::InputFloat3("Orientation", emitterOrientation);
+						}
+						ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::POINT;
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = w1;
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = w2;
+					}
+
+					if (selectedShape == 1)														// Circle Emitter
+					{
+						ImGui::InputFloat3("Center", emitterPosition);
+						ImGui::InputFloat3("Normal", emitterOrientation);
+						ImGui::InputFloat("Radius", &w1);
+						ImGui::Checkbox("Fill", &ps.m_EmitterInfo.m_Flags.m_Fill);
+						ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::CIRCLE;
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = w1;
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = w2;
+					}
+
+					if (selectedShape == 2)														// Cylinder Emitter
+					{
+
+						ImGui::InputFloat3("Center", emitterPosition);
+						ImGui::InputFloat3("Normal", emitterOrientation);
+						ImGui::InputFloat("Radius", &w1);
+						ImGui::InputFloat("Height", &w2);
+						ImGui::Checkbox("Fill", &ps.m_EmitterInfo.m_Flags.m_Fill);
+						ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::CYLINDER;
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = w1;
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = w2;
+					}
+
+					if (selectedShape == 3)														// Cone Emitter
+					{
+						ImGui::InputFloat3("Apex", emitterPosition);
+						ImGui::InputFloat3("Direction", emitterOrientation);
+						ImGui::InputFloat("Half Angle", &w1);
+						ImGui::InputFloat("Height", &w2);
+						ImGui::Checkbox("Fill", &ps.m_EmitterInfo.m_Flags.m_Fill);
+						ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::CONE;
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = w1;
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = w2;
+					}
+
+					if (selectedShape == 4)														// Sphere Emitter
+					{
+						ImGui::InputFloat3("Center", emitterPosition);
+						ImGui::InputFloat("Radius", &w1);
+						ImGui::Checkbox("Fill", &ps.m_EmitterInfo.m_Flags.m_Fill);
+						ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::SPHERE;
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = w1;
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = w2;
+					}
+
+					float prismLength = 10.0f;
+					float prismWidth = 10.0f;
+					float prismHeight = 10.0f;
+					if (selectedShape == 5)														// Prism Emitter
+					{
+						ImGui::InputFloat4("Center", emitterPosition);
+						ImGui::InputFloat("L", &prismLength);
+						ImGui::InputFloat("W", &prismWidth);
+						ImGui::InputFloat("H", &prismHeight);
+
+						ps.m_EmitterInfo.m_VectorOne.x = emitterPosition[0];
+						ps.m_EmitterInfo.m_VectorOne.y = emitterPosition[1];
+						ps.m_EmitterInfo.m_VectorOne.z = emitterPosition[2];
+						ps.m_EmitterInfo.m_VectorOne.w = emitterPosition[3];
+
+						ps.m_EmitterInfo.m_VectorTwo.x = emitterOrientation[0];
+						ps.m_EmitterInfo.m_VectorTwo.y = emitterOrientation[1];
+						ps.m_EmitterInfo.m_VectorTwo.z = emitterOrientation[2];
+						ps.m_EmitterInfo.m_VectorTwo.w = emitterOrientation[3];
+					}
+
+					float initialSpeed = 1.0f;
+					float colorOne[] = { 0,0,0, 1 };
+					float colorTwo[] = { 0.45f, 0.55f, 0.45f, 1.0f };
+					float colorThree[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+					static bool editColorOverLifetime = false;
+					ImGui::Separator();
+					ImGui::TextUnformatted("Particle Lifecycle");
+					ImGui::InputInt("Max Particles", &maxNumParticles);
+					ImGui::InputInt("Particles per second", &particleRate);
+					ImGui::InputFloat("Duration", &ps.m_Duration);
+					ImGui::InputFloat("Initial Speed", &initialSpeed);
+					if (ImGui::Button("Size over lifetime"));
+					if (ImGui::Button("Speed over lifetime"));
+					if (ImGui::Checkbox("Color over lifetime", &editColorOverLifetime));
+					if (editColorOverLifetime)
+					{
+						ImGui::ColorEdit4("Color 1", colorOne);
+						ImGui::ColorEdit4("Color 2", colorTwo);
+						ImGui::ColorEdit4("Color 3", colorThree);
+					}
+					ImGui::Separator();
+					ImGui::TextUnformatted("Stats");
+					ImGui::InputInt("Number of Particles", &numParticles);
+					ImGui::InputFloat("TimeStep", &ps.m_Ts);
+					ImGui::InputFloat("Accumulated Time", &ps.m_AccumulatedTime);
+
+					if (numParticles >= 0)
+					{
+						ps.m_NumParticles = numParticles;
+					}
+
+					if (maxNumParticles >= 0)
+					{
+						ps.m_MaxNumParticles = maxNumParticles;
+					}
+
+					if (particleRate >= 0)
+					{
+						ps.m_ParticleRate = particleRate;
+					}
+					ImGui::End();
+				}
+			}
+		}
+
+		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
+			ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		{
+			ImGui::OpenPopup("Edit Character");
+		}
+		if (ImGui::BeginPopup("Edit Character"))
+		{
+			if (ImGui::Button("Add Component"))
+			{
+				characterRemoveComponent = false;
+				characterAddComponent = true;
+			}
+
+			if (ImGui::Button("Remove Component"))
+			{
+				characterAddComponent = false;
+				characterRemoveComponent = true;
+			}
+
+			if (characterAddComponent)
+			{
+				ImGui::Separator();
+				ImGui::Text("Adding Components");
+				ImGui::Separator();
+				{
+					if (!(character.HasComponent<physics::PhysicsState>()))
+					{
+						if (ImGui::Button("PhysicsState  "))
+						{
+							float orientation[4] = {};
+							float position[3] = {};
+							float mass = 0;
+							float velocity[3] = {};
+							float restitution = 0;
+							float linear_acceleration[3] = {};
+							float unused1 = 0;
+							float angular_acceleration[3] = {};
+							float unused2 = 0;
+							float inertia[3] = {};
+							float unused3 = 0;
+
+							ImGui::InputFloat4("orientation", orientation);
+							ImGui::InputFloat3("position", position);
+							ImGui::InputFloat("mass", &mass);
+							ImGui::InputFloat3("velocity", velocity);
+							ImGui::InputFloat("restitution", &restitution);
+							ImGui::InputFloat3("linear_acceleration", linear_acceleration);
+							ImGui::InputFloat3("angular_acceleration", angular_acceleration);
+							ImGui::InputFloat3("inertia", inertia);
+
+							physics::PhysicsState ps{};
+							ps.orientation = glm::quat(orientation[0], orientation[1], orientation[2], orientation[3]);
+							ps.position = glm::vec3(position[0], position[1], position[2]);
+							ps.mass = mass;
+							ps.velocity = glm::vec3(velocity[0], velocity[1], velocity[2]);
+							ps.restitution = restitution;
+							ps.linear_acceleration = glm::vec3(linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]);
+							ps.angular_acceleration = glm::vec3(angular_acceleration[0], angular_acceleration[1], linear_acceleration[2]);
+							ps.inertia = glm::vec3(inertia[0], inertia[1], inertia[2]);
+							character.AddComponent<physics::PhysicsState>(ps);
+						}
+					}
+					if (!character.HasComponent<primitives::MeshInstance>())
+					{
+						if (ImGui::Button("Mesh  Instance"))
+						{
+
+						}
+					}
+					if (!character.HasComponent<scripting::ControlScript>())
+					{
+						if (ImGui::Button("Script Instance"))
+						{
+
+						}
+					}
+				}
+			}
+
+			if (characterRemoveComponent)
+			{
+				ImGui::Separator();
+				ImGui::Text("Removing Components");
+				ImGui::Separator();
+				{
+					if (character.HasComponent<physics::PhysicsState>())
+					{
+						if (ImGui::Button("PhysicsState  "))
+						{
+							character.RemoveComponent<physics::PhysicsState>();
+						}
+					}
+					if (character.HasComponent<primitives::MeshInstance>())
+					{
+						if (ImGui::Button("Mesh  Instance"))
+						{
+							character.RemoveComponent<primitives::MeshInstance>();
+						}
+					}
+					if (character.HasComponent<scripting::ControlScript>())
+					{
+						if (ImGui::Button("Script Instance"))
+						{
+							character.RemoveComponent<scripting::ControlScript>();
+						}
+					}
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+		ImGui::End();
+	}
+
 	ImGui::End();
 }
 

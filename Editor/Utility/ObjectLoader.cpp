@@ -1,11 +1,5 @@
 #include "ObjectLoader.h"
 
-std::string GetDirectoryFromPath(const std::string& filepath) {
-	size_t found = filepath.find_last_of("/\\");
-	return (found != std::string::npos) ? filepath.substr(0, found + 1) : "";
-}
-
-
 int ObjectLoader::LoadObjectFromFile(const char* file_path)
 {
     return 0;
@@ -21,427 +15,50 @@ void ObjectLoader::LoadObject(const char* file_path)
     int ret = LoadObjectFromFile(file_path);
 }
 
-void ObjectLoader::ExtractDump(const std::string& dump_line, uint64_t object_index) {
+void ObjectLoader::ExtractDump(
+	const std::string& dump_line, 
+	uint64_t object_index, 
+	std::vector<std::vector<unsigned int>>& vertex_indices, 
+	std::vector<std::vector<unsigned int>>& texture_indices, 
+	std::vector<std::vector<unsigned int>>& normal_indices 
+) 
+{
 	auto string_words = getWords(dump_line.substr(2), " ");
 	for (const auto& word : string_words) {
 		auto parts = getWords(word, "/");
 		if (parts.size() >= 1 && !parts[0].empty())
-			m_VertexIndices[object_index].push_back(std::stoul(parts[0]) - 1);
+			//m_VertexIndices[object_index].push_back(std::stoul(parts[0]) - 1);
+			vertex_indices[object_index].push_back(std::stoul(parts[0]) - 1);
 		if (parts.size() >= 2 && !parts[1].empty())
-			m_TextureIndices[object_index].push_back(std::stoul(parts[1]) - 1);
+			//m_TextureIndices[object_index].push_back(std::stoul(parts[1]) - 1);
+			texture_indices[object_index].push_back(std::stoul(parts[1]) - 1);
 		if (parts.size() >= 3 && !parts[2].empty())
-			m_NormalIndices[object_index].push_back(std::stoul(parts[2]) - 1);
+			//m_NormalIndices[object_index].push_back(std::stoul(parts[2]) - 1);
+			normal_indices[object_index].push_back(std::stoul(parts[2]) - 1);
 	}
 }
 
+primitives::Mesh OBJObjectLoader::LoadObjectFromFile(const char* file_path, bool flag) {
 
+	std::vector<std::vector<glm::vec3>> positions;
+	std::vector<std::vector<glm::vec3>> normals;
+	std::vector<std::vector<glm::vec2>> texCoords;
+	std::vector<std::vector<unsigned int>> vertexIndices;
+	std::vector<std::vector<unsigned int>> vertexIDs;
+	std::vector<std::vector<unsigned int>> textureIndices;
+	std::vector<std::vector<unsigned int>> normalIndices;
+	std::vector<Material> materials;
+	std::vector<std::string> materialPaths;
+	std::vector<std::string> materialNames;
+	std::vector<std::string> objectNames;
+	std::vector<std::string> surfaces;
 
-int FBXObjectLoader::LoadObjectFromFile(const char* file_path)
-{
+	primitives::Mesh mesh;
 
-	//GLuint mVBONames[VBO_COUNT];
-	FbxArray<SubMesh*> mSubMeshes;
-	bool mHasNormal{ false };
-	bool mHasUV{ false };
-	bool mAllByControlPoint{ false }; // Save data in VBO by control point or by polygon vertex.
-	m_pManager = FbxManager::Create();
-
-	FbxIOSettings* ios = FbxIOSettings::Create(m_pManager, IOSROOT);
-	m_pManager->SetIOSettings(ios);
-
-	FbxImporter* pFbxImporter = FbxImporter::Create(m_pManager, "");
-
-	auto filename = file_path;
-
-	bool import_status = pFbxImporter->Initialize(filename, -1, m_pManager->GetIOSettings());
-
-	m_pScene = FbxScene::Create(m_pManager, "");
-
-	if (pFbxImporter->IsFBX())
-	{
-		// Set the import states. By default, the import states are always set to 
-		// true. The code below shows how to change these states.
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_MATERIAL, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_TEXTURE, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_LINK, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_SHAPE, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_GOBO, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_ANIMATION, true);
-		(*(m_pManager->GetIOSettings())).SetBoolProp(IMP_FBX_GLOBAL_SETTINGS, true);
-	}
-	// Import the scene
-	import_status = pFbxImporter->Import(m_pScene);
-
-	auto ConstructMesh = [&](FbxMesh* pMesh)
-		{
-
-			std::vector<glm::vec3> pos;
-			std::vector<glm::vec2> tex;
-			std::vector<float> id;
-			std::vector<glm::vec3> norm;
-
-			const int lPolygonCount = pMesh->GetPolygonCount();
-
-			// Count the polygon count of each material
-			FbxLayerElementArrayTemplate<int>* lMaterialIndice = NULL;
-			FbxGeometryElement::EMappingMode lMaterialMappingMode = FbxGeometryElement::eNone;
-			if (pMesh->GetElementMaterial())
-			{
-				lMaterialIndice = &pMesh->GetElementMaterial()->GetIndexArray();
-				lMaterialMappingMode = pMesh->GetElementMaterial()->GetMappingMode();
-				if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon)
-				{
-					FBX_ASSERT(lMaterialIndice->GetCount() == lPolygonCount);
-					if (lMaterialIndice->GetCount() == lPolygonCount)
-					{
-						// Count the faces of each material
-						for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex)
-						{
-							const int lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
-							if (mSubMeshes.GetCount() < lMaterialIndex + 1)
-							{
-								mSubMeshes.Resize(lMaterialIndex + 1);
-							}
-							if (mSubMeshes[lMaterialIndex] == NULL)
-							{
-								mSubMeshes[lMaterialIndex] = new SubMesh;
-							}
-							mSubMeshes[lMaterialIndex]->TriangleCount += 1;
-						}
-
-						// Make sure we have no "holes" (NULL) in the mSubMeshes table. This can happen
-						// if, in the loop above, we resized the mSubMeshes by more than one slot.
-						for (int i = 0; i < mSubMeshes.GetCount(); i++)
-						{
-							if (mSubMeshes[i] == NULL)
-								mSubMeshes[i] = new SubMesh;
-						}
-
-						// Record the offset (how many vertex)
-						const int lMaterialCount = mSubMeshes.GetCount();
-						int lOffset = 0;
-						for (int lIndex = 0; lIndex < lMaterialCount; ++lIndex)
-						{
-							mSubMeshes[lIndex]->IndexOffset = lOffset;
-							lOffset += mSubMeshes[lIndex]->TriangleCount * 3;
-							// This will be used as counter in the following procedures, reset to zero
-							mSubMeshes[lIndex]->TriangleCount = 0;
-						}
-						FBX_ASSERT(lOffset == lPolygonCount * 3);
-					}
-				}
-			}
-
-			// All faces will use the same material.
-			if (mSubMeshes.GetCount() == 0)
-			{
-				mSubMeshes.Resize(1);
-				mSubMeshes[0] = new SubMesh();
-			}
-
-			// Congregate all the data of a mesh to be cached in VBOs.
-			// If normal or UV is by polygon vertex, record all vertex attributes by polygon vertex.
-			mHasNormal = pMesh->GetElementNormalCount() > 0;
-			mHasUV = pMesh->GetElementUVCount() > 0;
-			FbxGeometryElement::EMappingMode lNormalMappingMode = FbxGeometryElement::eNone;
-			FbxGeometryElement::EMappingMode lUVMappingMode = FbxGeometryElement::eNone;
-			if (mHasNormal)
-			{
-				lNormalMappingMode = pMesh->GetElementNormal(0)->GetMappingMode();
-				if (lNormalMappingMode == FbxGeometryElement::eNone)
-				{
-					mHasNormal = false;
-				}
-				if (mHasNormal && lNormalMappingMode != FbxGeometryElement::eByControlPoint)
-				{
-					mAllByControlPoint = false;
-				}
-			}
-			if (mHasUV)
-			{
-				lUVMappingMode = pMesh->GetElementUV(0)->GetMappingMode();
-				if (lUVMappingMode == FbxGeometryElement::eNone)
-				{
-					mHasUV = false;
-				}
-				if (mHasUV && lUVMappingMode != FbxGeometryElement::eByControlPoint)
-				{
-					mAllByControlPoint = false;
-				}
-			}
-
-			// Allocate the array memory, by control point or by polygon vertex.
-			int lPolygonVertexCount = pMesh->GetControlPointsCount();
-			if (!mAllByControlPoint)
-			{
-				lPolygonVertexCount = lPolygonCount * TRIANGLE_VERTEX_COUNT;
-			}
-			float* lVertices = new float[lPolygonVertexCount * VERTEX_STRIDE];
-			unsigned int* lIndices = new unsigned int[lPolygonCount * TRIANGLE_VERTEX_COUNT];
-			float* lNormals = NULL;
-			if (mHasNormal)
-			{
-				lNormals = new float[lPolygonVertexCount * NORMAL_STRIDE];
-			}
-			float* lUVs = NULL;
-			FbxStringList lUVNames;
-			pMesh->GetUVSetNames(lUVNames);
-			const char* lUVName = NULL;
-			if (mHasUV && lUVNames.GetCount())
-			{
-				lUVs = new float[lPolygonVertexCount * UV_STRIDE];
-				lUVName = lUVNames[0];
-			}
-
-			// Populate the array with vertex attribute, if by control point.
-			const FbxVector4* lControlPoints = pMesh->GetControlPoints();
-			FbxVector4 lCurrentVertex;
-			FbxVector4 lCurrentNormal;
-			FbxVector2 lCurrentUV;
-			if (mAllByControlPoint)
-			{
-				const FbxGeometryElementNormal* lNormalElement = NULL;
-				const FbxGeometryElementUV* lUVElement = NULL;
-				if (mHasNormal)
-				{
-					lNormalElement = pMesh->GetElementNormal(0);
-				}
-				if (mHasUV)
-				{
-					lUVElement = pMesh->GetElementUV(0);
-				}
-				for (int lIndex = 0; lIndex < lPolygonVertexCount; ++lIndex)
-				{
-					// Save the vertex position.
-					lCurrentVertex = lControlPoints[lIndex];
-					lVertices[lIndex * VERTEX_STRIDE] = static_cast<float>(lCurrentVertex[0]);
-					lVertices[lIndex * VERTEX_STRIDE + 1] = static_cast<float>(lCurrentVertex[1]);
-					lVertices[lIndex * VERTEX_STRIDE + 2] = static_cast<float>(lCurrentVertex[2]);
-					lVertices[lIndex * VERTEX_STRIDE + 3] = 1;
-
-					// Save the normal.
-					if (mHasNormal)
-					{
-						int lNormalIndex = lIndex;
-						if (lNormalElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
-						{
-							lNormalIndex = lNormalElement->GetIndexArray().GetAt(lIndex);
-						}
-						lCurrentNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
-						lNormals[lIndex * NORMAL_STRIDE] = static_cast<float>(lCurrentNormal[0]);
-						lNormals[lIndex * NORMAL_STRIDE + 1] = static_cast<float>(lCurrentNormal[1]);
-						lNormals[lIndex * NORMAL_STRIDE + 2] = static_cast<float>(lCurrentNormal[2]);
-
-					}
-
-					// Save the UV.
-					if (mHasUV)
-					{
-						int lUVIndex = lIndex;
-						if (lUVElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect)
-						{
-							lUVIndex = lUVElement->GetIndexArray().GetAt(lIndex);
-						}
-						lCurrentUV = lUVElement->GetDirectArray().GetAt(lUVIndex);
-						lUVs[lIndex * UV_STRIDE] = static_cast<float>(lCurrentUV[0]);
-						lUVs[lIndex * UV_STRIDE + 1] = static_cast<float>(lCurrentUV[1]);
-
-
-					}
-				}
-
-			}
-
-			int lVertexCount = 0;
-			for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex)
-			{
-				// The material for current face.
-				int lMaterialIndex = 0;
-				if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon)
-				{
-					lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
-				}
-
-				// Where should I save the vertex attribute index, according to the material
-				const int lIndexOffset = mSubMeshes[lMaterialIndex]->IndexOffset +
-					mSubMeshes[lMaterialIndex]->TriangleCount * 3;
-				for (int lVerticeIndex = 0; lVerticeIndex < TRIANGLE_VERTEX_COUNT; ++lVerticeIndex)
-				{
-					const int lControlPointIndex = pMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-					// If the lControlPointIndex is -1, we probably have a corrupted mesh data. At this point,
-					// it is not guaranteed that the cache will work as expected.
-					if (lControlPointIndex >= 0)
-					{
-						if (mAllByControlPoint)
-						{
-							lIndices[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lControlPointIndex);
-						}
-						// Populate the array with vertex attribute, if by polygon vertex.
-						else
-						{
-							lIndices[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
-
-							lCurrentVertex = lControlPoints[lControlPointIndex];
-							lVertices[lVertexCount * VERTEX_STRIDE] = static_cast<float>(lCurrentVertex[0]);
-							lVertices[lVertexCount * VERTEX_STRIDE + 1] = static_cast<float>(lCurrentVertex[1]);
-							lVertices[lVertexCount * VERTEX_STRIDE + 2] = static_cast<float>(lCurrentVertex[2]);
-							lVertices[lVertexCount * VERTEX_STRIDE + 3] = 1;
-
-							auto x = static_cast<float>(lCurrentVertex[0]);
-							auto y = static_cast<float>(lCurrentVertex[1]);
-							auto z = static_cast<float>(lCurrentVertex[2]);
-							pos.push_back(glm::vec3(x, y, z));
-							id.push_back(lMaterialIndex);
-
-							if (mHasNormal)
-							{
-								pMesh->GetPolygonVertexNormal(lPolygonIndex, lVerticeIndex, lCurrentNormal);
-								lNormals[lVertexCount * NORMAL_STRIDE] = static_cast<float>(lCurrentNormal[0]);
-								lNormals[lVertexCount * NORMAL_STRIDE + 1] = static_cast<float>(lCurrentNormal[1]);
-								lNormals[lVertexCount * NORMAL_STRIDE + 2] = static_cast<float>(lCurrentNormal[2]);
-
-								auto x = static_cast<float>(lCurrentNormal[0]);
-								auto y = static_cast<float>(lCurrentNormal[1]);
-								auto z = static_cast<float>(lCurrentNormal[2]);
-								norm.push_back(glm::vec3(x, y, z));
-							}
-
-							if (mHasUV)
-							{
-								bool lUnmappedUV;
-								pMesh->GetPolygonVertexUV(lPolygonIndex, lVerticeIndex, lUVName, lCurrentUV, lUnmappedUV);
-								lUVs[lVertexCount * UV_STRIDE] = static_cast<float>(lCurrentUV[0]);
-								lUVs[lVertexCount * UV_STRIDE + 1] = static_cast<float>(lCurrentUV[1]);
-
-								auto u = static_cast<float>(lCurrentUV[0]);
-								auto v = static_cast<float>(lCurrentUV[1]);
-								tex.push_back(glm::vec2(u, v));
-							}
-						}
-					}
-					++lVertexCount;
-				}
-				mSubMeshes[lMaterialIndex]->TriangleCount += 1;
-			}
-
-			std::vector<Vertex> v;
-
-
-			for (auto index = 0; index < lPolygonVertexCount; index++)
-			{
-				auto uv = mHasUV ? tex[index] : glm::normalize(glm::vec2(index, lPolygonCount));
-				v.push_back(Vertex{ pos[index], uv, id[index], norm[index] });
-			}
-			/*
-			if (lVertices)
-			{
-				delete[] lVertices;
-			}
-
-			if (lIndices)
-			{
-				delete[] lIndices;
-			}
-			*/
-			return v;
-		};
-
-	// RETRIEVE ANIMATION DATA
-	int i = 0;
-	int numObjects = m_pScene->GetSrcObjectCount<FbxGeometry>();
-	for (int object_index = 0; object_index < numObjects; object_index++)
-	{
-		auto object = m_pScene->GetSrcObject<FbxGeometry>(object_index);
-		int numStacks = object->GetSrcObjectCount<FbxAnimStack>();
-		if (numStacks)
-		{
-			for (auto anim_index = 0; anim_index < numStacks; anim_index++)
-			{
-				auto anim_stack = object->GetSrcObject< FbxAnimStack>(anim_index);
-				auto num_layers = anim_stack->GetMemberCount<FbxAnimLayer>();
-				for (auto layer_index = 0; layer_index < num_layers; layer_index++)
-				{
-					auto anim_layer = anim_stack->GetMember<FbxAnimLayer>(layer_index);
-				}
-			}
-
-		}
-	}
-	auto node_count = m_pScene->GetNodeCount();
-	int numMeshes = 0, numSkeleton = 0, numLights = 0, numCameras = 0;
-	for (auto node_index = 1; node_index < m_pScene->GetNodeCount(); node_index++)
-	{
-		auto child_node = m_pScene->GetNode(node_index);
-		auto node_attrib = child_node->GetNodeAttribute();
-		auto sc = node_attrib->GetSrcObjectCount<FbxAnimStack>();
-		auto node_attrib_type = node_attrib->GetAttributeType();
-
-		auto _scl = child_node->LclScaling.Get();
-		auto _rot = child_node->LclRotation.Get();
-		auto _pos = child_node->LclTranslation.Get();
-
-		int numMaterials = child_node->GetMaterialCount();
-		for (int material_index = 0; material_index < numMaterials; material_index++)
-		{
-			auto mat = child_node->GetMaterial(material_index);
-			auto ambient = mat->sAmbientFactor;
-			auto diffuse = mat->sDiffuseFactor;
-			auto specular = mat->sSpecularFactor;
-		}
-
-		glm::vec3 scl = glm::vec3(_scl[0] * 0.001, _scl[1] * 0.001, _scl[2] * 0.001);
-		glm::vec3 rot = glm::vec3(_rot[0] * 0.001, _rot[1] * 0.001, _rot[2] * 0.001);
-		glm::vec3 pos = glm::vec3(_pos[0] * 0.001, _pos[1] * 0.001, _pos[2] * 0.001);
-
-		auto transform = glm::scale(glm::mat4(1.0f), scl);
-		//transform = glm::rotate(transform, glm::radians(90.0f), rot);
-		transform = glm::translate(transform, pos);
-
-		//auto _transform = child_node->EvaluateGlobalTransform();
-
-		std::cout << "name:" << child_node->GetName() << std::endl;
-		std::cout << "node type: " << node_attrib_type << std::endl;
-		std::cout << "scale:" << _scl.Buffer() << std::endl;
-		std::cout << "rotation:" << _rot.Buffer() << std::endl;
-		std::cout << "translation:" << _pos.Buffer() << std::endl;
-		//std::cout << "transform:" << _transform.Buffer() << std::endl;
-
-		FbxLight* light = nullptr;
-		FbxMesh* mesh = nullptr;
-		FbxSkeleton* skeleton = nullptr;
-
-		switch (node_attrib_type)
-		{
-		case FbxNodeAttribute::EType::eCamera:
-			numCameras++;
-			break;
-
-		case FbxNodeAttribute::EType::eLight:
-			numLights++;
-			light = reinterpret_cast<FbxLight*>(child_node->GetLight());
-			break;
-
-		case FbxNodeAttribute::EType::eMesh:
-			numMeshes++;
-			mesh = reinterpret_cast<FbxMesh*>(child_node->GetGeometry());
-			m_MeshData = ConstructMesh(mesh);
-			break;
-		case FbxNodeAttribute::EType::eSkeleton:
-			numSkeleton++;
-			skeleton = reinterpret_cast<FbxSkeleton*>(child_node->GetSkeleton());
-			break;
-		}
-	}
-	pFbxImporter->Destroy();
-
-    return 0;
-}
-
-int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 	std::ifstream file(file_path, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
 		std::cerr << "Failed to open .obj file: " << file_path << "\n";
-		return -1;
+		return mesh;
 	}
 
 	std::streamsize size = file.tellg();
@@ -449,7 +66,7 @@ int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 	std::string buffer(size, '\0');
 	if (!file.read(&buffer[0], size)) {
 		std::cerr << "Failed to read .obj file into memory.\n";
-		return -1;
+		return mesh;
 	}
 
 	std::istringstream in(buffer);
@@ -459,6 +76,7 @@ int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 	std::unordered_map<std::string, size_t> materialLookup;
 	std::string objDir = GetDirectoryFromPath(file_path);
 
+	AssetHandle materialGroupHandle = CreateAssetHandleFromPath(file_path);
 	while (std::getline(in, line)) {
 		auto words = getWords(line, " ");
 		if (words.empty()) continue;
@@ -467,11 +85,14 @@ int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 
 		if (type == "mtllib" && words.size() >= 2) {
 			std::string fullPath = objDir + words[1];
-			m_MaterialPaths.push_back(fullPath);
-			LoadMaterialFromFile(fullPath.c_str());
+			materialPaths.push_back(fullPath);
+			//m_MaterialPaths.push_back(fullPath);
+			LoadMaterialFromFile(fullPath.c_str(), materialNames, materials);
 
-			for (size_t i = 0; i < m_MaterialNames.size(); ++i) {
-				materialLookup[m_MaterialNames[i]] = i;
+			//for (size_t i = 0; i < m_MaterialNames.size(); ++i) {
+			for (size_t i = 0; i < materialNames.size(); ++i) {
+				//materialLookup[m_MaterialNames[i]] = i;
+				materialLookup[materialNames[i]] = i;
 			}
 		}
 		else if (type == "usemtl" && words.size() >= 2) {
@@ -481,47 +102,117 @@ int OBJObjectLoader::LoadObjectFromFile(const char* file_path) {
 			}
 		}
 		else if (type == "o" && words.size() >= 2) {
-			m_ObjectNames.push_back(words[1]);
-			m_Positions.emplace_back();
-			m_TexCoords.emplace_back();
-			m_VertexIDs.emplace_back();
-			m_Normals.emplace_back();
-			m_VertexIndices.emplace_back();
-			m_TextureIndices.emplace_back();
-			m_NormalIndices.emplace_back();
+			//m_ObjectNames.push_back(words[1]);
+			//m_Positions.emplace_back();
+			//m_TexCoords.emplace_back();
+			//m_VertexIDs.emplace_back();
+			//m_Normals.emplace_back();
+			//m_VertexIndices.emplace_back();
+			//m_TextureIndices.emplace_back();
+			//m_NormalIndices.emplace_back();
+			// 
+			objectNames.push_back(words[1]);
+			positions.emplace_back();
+			texCoords.emplace_back();
+			vertexIDs.emplace_back();
+			normals.emplace_back();
+			vertexIndices.emplace_back();
+			textureIndices.emplace_back();
+			normalIndices.emplace_back();
 			++object_index;
 		}
 		else if (type == "s" && words.size() >= 2) {
-			m_Surfaces.push_back(words[1]);
+			//m_Surfaces.push_back(words[1]);
+			surfaces.push_back(words[1]);
 		}
 		else if (type == "v" && words.size() >= 4) {
 			float x = strtof(words[1].c_str(), &endptr);
 			float y = strtof(words[2].c_str(), &endptr);
 			float z = strtof(words[3].c_str(), &endptr);
-			m_Positions[object_index].emplace_back(x, y, z);
+			//m_Positions[object_index].emplace_back(x, y, z);
+			positions[object_index].emplace_back(x, y, z);
 		}
 		else if (type == "vt" && words.size() >= 3) {
 			float u = strtof(words[1].c_str(), &endptr);
 			float v = strtof(words[2].c_str(), &endptr);
-			m_TexCoords[object_index].emplace_back(u, v);
+			//m_TexCoords[object_index].emplace_back(u, v);
+			texCoords[object_index].emplace_back(u, v);
 		}
 		else if (type == "vn" && words.size() >= 4) {
 			float x = strtof(words[1].c_str(), &endptr);
 			float y = strtof(words[2].c_str(), &endptr);
 			float z = strtof(words[3].c_str(), &endptr);
-			m_Normals[object_index].emplace_back(x, y, z);
+			//m_Normals[object_index].emplace_back(x, y, z);
+			normals[object_index].emplace_back(x, y, z);
 		}
 		else if (type == "f") {
-			ExtractDump(line, object_index);
-			m_VertexIDs[object_index].insert(m_VertexIDs[object_index].end(), 3, material_index);
+			//ExtractDump(line, object_index);
+			ExtractDump(line, object_index, vertexIndices, textureIndices, normalIndices);
+			//m_VertexIDs[object_index].insert(m_VertexIDs[object_index].end(), 3, material_index);
+			vertexIDs[object_index].insert(vertexIDs[object_index].end(), 3, material_index);
 		}
 	}
 
-	return 0;
+	size_t object_count = objectNames.size();
+
+	for (size_t i = 0; i < object_count; ++i) 
+	{
+		primitives::Mesh sub;
+		const auto& Positions = positions[i];
+		const auto& TexCoords = texCoords[i];
+		const auto& Normals = normals[i];
+		const auto& vIndices = vertexIndices[i];
+		const auto& tIndices = textureIndices[i];
+		const auto& nIndices = normalIndices[i];
+		const auto& VertexIDs = vertexIDs[i];
+
+		for (size_t j = 0; j < vIndices.size(); ++j) {
+			primitives::Vertex vert;
+			vert.pos = Positions[vIndices[j]];
+
+			vert.tex = (j < tIndices.size() && !TexCoords.empty())
+				? TexCoords[tIndices[j]]
+				: glm::vec2(0.0f);
+
+			vert.norm = (j < nIndices.size() && !Normals.empty())
+				? Normals[nIndices[j]]
+				: glm::vec3(0.0f);
+
+			vert.ID = (j < VertexIDs.size())
+				? static_cast<float>(VertexIDs[j])
+				: 0.0f;
+
+			sub.m_V.push_back(vert);
+			sub.m_VertexIndices.push_back(static_cast<unsigned int>(j));
+		}
+		sub.m_MaterialGroupHandle = materialGroupHandle;
+		sub.m_Materials = materials;
+		mesh.m_SubMeshes.push_back(std::move(sub));
+	}
+
+	if (mesh.m_SubMeshes.size() == 1) {
+		const primitives::Mesh& submesh = mesh.m_SubMeshes.front();
+
+		// Clear existing mesh data to ensure we're overwriting the data
+		mesh.m_VertexIndices.clear();
+		mesh.m_V.clear();
+
+		// Copy data from the submesh into the main mesh
+		mesh.m_VertexIndices = submesh.m_VertexIndices;
+		mesh.m_V = submesh.m_V;
+
+		// Optionally copy materials if needed (if not already set)
+		if (mesh.m_Materials.empty()) {
+			mesh.m_Materials = submesh.m_Materials;
+		}
+		mesh.m_MaterialGroupHandle = materialGroupHandle;
+		// Clear the submeshes vector
+		mesh.m_SubMeshes.clear();
+	}
+	return mesh;
 }
 
-
-int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
+int OBJObjectLoader::LoadMaterialFromFile(const char* file_path, std::vector<std::string>& material_names, std::vector<Material>& materials) {
 	std::ifstream file(file_path, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
 		std::cerr << "Failed to open .mtl file: " << file_path << "\n";
@@ -555,12 +246,15 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 		if (type == "newmtl" && words.size() >= 2) {
 			if (firstMaterial)
 			{
-				m_MaterialNames.push_back(words[1]);
+				//m_MaterialNames.push_back(words[1]);
+				material_names.push_back(words[1]);
 				firstMaterial = false;
 				continue;
 			}
-			m_Materials.push_back(tempMaterial);
-			m_MaterialNames.push_back(words[1]);
+			//m_Materials.push_back(tempMaterial);
+			//m_MaterialNames.push_back(words[1]);
+			materials.push_back(tempMaterial);
+			material_names.push_back(words[1]);
 		}
 		else if (type == "Ka" && words.size() >= 4) {
 			auto Ka = glm::vec3(
@@ -635,6 +329,436 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path) {
 			materialInfos.push_back(materialInfo);
 		}
 	}
-	m_Materials.push_back(tempMaterial);
+	//m_Materials.push_back(tempMaterial);
+	materials.push_back(tempMaterial);
 	return 0;
+}
+
+int MeshWriter::WriteMeshToFile(const char* file_path, const primitives::Mesh& mesh)
+{
+	std::ofstream ofs(file_path, std::ios::binary);
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+	WriteMeshToFile(ofs, mesh);
+	ofs.close();
+	return 0;
+}
+
+int MeshWriter::WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh)
+{
+	MeshFileHeader header;
+	header.subMeshCount = mesh.m_SubMeshes.size();
+	header.vertexCount = mesh.m_V.size();
+	header.indexCount = mesh.m_VertexIndices.size();
+
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+	auto startOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(header)
+	);
+
+	for (auto index = 0; index < mesh.m_SubMeshes.size(); index++)
+	{
+		auto& subMesh = mesh.m_SubMeshes[index];
+		MeshFileHeader subMeshHeader;
+		subMeshHeader.subMeshCount = subMesh.m_SubMeshes.size();
+		subMeshHeader.vertexCount = subMesh.m_V.size();
+		subMeshHeader.indexCount = subMesh.m_VertexIndices.size();
+
+		auto subMeshStartOffset = ofs.tellp();
+		ofs.write(
+			reinterpret_cast<const char*>(&subMeshHeader),
+			sizeof(subMeshHeader)
+		);
+		auto subMeshDataOffset = ofs.tellp();
+		ofs.write(
+			reinterpret_cast<const char*>(&subMesh.m_MaterialGroupHandle),
+			sizeof(AssetHandle)
+		);
+		ofs.write(
+			reinterpret_cast<const char*>(subMesh.m_V.data()),
+			sizeof(primitives::Vertex) * subMesh.m_V.size()
+		);
+		ofs.write(
+			reinterpret_cast<const char*>(subMesh.m_VertexIndices.data()),
+			sizeof(uint32_t) * subMesh.m_VertexIndices.size()
+		);
+		auto subMeshEndOffset = ofs.tellp();
+		uint32_t size = subMeshEndOffset - subMeshDataOffset;
+		uint32_t offset = static_cast<uint32_t>(subMeshDataOffset);
+		subMeshHeader.offset = offset;
+		subMeshHeader.size = size;
+
+		ofs.seekp(subMeshStartOffset);
+		ofs.write(
+			reinterpret_cast<const char*>(&subMeshHeader),
+			sizeof(subMeshHeader)
+		);
+		ofs.seekp(subMeshEndOffset);
+	}
+
+	auto dataOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&mesh.m_MaterialGroupHandle),
+		sizeof(AssetHandle)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(mesh.m_V.data()),
+		sizeof(primitives::Vertex) * mesh.m_V.size()
+	);
+
+	ofs.write(
+		reinterpret_cast<const char*>(mesh.m_VertexIndices.data()),
+		sizeof(uint32_t) * mesh.m_VertexIndices.size()
+	);
+
+	auto endOffset = ofs.tellp();
+	uint32_t size = endOffset - dataOffset;
+	uint32_t offset = static_cast<uint32_t>(dataOffset);
+	header.offset = offset;
+	header.size = size;
+
+	ofs.seekp(startOffset);
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(header)
+	);
+	ofs.seekp(endOffset);
+	return 0;
+}
+
+primitives::Mesh MeshReader::ReadMeshFromFile(const char* file_path)
+{
+	std::ifstream ifs(file_path, std::ios::binary);
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+	auto mesh = ReadMeshFromFile(ifs);
+	ifs.close();
+	return mesh;
+}
+
+primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
+{
+	MeshFileHeader header;
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file");
+	}
+	ifs.read(
+		reinterpret_cast<char*>(&header),
+		sizeof(header)
+	);
+
+	assert(header.magic == 0x4853454D);
+	primitives::Mesh mesh;
+
+	mesh.m_V.resize(header.vertexCount);
+	mesh.m_VertexIndices.resize(header.indexCount);
+	for (auto index = 0; index < header.subMeshCount; index++)
+	{
+		primitives::Mesh subMesh;
+		MeshFileHeader subMeshHeader;
+		ifs.read(
+			reinterpret_cast<char*>(&subMeshHeader),
+			sizeof(subMeshHeader)
+		);
+		std::streampos dataOffset = subMeshHeader.offset;
+		size_t dataSize = subMeshHeader.size;
+		ifs.seekg(dataOffset);
+		ifs.read(
+			reinterpret_cast<char*>(
+				&subMesh.m_MaterialGroupHandle),
+			sizeof(AssetHandle)
+		);
+		ifs.read(
+			reinterpret_cast<char*>(
+				subMesh.m_V.data()),
+			sizeof(primitives::Vertex) * subMeshHeader.vertexCount
+		);
+		ifs.read(
+			reinterpret_cast<char*>(
+				subMesh.m_VertexIndices.data()),
+			sizeof(uint32_t) * subMeshHeader.indexCount
+		);
+
+		mesh.m_SubMeshes.push_back(std::move(subMesh));
+	}
+	std::streampos dataOffset = header.offset;
+	size_t dataSize = header.size;
+	ifs.seekg(dataOffset);
+	ifs.read(
+		reinterpret_cast<char*>(
+			&mesh.m_MaterialGroupHandle),
+		sizeof(AssetHandle)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(
+			mesh.m_V.data()),
+		sizeof(primitives::Vertex) * header.vertexCount
+	);
+	ifs.read(
+		reinterpret_cast<char*>(
+			mesh.m_VertexIndices.data()),
+		sizeof(uint32_t) * header.indexCount
+	);
+	return mesh;
+}
+
+int MaterialWriter::WriteMaterialToFile(const char* file_path, const MTLMaterial& material)
+{
+	std::ofstream ofs(file_path, std::ios::binary);
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	WriteMaterialToFile(ofs, material);
+	ofs.close();
+	return 0;
+}
+
+int MaterialWriter::WriteMaterialToFile(std::ofstream& ofs, const MTLMaterial& material)
+{
+	MaterialFileHeader header;
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file !!!");
+	}
+	auto startOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(MaterialFileHeader)
+	);
+	auto dataOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&material.KaNs),
+		sizeof(glm::vec4)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&material.KdNi),
+		sizeof(glm::vec4)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&material.KsD),
+		sizeof(glm::vec4)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&material.KeIllum),
+		sizeof(glm::vec4)
+	);
+	auto endOffset = ofs.tellp();
+	uint32_t size = endOffset - dataOffset;
+	uint32_t offset = static_cast<uint32_t>(dataOffset);
+	header.offset = offset;
+	header.size = size;
+	ofs.seekp(startOffset);
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(MaterialFileHeader)
+	);
+	ofs.seekp(endOffset);
+	return 0;
+}
+
+MTLMaterial MaterialReader::ReadMaterialFromFile(const char* file_path)
+{
+	std::ifstream ifs(file_path, std::ios::binary);
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	auto material = ReadMaterialFromFile(ifs);
+	return material;
+}
+
+MTLMaterial MaterialReader::ReadMaterialFromFile(std::ifstream& ifs)
+{
+	MaterialFileHeader materialHeader;
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	ifs.read(
+		reinterpret_cast<char*>(&materialHeader),
+		sizeof(MaterialFileHeader)
+	);
+	assert(materialHeader.magic = 0x4C52544D);
+	auto tempVec = glm::vec4(0);
+	MTLMaterial material{ tempVec, tempVec, tempVec, tempVec };
+	ifs.read(
+		reinterpret_cast<char*>(&material.KaNs),
+		sizeof(glm::vec4)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&material.KdNi),
+		sizeof(glm::vec4)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&material.KsD),
+		sizeof(glm::vec4)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&material.KeIllum),
+		sizeof(glm::vec4)
+	);
+	return material;
+}
+
+Sound SoundReader::ReadSoundClipFromFile(const char* file_path, BlockAllocator<BYTE>& sound_allocator)
+{
+	std::ifstream ifs(file_path, std::ios::binary);
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	auto sound = ReadSoundClipFromFile(ifs, sound_allocator);
+	ifs.close();
+	return sound;
+}
+
+Sound SoundReader::ReadSoundClipFromFile(std::ifstream& ifs, BlockAllocator<BYTE>& sound_allocator)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	auto wavHeader = ReadWAVHeaderFromFile(ifs);
+	Sound sound{};
+	sound.bitsPerSample = wavHeader.bitsPerSample;
+	sound.blockAlign = wavHeader.blockAlign;
+	sound.byteRate = wavHeader.byteRate;
+	sound.currentFrame = 0;
+	sound.frameCount = wavHeader.dataSize / wavHeader.blockAlign;
+	sound.numChannels = wavHeader.numChannels;
+	sound.PCMData = sound_allocator.allocate(wavHeader.dataSize);
+	ifs.read(
+		reinterpret_cast<char*>(sound.PCMData),
+		wavHeader.dataSize
+	);
+	return sound;
+}
+
+WAVHEADER SoundReader::ReadWAVHeaderFromFile(std::ifstream& ifs)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	WAVHEADER wavHeader{};
+	ifs.read(
+		reinterpret_cast<char*>(&wavHeader),
+		sizeof(WAVHEADER)
+	);
+	if (strncmp(wavHeader.RIFF, "RIFF", 4) != 0 ||
+		strncmp(wavHeader.WAVE, "WAVE", 4) != 0 ||
+		wavHeader.audioFormat != 1)
+	{
+		throw std::runtime_error("Reading Invalid WAVHEADER !!!");
+	}
+	return wavHeader;
+}
+
+int TextureWriter::WriteDDSTextureToFile(const char* pak_name, const char* dds_file_path)
+{
+	std::ofstream ofs(pak_name, std::ios::binary);
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	WriteDDSTextureToFile(ofs, dds_file_path);
+	ofs.close();
+	return 0;
+}
+
+int TextureWriter::WriteDDSTextureToFile(std::ofstream& ofs, const char* dds_file_path)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	std::ifstream ifs(dds_file_path, std::ios::binary |  std::ios::ate);
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	std::streamsize size = ifs.tellg();
+	ifs.seekg(0);
+	std::string ddsFileBuffer(size, '\0');
+	if (!ifs.read(
+		&ddsFileBuffer[0],
+		size)) 
+	{
+		throw std::runtime_error("Failed to load DDS file into memory !!!");
+	}
+
+	PakHeader header{};
+	header.itemCount = 1;
+	auto startOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+	auto dataStartOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(ddsFileBuffer.data()),
+		size
+	);
+	auto dataEndOffset = ofs.tellp();
+	header.offset = static_cast<uint32_t>(dataStartOffset);
+	header.size = static_cast<uint32_t>(size);
+	ofs.seekp(startOffset);
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+	ofs.seekp(dataEndOffset);
+	ifs.close();
+	return 0;
+}
+
+DDS_HEADER TextureReader::ReadDDSHeader(std::ifstream& ifs)
+{
+	DDS_HEADER  ddsHeader{};
+	uint32_t magic = 0;
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	ifs.read(
+		reinterpret_cast<char*>(&magic),
+		sizeof(uint32_t)
+	);
+	assert(magic == 0x20534444);
+	ifs.read(
+		reinterpret_cast<char*>(&ddsHeader),
+		sizeof(DDS_HEADER)
+	);
+	if (ddsHeader.ddspf.dwFourCC = 0x30315844) // DX10
+	{
+		DDS_HEADER_DX10 dx10Header{};
+		ifs.read(
+			reinterpret_cast<char*>(&dx10Header),
+			sizeof(DDS_HEADER_DX10)
+		);
+	}
+	return ddsHeader;
+}
+
+void TextureReader::LoadDDSTextureIntoMemory(std::ifstream& ifs, uint32_t size, byte* buffer)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	ifs.read(
+		reinterpret_cast<char*>(buffer),
+		size
+	);
 }

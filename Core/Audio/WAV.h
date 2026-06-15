@@ -2,7 +2,8 @@
 #define _WAV_H_
 #include <stdint.h>
 #pragma pack(push, 1)
-struct WAVHEADER {
+struct WAVHEADER 
+{
     char RIFF[4];            // "RIFF"
     uint32_t chunkSize;
     char WAVE[4];            // "WAVE"

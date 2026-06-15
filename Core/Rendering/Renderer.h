@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _RENDERER_H_
+#define _RENDERER_H_
 #include "Character.h"
 #include "VertexArray.h"
 #include "FrameBuffer.h"
@@ -6,23 +7,26 @@
 #include "VertexBuffer.h"
 #include "RenderCommand.h"
 
-struct MTLMaterial
+struct ParticleRange
 {
-public:
-    glm::vec4 KaNs;
-    glm::vec4 KdNi;
-    glm::vec4 KsD;
-    glm::vec4 KeIllum;
-
-    MTLMaterial(glm::vec4 ka_ns, glm::vec4& kd_ni, glm::vec4 ks_d, glm::vec4& ke_illum)
-        :
-        KaNs{ ka_ns },
-        KdNi{ kd_ni },
-        KsD{ ks_d },
-        KeIllum{ ke_illum }
-    {
-    }
+    uint32_t Offset;
+    uint32_t Size;
 };
+
+struct ParticleSystemBuffer
+{
+    uint32_t LifetimeAndSizeBuffer;
+    uint32_t PositionBuffer;
+    uint32_t VelocityBuffer;
+    uint32_t ColorBuffer;
+
+    glm::vec4* LifetimeAndSize = nullptr;
+    glm::vec4* Positions = nullptr;
+    glm::vec4* Velocities = nullptr;
+    glm::vec4* Color = nullptr;
+};
+
+
 
 constexpr uint64_t U64_DEF = 14757395258967641292;
 class Renderer
@@ -36,7 +40,13 @@ public:
         {ShaderDataType::Mat4,  "Projection"}
     };
 public:
-    TimeStep m_Ts;
+    int counter;
+    int counterLimit;
+    float m_Ts;
+    unsigned int MAX_CHARACTER_BUFFER_SIZE = 16384;
+    unsigned int MAX_INSTANCEBATCH_BUFFER_SIZE = 1024;
+    unsigned int MAX_MATERIALBATCH_BUFFER_SIZE = 64;
+    unsigned int MAX_PARTICLE_BUFFER_SIZE = 16384;
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
     unsigned int m_MaterialBuffer;
@@ -49,8 +59,10 @@ public:
     void DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint64_t instance_count = 1) const;
     void DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const;
     void DrawBufferInstanced(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager);
+    void DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager);
     void UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const;
     void UploadUniformData(const RenderCommand& cmd, AssetManager& asset_manager) const;
+    void UploadUniformData(const ParticleCommand& cmd, AssetManager& asset_manager) const;
     void OnUpdate(TimeStep delta);
 
     void EndFrame();
@@ -60,7 +72,15 @@ public:
     void Clear(GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) const;
     void Flush() const;
 
+    void ParticleSystemSync(Scene * scene);
+    uint32_t AllocateParticles(uint32_t num_particles);
+    bool DeallocateParticles(ParticleRange range);
+    void MergeFreeRanges();
+    void DebugParticleRanges();
+
     Renderer():
+        counter{0},
+        counterLimit{64},
         m_Ts{0},
         m_VertexBuffer{0},
         m_IndexBuffer{0},
@@ -68,11 +88,14 @@ public:
         m_ModelMatrixInstanceBuffer{0},
         m_InstanceGroups{},
         m_InstanceGroupKeys{},
-        m_InstanceGroupsMap{}
+        m_InstanceGroupsMap{},
+        m_AllocatedRanges{},
+        m_FreeRanges{{0, 16384}}
     {
     }
-    ~Renderer() {}
+    ~Renderer();
     std::vector<RenderCommand> m_CommandBuffer;
+
 private:
     std::vector<TextureBase<GL_Texture>> m_Textures;
     std::vector<glm::mat4> m_ActiveTransforms;
@@ -84,6 +107,10 @@ private:
     std::vector<int> m_InstanceGroupKeys;
     std::vector<glm::mat4> m_ModelMatrices;
 
+    ParticleSystemBuffer m_GpuBuffers;
+    std::vector<ParticleRange> m_AllocatedRanges;
+    std::vector<ParticleRange> m_FreeRanges;
+
 };
 
 class RenderManager
@@ -91,3 +118,5 @@ class RenderManager
 public:
     
 };
+
+#endif

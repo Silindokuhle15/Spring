@@ -8,7 +8,6 @@ namespace primitives
         float z_offset = 0;
 
         float z = 0;
-
         for (int j = 0; j < static_cast<int>(m_Columns); j++)
         {
             for (int i = 0; i < static_cast<int>(m_Rows); i++)
@@ -45,19 +44,11 @@ namespace primitives
                 for (auto& v : v1)
                 {
                     m_V.push_back(v);
-                    m_Positions.push_back(v.pos);
-                    m_TexCoords.push_back(v.tex);
-                    m_VertexIDs.push_back(v.ID);
-                    m_Normals.push_back(v.norm);
                 }
 
                 for (auto& v : v2)
                 {
                     m_V.push_back(v);
-                    m_Positions.push_back(v.pos);
-                    m_TexCoords.push_back(v.tex);
-                    m_VertexIDs.push_back(v.ID);
-                    m_Normals.push_back(v.norm);
                 }
             }
         }

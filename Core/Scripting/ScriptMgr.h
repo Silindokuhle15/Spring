@@ -6,6 +6,8 @@
 #include <string>
 #include "PhysicsState.h"
 #include "Camera.h"
+#include "Script.h"
+#include <entt.hpp>
 
 class Scene;
 class Character;
@@ -13,6 +15,7 @@ class Character;
 namespace scripting
 {
 	namespace MT {
+		constexpr const char* ENTITY_MT = "Entity";
 		constexpr const char* INPUT_MT = "Input";
 		constexpr const char* SCENE_MT = "Scene";
 		constexpr const char* CAMERA_MT = "Camera";
@@ -33,9 +36,16 @@ namespace scripting
 		static int PrintStack(lua_State* L);
 		static int IsKeyDown(lua_State* L);
 
-		static std::string GetLuaFilenameWithoutExtension(const std::string& path);
 		static void ExecuteScript(lua_State* L, const char* script, size_t size, const char* name);
 		static void ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts);
+		static void InitScript(lua_State* L, Character* character, ControlScript& script);
+
+		// -------------------Entity-------------------
+		static int lua_ScenePushEntity(lua_State* L, entt::entity entity);
+		static entt::entity lua_checkEntity(lua_State* L, int index);
+		static void CallOnInit(lua_State* L, entt::entity entity, ControlScript& script);
+		static void CallOnUpdate(lua_State* L, entt::entity entity, ControlScript& script, float dt);
+		static void CallOnDestroy(lua_State* L, entt::entity entity, ControlScript& script);
 
 		// -------------------Input-------------------
 		static void register_input(lua_State* L);
@@ -53,6 +63,7 @@ namespace scripting
 		static int lua_pushSceneCamera(lua_State* L, Camera* pcamera);
 		static int lua_Scene_CreateCharacter(lua_State* L);
 		static int lua_Scene_DestroyCharacter(lua_State* L);
+		static int lua_Scene_FindCharacterByTag(lua_State* L);
 		static int lua_Scene_CameraUnProject(lua_State* L);
 
 		// ------------------Character-------------------
@@ -83,6 +94,7 @@ namespace scripting
 		static int lua_vec3_add(lua_State* L);
 		static int lua_vec3_index(lua_State* L);
 		static int lua_vec3_newindex(lua_State* L);
+
 		// ------------------PhysicsState-----------------
 		static physics::PhysicsState* lua_checkPhysicsState(lua_State* L, int index);
 		static void register_physicsstate(lua_State* L);

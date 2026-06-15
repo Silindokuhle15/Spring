@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15) 
+	cmake_minimum_required(VERSION 3.15) 
 # Enable hot reload for MSVC 
 if(POLICY CMP0141) 
 cmake_policy(SET CMP0141 NEW) 
@@ -13,7 +13,6 @@ project(${LIB_NAME})
 # Compiler definitions 
 add_compile_definitions( -D__LEAN_AND_MEAN__ 
 	-D_CRT_SECURE_NO_WARNINGS 
-	-DFBXSDK_SHARED 
 	-DSTB_IMAGE_IMPLEMENTATION 
 	#-DGLFW_INCLUDE_NONE 
 	-DGLEW_BUILD
@@ -21,8 +20,6 @@ add_compile_definitions( -D__LEAN_AND_MEAN__
 
 # Include directories 
 include_directories( 
-	"E:/FBX/include/" 
-	"E:/PhysX/physx/include/" 
 	"Dependencies/stbi_image/"
 	"Dependencies/EnTT/" 
 	"Dependencies/GLEW/include/"
@@ -30,6 +27,7 @@ include_directories(
 	"Dependencies/imgui-docking/" 
 	"Dependencies/imgui-docking/backends/" 
 	"Dependencies/ImGuizmo/"
+	"Dependencies/json-develop/include/"
 	"Dependencies/GLM/"
 	"Dependencies/Lua/include/"
 	"Dependencies/FREETYPE/include/"
@@ -62,6 +60,12 @@ set(SHARED_SOURCES
 
 "Core/Common/Common.h"
 "Core/Common/Common.cpp"
+"Core/Common/StringUtils.h"
+"Core/Common/StringUtils.cpp"
+
+"Core/Engine/Allocator.h"
+"Core/Engine/Application.h" 
+"Core/Engine/Application.cpp"
 "Core/Engine/TimeStep.h" 
 "Core/Engine/TimeStep.cpp"
 "Core/Engine/BaseWin32Window.h"
@@ -76,16 +80,19 @@ set(SHARED_SOURCES
 "Core/Engine/Layer.cpp"
 "Core/Engine/Win32Window.h"
 "Core/Engine/Win32Window.cpp"
+
 "Core/Event/Event.h"
 "Core/Event/Event.cpp"
 "Core/FontMgr/FontMgr.h" 
 "Core/FontMgr/FontMgr.cpp"
+
 "Core/Input/InputDevice.h" 
 "Core/Input/InputDevice.cpp"
 "Core/Input/Keyboard.h" 
 "Core/Input/Keyboard.cpp" 
 "Core/Input/Mouse.h"
-"Core/Input/Mouse.cpp" 
+"Core/Input/Mouse.cpp"
+
 "Core/Materials/TextureBase.h"
 "Core/Materials/TextureBase.cpp"
 "Core/Materials/Material.h" 
@@ -94,16 +101,19 @@ set(SHARED_SOURCES
 "Core/Materials/Shader.cpp"
 "Core/Materials/Texture.h" 
 "Core/Materials/Texture.cpp"
+
 "Core/Physics/Collider.h"
 "Core/Physics/Collider.cpp"
 "Core/Physics/Ray.h"
 "Core/Physics/Ray.cpp" 
 "Core/Physics/PhysicsState.h" 
 "Core/Physics/PhysicsState.cpp"
+
 "Editor/Utility/ObjectLoader.h"
 "Editor/Utility/ObjectLoader.cpp"
 "Editor/Utility/Serializer.h"
 "Editor/Utility/Serializer.cpp"
+
 "Core/Primitives/Bound.h" 
 "Core/Primitives/Mesh.h" 
 "Core/Primitives/Mesh.cpp"
@@ -112,7 +122,8 @@ set(SHARED_SOURCES
 "Core/Primitives/ParticleSystem.h" 
 "Core/Primitives/ParticleSystem.cpp"
 "Core/Primitives/Square.h"
-"Core/Primitives/Square.cpp" 
+"Core/Primitives/Square.cpp"
+
 "Core/Rendering/FrameBuffer.h" 
 "Core/Rendering/FrameBuffer.cpp" 
 "Core/Rendering/BufferLayout.h"
@@ -128,19 +139,23 @@ set(SHARED_SOURCES
 "Core/Rendering/UniformBuffer.h"
 "Core/Rendering/RenderCommand.h"
 "Core/Rendering/RenderCommand.cpp"
+
+"Core/Resources/Asset.h"
+"Core/Resources/Asset.cpp"
 "Core/Resources/ShaderResource.h"
 "Core/Resources/ShaderResource.cpp"
 "Core/Resources/AssetManager.h"
 "Core/Resources/AssetManager.cpp"
+
 "Core/SceneMgr/SceneState.h"
 "Core/SceneMgr/Scene.h" 
-"Core/SceneMgr/Scene.cpp" 
-"Core/Scripting/ScriptBase.h"
-"Core/Scripting/ScriptBase.cpp"
+"Core/SceneMgr/Scene.cpp"
+
 "Core/Scripting/ScriptMgr.h" 
 "Core/Scripting/ScriptMgr.cpp"
 "Core/Scripting/Script.h"
 "Core/Scripting/Script.cpp"
+
 "Core/Text/TextField.h"
 "Core/Text/TextField.cpp" 
 "Core/Text/Label.h" 
@@ -159,12 +174,11 @@ set(SHARED_SOURCES
 
 "Core/Viewing/Camera.h"
 "Core/Viewing/Camera.cpp"
-"Core/Engine/Application.h" 
-"Core/Engine/Application.cpp"
-"Core/Audio/WAV.h" 
 
+"Core/Audio/WAV.h"
+"Core/Audio/Sound.h"
 
-)
+ "Core/Primitives/Vertex.h")
 # Executable-specific files 
 set(EDITOR_SOURCES
 "SpringEditor.cpp" 
@@ -176,11 +190,13 @@ set(EDITOR_SOURCES
 "Editor/Panel.cpp"
 "Editor/Project/Project.h" 
 "Editor/Project/Project.cpp"
-"Editor/RenderPanel.h"
+"Editor/ParticleSystemPanel.h"
 "Editor/MenuBarPanel.h" 
 "Editor/ContentBrowserPanel.h" 
 "Editor/ComponentsPanel.h"
 "Editor/StatisticsPanel.h" 
+"Editor/RenderPanel.h"
+
 ) 
 # Library-specific sources 
 set(LIB_SOURCES ${SHARED_SOURCES}
@@ -196,9 +212,7 @@ ${EDITOR_SOURCES}
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES} ) 
 # External libraries 
 set(LUA_LIB_DIR "${PROJECT_SOURCE_DIR}/Dependencies/Lua/lua54.lib") 
-set(FBX_LIB_DIR "E:/FBX/lib/x64/debug/libfbxsdk.lib") 
-set(FT_LIB_DIR "${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib") 
-set(PHYSX_LIB_DIR "E:/PhysX/physx/bin/win.x86_64.vc143.mt/debug/PhysXDevice64.dll") 
+set(FT_LIB_DIR "${PROJECT_SOURCE_DIR}/Dependencies/FREETYPE/release static/vs2015-2022/win64/freetype.lib")
 
 add_subdirectory("Assets/Scripts") 
 add_subdirectory("Dependencies/")
@@ -210,7 +224,6 @@ target_link_libraries(${LIB_NAME}
 ${OPENGL_gl_LIBRARY} 
 ${LUA_LIB_DIR}
 glfw 
-${FBX_LIB_DIR} 
 ${FT_LIB_DIR}
 SpringVendor
 "Ws2_32.lib"
@@ -219,7 +232,6 @@ target_link_libraries(${EXEC_NAME}
 ${OPENGL_gl_LIBRARY} 
 ${LUA_LIB_DIR}
 glfw
-${FBX_LIB_DIR}
 ${FT_LIB_DIR}
 ${LIB_NAME}
 SpringVendor

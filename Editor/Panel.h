@@ -12,7 +12,6 @@
 #include <set>
 #include "Scene.h"
 #include "Project/Project.h"
-#include "Utility/Serializer.h"
 
 class Panel
 {

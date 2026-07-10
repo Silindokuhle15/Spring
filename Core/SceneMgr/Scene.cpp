@@ -104,9 +104,12 @@ bool Scene::Deserialize()
 
 Character* Scene::CreateSceneObject(uint32_t hint)
 {
-	static ArenaAllocator<Character> allocator;
 	auto desired = entt::entity(hint);
-	auto newCharacter = allocator.allocate(Character(m_Registry.create(desired), this));
+	//Character ch(m_Registry.create(desired), this); // ch is created as a stack object and destroyed on return;
+	//auto newCharacter = m_CharacterAllocator.allocate(Character(m_Registry.create(desired), this)); // a temporary Character object is created on the stack and then copied from, what happens on return?
+	auto entity = m_Registry.create(desired);
+	auto newCharacter = m_CharacterAllocator.allocate(entity, this);
+	m_EntityCharacterMap[entity] = newCharacter;
 	return newCharacter;
 }
 
@@ -116,16 +119,17 @@ void Scene::DestroySceneObject(entt::entity id)
 	if (isValidEntity && !m_Registry.any_of<primitives::DestructComponent>(id))
 	{
 		m_Registry.emplace<primitives::DestructComponent>(id);
+		m_EntityCharacterMap[id] = nullptr;
 	}
 }
 
-Character Scene::GetSceneCharacter(entt::entity& id)
+Character* Scene::GetSceneCharacter(entt::entity& id)
 {
-	return Character::GetCharacterPtr(id, this);
-}
-
-Character* Scene::GetSceneCharacterPtr(entt::entity& id)
-{
+	auto isValidEntity = m_Registry.valid(id);
+	if (isValidEntity)
+	{
+		return m_EntityCharacterMap[id];
+	}
 	return nullptr;
 }
 
@@ -211,12 +215,12 @@ void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsSt
 		globalMax.x, globalMax.y, globalMax.z,
 	};
 
-	auto y = static_cast<uint64_t>(glm::floor((globalMax.x - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto z = static_cast<uint64_t>(glm::floor((globalMax.y - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto x = static_cast<uint64_t>(glm::floor((globalMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+	auto y = static_cast<uint32_t>(glm::floor((globalMax.x - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+	auto z = static_cast<uint32_t>(glm::floor((globalMax.y - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+	auto x = static_cast<uint32_t>(glm::floor((globalMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
 
 	auto morton_code = morton_encode_3d32(x, y, z);
-	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint64_t>(entity), morton_code, worldBound, nullptr, nullptr});
+	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint32_t>(entity), morton_code, worldBound, nullptr, nullptr});
 }
 
 void Scene::OnInit()
@@ -240,16 +244,17 @@ void Scene::OnUpdate(float ts)
 	auto scriptView = m_Registry.view<scripting::ControlScript>();
 	for (auto [entity, script] : scriptView.each())
 	{
-		scripting::ScriptMgr::CallOnUpdate(m_pLuaState, entity, script, m_Ts);
+		scripting::ScriptMgr::CallOnUpdate(m_pLuaState, script, m_Ts);
 	}
 
 	auto boundView = m_Registry.view<physics::PhysicsState, primitives::Bound3D>();
 	for (auto [entity, physicsState, localBound] : boundView.each())
 	{
 		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * (float)m_Ts * 5.0f;
-		AddBVBoundEntry(entity, physicsState, localBound);
+		physics::PhysicsState ps = physicsState;
+		AddBVBoundEntry(entity, ps, localBound);
 	}
-
+	/**/
 	m_NodeBuffer.reserve(131072);
 	m_BVHTreeRoot = create_tree<primitives::Bound3D>(m_BVEntries);
 	for (auto& bound : m_BVEntries)
@@ -257,11 +262,12 @@ void Scene::OnUpdate(float ts)
 		m_Collisions.clear();
 		m_Collisions.reserve(m_BVEntries.size());
 		detect_overlapping_bounds<primitives::Bound3D>(bound, m_BVHTreeRoot, m_Collisions, m_NodeBuffer);
+	
 		if (m_Collisions.size() == 2)
 		{
 			// Fix this later, the collision size should be allowed to be greater than 2
-			uint64_t first = m_Collisions[0];
-			uint64_t second = m_Collisions[1];
+			uint32_t first = m_Collisions[0];
+			uint32_t second = m_Collisions[1];
 			if (first == second) continue;
 			if (m_Registry.valid(static_cast<entt::entity>(first)) && (m_Registry.valid(static_cast<entt::entity>(second))))
 			{
@@ -272,6 +278,7 @@ void Scene::OnUpdate(float ts)
 			}
 		}
 	}
+	/**/
 	m_AccumulatedTime += m_Ts;
 }
 
@@ -289,7 +296,9 @@ int Scene::LoadSceneFromFile()
 			"scene_blob",
 			"meshPack",
 			"materialPack",
-			"texturePack"
+			"texturePack",
+			"shaderPack",
+			"soundPack"
 		}
 	);
 	m_LuaEngine.Run();
@@ -390,6 +399,18 @@ int Scene::LoadSceneFromFile()
 				{
 					str = lua_tostring(pLuaState, -1);
 					texturePack = str;
+					lua_pop(pLuaState, 1);
+				}
+				if (var == "shaderPack")
+				{
+					str = lua_tostring(pLuaState, -1);
+					shaderPack = str;
+					lua_pop(pLuaState, 1);
+				}
+				if (var == "soundPack")
+				{
+					str = lua_tostring(pLuaState, -1);
+					soundPack = str;
 					lua_pop(pLuaState, 1);
 				}
 		}

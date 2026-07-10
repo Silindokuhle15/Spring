@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _OBJECT_LOADER_H_
+#define _OBJECT_LOADER_H_
 #include "Mesh.h"
 #include "Sound.h"
 #include "Allocator.h"
@@ -125,6 +126,17 @@ public:
 	uint32_t indexCount = 0;
 };
 
+struct ShaderFileHeader
+{
+public:
+	uint32_t magic = 0x52444853; // SHDR
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
+	uint32_t stageCount = 0;
+	uint32_t stageMask = 0;
+};
+
 class MaterialWriter
 {
 public:
@@ -153,6 +165,12 @@ public:
 	static primitives::Mesh ReadMeshFromFile(std::ifstream& ifs);
 };
 
+class SoundWriter
+{
+public:
+	static int WriteSoundToFile(std::ofstream& ofs, const char* path_to_source);
+};
+
 class SoundReader
 {
 public:
@@ -176,3 +194,19 @@ public:
 	static DDS_HEADER ReadDDSHeader(std::ifstream& ifs);
 	static void LoadDDSTextureIntoMemory(std::ifstream& ifs, uint32_t size, byte* buffer);
 };
+
+class ShaderWriter
+{
+public:
+	static int WriteShaderProgramToFile(const char* pak_name, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages);
+	static int WriteShaderProgramToFile(std::ofstream& ofs, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages);
+	static int WriteShaderProgramHeaderToFile(std::ofstream& ofs, const ShaderFileHeader& shader_file_header);
+};
+
+class ShaderReader
+{
+public:
+	static std::string LoadShaderSourceIntoMemory(std::ifstream& ifs, uint32_t size);
+	static ShaderFileHeader ReadShaderProgramHeader(std::ifstream& ifs);
+};
+#endif

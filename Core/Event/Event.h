@@ -59,8 +59,7 @@ namespace event
 		W = 0x57,
 		X = 0x58,
 		Y = 0x59,
-		Z = 0x5A,
-		PLAY_SOUND
+		Z = 0x5A
 	};
 
 	class Event

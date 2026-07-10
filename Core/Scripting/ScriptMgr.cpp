@@ -6,50 +6,6 @@
 
 namespace scripting {
 
-    void ScriptMgr::ExecuteScript(lua_State* L, const char* script, size_t size, const char* name)
-    {
-        int status = luaL_loadbuffer(L, script, size, name);
-        if (status != LUA_OK)
-        {
-            // Load the script onto the stack
-            // Handle error here
-            auto error = true;
-        }
-        status = lua_pcall(L, 0, 0, 0);
-        if (status != LUA_OK)
-        {
-            // Execute the script that is ontop the stack
-            // Handle error here
-            auto error = true;
-        }
-        int res = lua_getglobal(L, "onInit");
-        if (lua_pcall(L, 0, 0, 0) != LUA_OK)
-        {
-            // Find the onInit function of the object
-            // Execute onInit function of the object
-            return;
-        }
-
-
-    }
-
-    void ScriptMgr::ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts)
-    {
-        if (!luaL_dostring(L, script))
-        {
-            assert("Failed to execute script");
-        }
-        if (!lua_getglobal(L, function_name))
-        {
-            assert("Failed to Locate function");
-        }
-        lua_pushnumber(L, ts);
-        if (lua_pcall(L, 1, 0, 0) != LUA_OK)
-        {
-            assert("Failed to execute script function");
-        }
-    }
-
     void ScriptMgr::InitScript(lua_State* L, Character * character, ControlScript& script)
     {
         auto& scriptData = script.m_Data;
@@ -102,7 +58,7 @@ namespace scripting {
         return *static_cast<entt::entity*>(luaL_checkudata(L, index, MT::ENTITY_MT));
     }
 
-    void ScriptMgr::CallOnInit(lua_State* L, entt::entity entity, ControlScript& script)
+    void ScriptMgr::CallOnInit(lua_State* L, ControlScript& script)
     {
         if (script.m_LuaTableRef == LUA_NOREF)
         {
@@ -130,7 +86,7 @@ namespace scripting {
         lua_pop(L, 1);
     }
 
-    void ScriptMgr::CallOnUpdate(lua_State* L, entt::entity entity, ControlScript& script, float dt)
+    void ScriptMgr::CallOnUpdate(lua_State* L, ControlScript& script, float dt)
     {
         if (script.m_LuaTableRef == LUA_NOREF)
         {
@@ -142,21 +98,23 @@ namespace scripting {
             lua_pop(L, 1);
             return;
         }
+        
         lua_getfield(L, -1, "onUpdate");
         if (lua_isfunction(L, -1))
         {
             lua_pushvalue(L, -2);
             lua_pushnumber(L, dt);
-
+  
             if (lua_pcall(L, 2, 0, 0) != LUA_OK)
             {
                 luaL_error(L, "failed to execute onUpdate()");
             }
         }
+        
         lua_pop(L, 1);
     }
 
-    void ScriptMgr::CallOnDestroy(lua_State* L, entt::entity entity, ControlScript& script)
+    void ScriptMgr::CallOnDestroy(lua_State* L, ControlScript& script)
     {
         if (script.m_LuaTableRef != LUA_NOREF)
         {
@@ -283,14 +241,13 @@ namespace scripting {
     {
         Scene* scene = lua_checkScene(L, 1);
         const char* tagName = lua_tostring(L, 2);
-
         auto tagView = scene->GetView<std::string>();
         for (auto [entity, tag] : tagView.each())
         {
             if (tag == tagName)
             {
                 auto character = scene->GetSceneCharacter(entity);
-                lua_pushCharacter(L, &character);
+                lua_pushCharacter(L, character);
                 return 1;
             }
         }

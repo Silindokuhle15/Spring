@@ -25,7 +25,7 @@ namespace event
 			{
 				listener->OnMouseMove(*(MouseMoveEvent*)&event);
 			}
-			if (event::Event::GetType(event) == EventID::PLAY_SOUND)
+			else
 			{
 				listener->OnKeyPress(*(KeyPressEvent*)&event);
 

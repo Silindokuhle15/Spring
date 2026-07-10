@@ -29,9 +29,13 @@ bool AssetManager::Serialize(const std::string& filename)
     std::string meshPath = tempPath + "_MESH.pak";
     std::string materialPath = tempPath + "_MTRL.pak";
     std::string texturePath = tempPath + "_TXTR.pak";
+    std::string shaderPath = tempPath + "_SHDR.pak";
+    std::string soundPath = tempPath + "_SWND.pak";
     SerializeMaterialPack(materialPath);
     SerializeMeshPack(meshPath);
     SerializeTexturePack(texturePath);
+    SerializeShaderPack(shaderPath);
+    SerializeSoundPack(soundPath);
     return true;
 }
 
@@ -276,14 +280,155 @@ bool AssetManager::SerializeTexturePack(const std::string& filename)
     return false;
 }
 
-bool AssetManager::Deserialize(const std::string& filename)
+bool AssetManager::SerializeShaderPack(const std::string& filename)
+{
+    PakHeader pakHeader{};
+    uint32_t programCount = 0;
+    std::ofstream ofs(filename, std::ios::binary);
+    if (!ofs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for writing !!!");
+    }
+    auto startOffset = ofs.tellp();
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    auto dataOffset = ofs.tellp();
+    for (auto& program : m_ShaderMap)
+    {
+        auto& assetHandle = program.first;
+        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        auto& resourceCombinedPath = resource.m_Filepath;
+        PakHeader programHeader{};
+        auto programStartOffset = ofs.tellp();
+        ofs.write(
+            reinterpret_cast<const char*>(&programHeader),
+            sizeof(PakHeader)
+        );
+        auto programDataStartOffset = ofs.tellp();
+        ofs.write(
+            reinterpret_cast<const char*>(&assetHandle),
+            sizeof(AssetHandle)
+        );
+        auto& shaderResource = m_ShaderResourceMap[assetHandle];
+        auto& shaderInfo = shaderResource.GetShaderInfo();
+        auto& shaderSources = shaderResource.GetShaderSources();
+        uint32_t stageCount{ 0 };
+        for (auto& shaderSource : shaderSources)
+        {
+
+        }
+        assert(shaderInfo.size() == shaderSources.size());
+        for (auto index = 0; index < shaderSources.size(); index++)
+        {
+            auto& stageInfo = shaderInfo[index];
+            auto& shaderSource = shaderSources[index];
+
+            ShaderFileHeader stageHeader{};
+            auto stageStartOffset = ofs.tellp();
+            ShaderWriter::WriteShaderProgramHeaderToFile(ofs, stageHeader);
+            auto stageDataStartOffset = ofs.tellp();
+            ofs.write(
+                reinterpret_cast<const char*>(shaderSource.data()),
+                shaderSource.size()
+            );
+            auto stageDataEndOffset = ofs.tellp();
+            uint32_t size = stageDataEndOffset - stageDataStartOffset;
+            uint32_t offset = static_cast<uint32_t>(stageDataStartOffset);
+            stageHeader.offset = offset;
+            stageHeader.size = size;
+            stageHeader.stageCount = 1;
+            stageHeader.stageMask = stageInfo.shaderType;
+            ofs.seekp(stageStartOffset);
+            ofs.write(
+                reinterpret_cast<const char*>(&stageHeader),
+                sizeof(ShaderFileHeader)
+            );
+            ofs.seekp(stageDataEndOffset);
+            stageCount++;
+        }
+        auto programDataEndOffset = ofs.tellp();
+        uint32_t programSize = programDataEndOffset - programDataStartOffset;
+        uint32_t programOffset = static_cast<uint32_t>(programStartOffset);
+        programHeader.offset = programOffset;
+        programHeader.size = programSize;
+        programHeader.itemCount = stageCount;
+        ofs.seekp(programStartOffset);
+        ofs.write(
+            reinterpret_cast<const char*>(&programHeader),
+            sizeof(PakHeader)
+        );
+        ofs.seekp(programDataEndOffset);
+        programCount++;
+    }
+    auto endOffset = ofs.tellp();
+    uint32_t size = endOffset - dataOffset;
+    uint32_t offset = static_cast<uint32_t>(dataOffset);
+    pakHeader.size = size;
+    pakHeader.offset = offset;
+    pakHeader.itemCount = programCount;
+    ofs.seekp(startOffset);
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    ofs.seekp(endOffset);
+    ofs.close();
+    return true;
+}
+
+bool AssetManager::SerializeSoundPack(const std::string& filename)
+{
+    std::ofstream ofs(filename, std::ios::binary);
+    if (!ofs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for writing !!!");
+    }
+    PakHeader pakHeader{};
+    uint32_t soundCount{ 0 };
+    auto startOffset = ofs.tellp();
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    auto dataStartOffset = ofs.tellp();
+    for (auto& sound : m_SoundMap)
+    {
+        auto& assetHandle = sound.first;
+        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        auto& filePath = resource.m_Filepath;
+        ofs.write(
+            reinterpret_cast<const char*>(&assetHandle),
+            sizeof(AssetHandle)
+        );
+        SoundWriter::WriteSoundToFile(ofs, filePath.c_str());
+        soundCount++;
+    }
+    auto dataEndOffset = ofs.tellp();
+    uint32_t size = dataEndOffset - dataStartOffset;
+    uint32_t offset = static_cast<uint32_t>(dataStartOffset);
+    pakHeader.size = size;
+    pakHeader.offset = offset;
+    pakHeader.itemCount = soundCount;
+    ofs.seekp(startOffset);
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    ofs.seekp(dataEndOffset);
+    ofs.close();
+    return true;
+}
+
+bool AssetManager::Deserialize(const std::string& filepath)
 {
     using json = nlohmann::json;
     json jassetRegistry;
-    std::ifstream ifs(filename);
+    std::ifstream ifs(filepath);
     if (!ifs.is_open())
     {
-        std::cerr << "Failed to open" << filename << std::endl;
+        std::cerr << "Failed to open" << filepath << std::endl;
         return false;
     }
     ifs >> jassetRegistry;
@@ -456,6 +601,64 @@ bool AssetManager::DeserializeTexturePack(const std::string& filepath)
     }
     ifs.close();
     return false;
+}
+
+bool AssetManager::DeserializeShaderPack(const std::string& filepath)
+{
+    std::ifstream ifs(filepath, std::ios::binary);
+    if (!ifs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for reading !!!");
+    }
+    PakHeader pakHeader{};
+    ifs.read(
+        reinterpret_cast<char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    for (size_t index = 0; index < pakHeader.itemCount; index++)
+    {
+        PakHeader programHeader{};
+        ifs.read(
+            reinterpret_cast<char*>(&programHeader),
+            sizeof(PakHeader)
+        );
+        AssetHandle assetHandle{ 0,0 };
+        ifs.read(
+            reinterpret_cast<char*>(&assetHandle),
+            sizeof(AssetHandle)
+        );
+        std::vector<ShaderType> types(programHeader.itemCount);
+        std::vector<std::string> sources(programHeader.itemCount);  
+        for (auto stageIndex = 0; stageIndex < programHeader.itemCount; stageIndex++)
+        {
+            auto stageInfo = ShaderReader::ReadShaderProgramHeader(ifs);
+            sources[stageIndex].resize(stageInfo.size);
+            ifs.read(
+                reinterpret_cast<char*>(sources[stageIndex].data()),
+                stageInfo.size
+            );
+            ShaderType typeInfo{};
+            switch (stageInfo.stageMask)
+            {
+            case 0:
+            case 1:
+                types[stageIndex] = ShaderType::VERTEX;
+                break;
+            case 2:
+            case 3:
+            case 4:
+                types[stageIndex] = ShaderType::PIXEL;
+                break;
+            case 5:
+                types[stageIndex] = ShaderType::COMPUTE;
+                break;
+            }
+        }
+        Shader shader{ types, sources };
+        m_ShaderMap[assetHandle] = shader;
+    }
+    ifs.close();
+    return true;
 }
 
 void AssetManager::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)

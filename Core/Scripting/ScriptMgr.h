@@ -35,17 +35,14 @@ namespace scripting
 		static void PrintLuaStack(lua_State* L);
 		static int PrintStack(lua_State* L);
 		static int IsKeyDown(lua_State* L);
-
-		static void ExecuteScript(lua_State* L, const char* script, size_t size, const char* name);
-		static void ExecuteScriptFunction(lua_State* L, const char* script, const char* function_name, float ts);
 		static void InitScript(lua_State* L, Character* character, ControlScript& script);
 
 		// -------------------Entity-------------------
 		static int lua_ScenePushEntity(lua_State* L, entt::entity entity);
 		static entt::entity lua_checkEntity(lua_State* L, int index);
-		static void CallOnInit(lua_State* L, entt::entity entity, ControlScript& script);
-		static void CallOnUpdate(lua_State* L, entt::entity entity, ControlScript& script, float dt);
-		static void CallOnDestroy(lua_State* L, entt::entity entity, ControlScript& script);
+		static void CallOnInit(lua_State* L, ControlScript& script);
+		static void CallOnUpdate(lua_State* L, ControlScript& script, float dt);
+		static void CallOnDestroy(lua_State* L, ControlScript& script);
 
 		// -------------------Input-------------------
 		static void register_input(lua_State* L);

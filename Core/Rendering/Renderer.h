@@ -26,8 +26,6 @@ struct ParticleSystemBuffer
     glm::vec4* Color = nullptr;
 };
 
-
-
 constexpr uint64_t U64_DEF = 14757395258967641292;
 class Renderer
 {
@@ -67,7 +65,6 @@ public:
 
     void EndFrame();
 
-    void SetUpForRendering();
     void UploadBuffer(const VertexBuffer& vertex_buffer) const;
     void Clear(GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) const;
     void Flush() const;
@@ -78,21 +75,7 @@ public:
     void MergeFreeRanges();
     void DebugParticleRanges();
 
-    Renderer():
-        counter{0},
-        counterLimit{64},
-        m_Ts{0},
-        m_VertexBuffer{0},
-        m_IndexBuffer{0},
-        m_MaterialBuffer{0},
-        m_ModelMatrixInstanceBuffer{0},
-        m_InstanceGroups{},
-        m_InstanceGroupKeys{},
-        m_InstanceGroupsMap{},
-        m_AllocatedRanges{},
-        m_FreeRanges{{0, 16384}}
-    {
-    }
+    Renderer();
     ~Renderer();
     std::vector<RenderCommand> m_CommandBuffer;
 
@@ -111,12 +94,6 @@ private:
     std::vector<ParticleRange> m_AllocatedRanges;
     std::vector<ParticleRange> m_FreeRanges;
 
-};
-
-class RenderManager
-{
-public:
-    
 };
 
 #endif

@@ -14,5 +14,4 @@ struct Sound
 	uint32_t frameCount;
 	uint8_t* PCMData;
 };
-
 #endif

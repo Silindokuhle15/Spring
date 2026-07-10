@@ -26,12 +26,30 @@ public:
 	UILayer<Win32Window> m_pUILayer;
 	//void BeginFrame();
 	void DrawMenuBarPanel();
+    void DrawComponentsPanel();
+    void DrawParticleSystemPanel();
+    void DrawParticleSystemEditor();
 	//void EndFrame();
 	std::shared_ptr<Scene> m_Scene;
 	AssetHandle m_LobbyMeshHandle;
 	AssetHandle m_LobbyGraphicsShaderHandle;
 	AssetHandle m_ParticleGraphicsShaderHandle;
 	AssetManager m_AssetManager;
+
+    //--------- COMPONENTS ----------//
+    entt::entity selectedEntity;
+    int selectedCharacter = -1;
+    bool showAddCharacterMenu = false;
+    bool showCharacterEditor = false;
+    bool showEditCharacterMenu = false;
+
+    bool characterAddComponent = false;
+    bool characterRemoveComponent = false;
+    std::string createNewCharacterMeshPath = "";
+    //-------- PARTICLE SYSTEM -------//
+    int selectedParticleSystem = -1;
+    bool showParticleEditor = false;
+    bool randomOrientation = false;
 public:
 	void Run() override;
 	void OnUpdate();
@@ -44,6 +62,7 @@ public:
 public:
 	BaseApplication(uint64_t width, uint64_t height, const char* title);
 	BaseApplication() = default;
+    ~BaseApplication();
 
 private:
     std::string GetFileName(const char* filter)
@@ -80,5 +99,10 @@ private:
         SetWindowText(GetDlgItem(m_AppWindow.m_Hwnd, IMPORT_FROM_EDITBOX), szFile);
         return std::string(szFile);
     }
+    bool showCreateNewSceneWindow = false;
+    char* newSceneNameBuffer;
+    char* meshPackBuffer;
+    char* materialPackBuffer;
+    char* texturePackBuffer;
     bool showAssetManagerWindow = false;
 };

@@ -47,11 +47,11 @@ public:
     }
     void Enable() override
     {
-        m_ComponentPanel.Run();
+        //m_ComponentPanel.Run();
         m_ContentBrowser.Run();
         m_RenderPanel.Run();
-        m_ParticleSystemPanel.Run();
-        m_StatsPanel.Run();
+        //m_ParticleSystemPanel.Run();
+        //m_StatsPanel.Run();
         //m_FileMenuBar.Run();
     }
 
@@ -115,6 +115,23 @@ public:
         {
             camPos += glm::vec3(0, 0, -1);
         }
+        if (event.GetID() == event::EventID::A)
+        {
+            camPos += glm::vec3(-1, 0, 0);
+        }
+        if (event.GetID() == event::EventID::D)
+        {
+            camPos += glm::vec3(1, 0, 0);
+        }
+        if (event.GetID() == event::EventID::Q)
+        {
+            camPos += glm::vec3(0, 1, 0);
+        }
+        if (event.GetID() == event::EventID::Z)
+        {
+            camPos += glm::vec3(0, -1, 0);
+        }
+        event.m_Handled = true;
         m_pActiveCamera->SetEye(camPos);
     }
     virtual void OnUpdate(TimeStep ts) override

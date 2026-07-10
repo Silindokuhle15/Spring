@@ -10,7 +10,7 @@
 #include "SceneState.h"
 #include "ParticleSystem.h"
 #include "StringUtils.h"
-#include "Event.h"
+
 class Character;
 class Renderer;
 
@@ -30,6 +30,8 @@ public:
 	std::string meshPack;
 	std::string materialPack;
 	std::string texturePack;
+	std::string shaderPack;
+	std::string soundPack;
 
 	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;
@@ -40,10 +42,8 @@ public:
 	std::vector<Camera> m_Cameras;
 
 	std::vector<BVNode<primitives::Bound3D>> m_BVEntries;
-	std::vector<uint64_t> m_Collisions;
+	std::vector<uint32_t> m_Collisions;
 	std::vector<physics::CollisionPairDescription> m_CollisionPairs;
-
-	std::vector<primitives::ParticleSystem> m_ParticleSystems;
 
 	virtual void OnCreateSceneObjects();
 	virtual void AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound);
@@ -56,9 +56,8 @@ public:
 	lua_State* GetLuaState() const { return m_pLuaState; }
 
 	Character* CreateSceneObject(uint32_t hint = 0);
+	Character* GetSceneCharacter(entt::entity& id);
 	void DestroySceneObject(entt::entity id);
-	Character GetSceneCharacter(entt::entity& id);
-	Character* GetSceneCharacterPtr(entt::entity& id);
 
 	template<typename... T>
 	inline auto GetView() { return m_Registry.view<T...>(); }
@@ -78,6 +77,8 @@ protected:
 	lua_State* m_pLuaState = nullptr;
 	AssetManager* m_AssetManager;
 	BVNode<primitives::Bound3D>* m_BVHTreeRoot;
+	ArenaAllocator<Character> m_CharacterAllocator;
+	std::map<entt::entity, Character*> m_EntityCharacterMap;
 private:
 	std::vector<const BVNode<primitives::Bound3D>*> m_NodeBuffer;
 	float m_CollisionVolumeSize;

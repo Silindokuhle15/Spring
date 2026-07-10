@@ -54,19 +54,6 @@ public:
 	uint64_t m_ID;
 	PLATFORM m_Texture;
 
-	virtual void OnInit()
-	{
-		//m_Texture.OnInit();
-	}
-	virtual void Bind()
-	{
-		//m_Texture.Bind();
-	}
-	virtual void OnUpdate()
-	{
-		//m_Texture.OnUpdate();
-	}
-
 	TextureBase(const _TextureDescription& desc, const _TextureView& view, uint64_t id= 0xFFFFFFFF) :
 		_TextureDescription{ desc },
 		_TextureView{ view },

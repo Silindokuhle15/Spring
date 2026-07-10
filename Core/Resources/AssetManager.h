@@ -24,8 +24,12 @@ private:
 	std::map<AssetHandle, Sound> m_SoundMap;
 public:
 	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
+	std::map<AssetHandle, AssetResource> m_AssetHandleAndResourceMap;
+	std::map<AssetHandle, ShaderResource> m_ShaderResourceMap;
 	AssetManager() :
 		m_AssetResourceAndHandleMap{},
+		m_AssetHandleAndResourceMap{},
+		m_ShaderResourceMap{},
 		m_FrameBufferMap{},
 		m_ShaderMap{},
 		m_MaterialGroupMap{},
@@ -41,12 +45,14 @@ public:
 	bool SerializeMaterialPack(const std::string& filename);
 	bool SerializeMeshPack(const std::string& filename);
 	bool SerializeTexturePack(const std::string& filename);
-	bool Deserialize(const std::string& filename);
+	bool SerializeShaderPack(const std::string& filename);
+	bool SerializeSoundPack(const std::string& filename);
+	bool Deserialize(const std::string& filepath);
 	bool DeserializeMaterialPack(const std::string filepath);
 	bool DeserializeMeshPack(const std::string& filepath);
 	bool DeserializeTexturePack(const std::string& filepath);
+	bool DeserializeShaderPack(const std::string& filepath);
 	
-
 	void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
 	AssetHandle CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths);
 	AssetHandle CreateOpenGLFrameBuffer(TextureBase<GL_Texture>& tex_base);
@@ -65,10 +71,14 @@ public:
 			if (resource.m_Type == AssetType::ComputeShaderResource)
 			{
 				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
-				ShaderResource r{ ShaderInfo{resource.m_Filepath, ShaderType::COMPUTE} };
+				std::vector<ShaderInfo> infos(1);
+				infos[0].filePath = resource.m_Filepath;
+				infos[0].shaderType = ShaderType::COMPUTE;
+				ShaderResource r{ infos};
 				Shader shader{ r };
 				m_ShaderMap[assetHandle] = shader;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
 			}
 			if (resource.m_Type == AssetType::GraphicsShaderResource)
 			{
@@ -76,12 +86,18 @@ public:
 				auto& combinedPaths = resource.m_Filepath;
 				auto path1 = combinedPaths.substr(0, combinedPaths.find('\n'));
 				auto path2 = combinedPaths.substr(combinedPaths.find('\n') + 1);
-
-				ShaderResource r = { ShaderInfo{ path1, ShaderType::VERTEX },
-					ShaderInfo{ path2, ShaderType::PIXEL } };
+				std::vector<ShaderInfo> infos(2);
+				infos[0].filePath = path1;
+				infos[0].shaderType = ShaderType::VERTEX;
+				infos[1].filePath = path2;
+				infos[1].shaderType = ShaderType::PIXEL;
+				ShaderResource r { infos};
 				Shader shader{ r };
+				m_ShaderResourceMap[assetHandle] = r;
 				m_ShaderMap[assetHandle] = shader;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
+
 			}
 			if (resource.m_Type == AssetType::MeshResource)
 			{
@@ -97,6 +113,7 @@ public:
 					m_MaterialGroupMap[assetHandle] = materialGroup;
 					m_MeshMap[assetHandle] = mesh;
 					m_AssetResourceAndHandleMap[resource] = assetHandle;
+					m_AssetHandleAndResourceMap[assetHandle] = resource;
 				}
 				if (extension == ".mesh")
 				{
@@ -106,6 +123,7 @@ public:
 					mesh.m_Materials = m_MaterialGroupMap[assetHandle];
 					m_MeshMap[assetHandle] = mesh;
 					m_AssetResourceAndHandleMap[resource] = assetHandle;
+					m_AssetHandleAndResourceMap[assetHandle] = resource;
 				}
 			}
 			if (resource.m_Type == AssetType::ScriptResource)
@@ -114,6 +132,8 @@ public:
 				auto scriptData = ReadLuaScriptFromDisk(resource.m_Filepath);
 				m_ScriptMap[assetHandle] = scriptData;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
+
 			}
 			if (resource.m_Type == AssetType::Texture2D)
 			{
@@ -122,6 +142,8 @@ public:
 				auto glTexture = LoadTextureFromFile(filepath);
 				m_TextureMap[assetHandle] = glTexture;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
+
 			}
 			if (resource.m_Type == AssetType::CubeMap)
 			{
@@ -133,6 +155,7 @@ public:
 				auto sound = SoundReader::ReadSoundClipFromFile(resource.m_Filepath.c_str(), soundBlockAllocator);
 				m_SoundMap[assetHandle] = sound;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
 			}
 		}
 		return assetHandle;

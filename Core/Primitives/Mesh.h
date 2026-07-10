@@ -68,7 +68,9 @@ namespace primitives
     struct PlaySoundRequest
     {
         entt::entity ParentEntity;
-        bool Active[4];
+        uint32_t flags = 0;
+        uint32_t currentFrame = 0;
+        uint32_t frameCount = 0;
         AssetHandle SoundID;
     };
 

@@ -611,6 +611,51 @@ MTLMaterial MaterialReader::ReadMaterialFromFile(std::ifstream& ifs)
 	return material;
 }
 
+int SoundWriter::WriteSoundToFile(std::ofstream& ofs, const char* path_to_source)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	std::ifstream ifs(path_to_source, std::ios::binary | std::ios::ate);
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	std::streamsize size = ifs.tellg();
+	ifs.seekg(0);
+	std::string soundBuffer(size, '\0');
+	if (!ifs.read(
+		&soundBuffer[0],
+		size))
+	{
+		throw std::runtime_error("Failed to load Sound file into memory !!!");
+	}
+	PakHeader header{};
+	header.itemCount = 1;
+	auto startOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+	auto dataStartOffset = ofs.tellp();
+	ofs.write(
+		reinterpret_cast<const char*>(soundBuffer.data()),
+		size
+	);
+	auto dataEndOffset = ofs.tellp();
+	header.offset = static_cast<uint32_t>(dataStartOffset);
+	header.size = static_cast<uint32_t>(size);
+	ofs.seekp(startOffset);
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+	ofs.seekp(dataEndOffset);
+	ifs.close();
+	return 0;
+}
+
 Sound SoundReader::ReadSoundClipFromFile(const char* file_path, BlockAllocator<BYTE>& sound_allocator)
 {
 	std::ifstream ifs(file_path, std::ios::binary);
@@ -762,3 +807,117 @@ void TextureReader::LoadDDSTextureIntoMemory(std::ifstream& ifs, uint32_t size, 
 		size
 	);
 }
+
+std::string ShaderReader::LoadShaderSourceIntoMemory(std::ifstream& ifs, uint32_t size)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	char* buffer = new char[size];
+	ifs.read(
+		reinterpret_cast<char*>(buffer),
+		size
+	);
+	std::string shaderSource(buffer);
+	delete[] buffer;
+	return shaderSource;
+}
+
+ShaderFileHeader ShaderReader::ReadShaderProgramHeader(std::ifstream& ifs)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failedf to open file for reading !!!");
+	}
+	ShaderFileHeader pakHeader{};
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.magic),
+		sizeof(uint32_t)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.version),
+		sizeof(uint32_t)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.offset),
+		sizeof(uint32_t)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.size),
+		sizeof(uint32_t)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.stageCount),
+		sizeof(uint32_t)
+	);
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader.stageMask),
+		sizeof(uint32_t)
+	);
+	return pakHeader;
+}
+
+int ShaderWriter::WriteShaderProgramToFile(const char* pak_name, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages)
+{
+	std::ofstream ofs(pak_name, std::ios::binary);
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	auto result = WriteShaderProgramToFile(ofs, asset_handle, num_stages, stages);
+	ofs.close();
+	return result;
+}
+
+int ShaderWriter::WriteShaderProgramToFile(std::ofstream& ofs, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	ofs.write(
+		reinterpret_cast<const char*>(&asset_handle),
+		sizeof(AssetHandle)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&num_stages),
+		sizeof(uint32_t)
+	);
+	return 0;
+}
+
+int ShaderWriter::WriteShaderProgramHeaderToFile(std::ofstream& ofs, const ShaderFileHeader& shader_file_header)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.magic),
+		sizeof(uint32_t)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.version),
+		sizeof(uint32_t)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.offset),
+		sizeof(uint32_t)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.size),
+		sizeof(uint32_t)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.stageCount),
+		sizeof(uint32_t)
+	);
+	ofs.write(
+		reinterpret_cast<const char*>(&shader_file_header.stageMask),
+		sizeof(uint32_t)
+	);
+	return 0;
+}
+
+

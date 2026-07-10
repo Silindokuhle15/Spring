@@ -111,8 +111,6 @@ set(SHARED_SOURCES
 
 "Editor/Utility/ObjectLoader.h"
 "Editor/Utility/ObjectLoader.cpp"
-"Editor/Utility/Serializer.h"
-"Editor/Utility/Serializer.cpp"
 
 "Core/Primitives/Bound.h" 
 "Core/Primitives/Mesh.h" 

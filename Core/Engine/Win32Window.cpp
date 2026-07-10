@@ -60,6 +60,30 @@ LRESULT Win32Window::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 OnEvent(sEvent);
                 break;
             }
+            if(wParam == 0x41)
+            {
+                event::KeyPressEvent wEvent(event::EventID::A);
+                OnEvent(wEvent);
+                break;
+            }
+            if(wParam == 0x44)
+            {
+                event::KeyPressEvent sEvent(event::EventID::D);
+                OnEvent(sEvent);
+                break;
+            }
+            if(wParam == 0x51)
+            {
+                event::KeyPressEvent wEvent(event::EventID::Q);
+                OnEvent(wEvent);
+                break;
+            }
+            if(wParam == 0x5A)
+            {
+                event::KeyPressEvent sEvent(event::EventID::Z);
+                OnEvent(sEvent);
+                break;
+            }
         }break;
         default:
             return DefWindowProc(m_Hwnd, uMsg, wParam, lParam);

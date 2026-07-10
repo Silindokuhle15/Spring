@@ -1,11 +1,94 @@
 #include "Application.h"
+#include <fstream>
+
+void Application::advanceAudioMix()
+{
+	m_CurrentMixFrame = (m_CurrentMixFrame >= m_CurrentMixFrameCount) ? 0 : m_CurrentMixFrame;
+	for (auto& request : m_AudioRequestQueue)
+	{
+		auto& currentFrame = request.currentFrame;
+		auto& frameCount = request.frameCount;
+		if (currentFrame >= frameCount)
+		{
+			continue;
+		}
+		auto& assetHandle = request.SoundID;
+		auto& sound = m_SoundMap[assetHandle];
+		m_CurrentMixFrameCount = max<uint32_t>(m_CurrentMixFrameCount, sound.frameCount);
+		if (sound.numChannels == 1)
+		{
+
+		}
+		for (auto frameIndex = currentFrame; frameIndex < frameCount; frameIndex++)
+		{
+			if (sound.bitsPerSample == 16)
+			{
+				int16_t* s = reinterpret_cast<int16_t*>(sound.PCMData);
+
+				if (sound.numChannels == 1)
+				{
+					m_AudioMixBuffer[2 * frameIndex + 0] = s[frameIndex];
+					m_AudioMixBuffer[2 * frameIndex + 1] = s[frameIndex];
+				}
+				if (sound.numChannels == 2)
+				{
+					m_AudioMixBuffer[frameIndex] = s[frameIndex] / 32768.0f;
+				}
+			}
+			if (sound.bitsPerSample == 32)
+			{
+				float* s = reinterpret_cast<float*> (sound.PCMData);
+
+				if (sound.numChannels == 1)
+				{
+					m_AudioMixBuffer[2 * frameIndex + 0] += 0.25 * (min<float>(1.0f, max<float>(s[frameIndex], -1.0f)));
+					m_AudioMixBuffer[2 * frameIndex + 1] += 0.25 * (min<float>(1.0f, max<float>(s[frameIndex], -1.0f)));
+				}
+				if (sound.numChannels == 2)
+				{
+					m_AudioMixBuffer[frameIndex] += s[frameIndex] / 32768.0f;
+				}
+			}
+		}
+	}
+	uint32_t remainingFrames = m_CurrentMixFrameCount - m_CurrentMixFrame;
+	if (remainingFrames > 0 && !m_ExitApplication.load())
+	{
+		float* src = m_AudioMixBuffer.data() + m_CurrentMixFrame;
+		uint32_t padding{ 0 };
+		uint32_t framesAvailable{ 0 };
+		uint32_t framesToWrite{ 0 };
+		BYTE* physicalAudioBuffer{ nullptr };
+		m_AudioClient->GetCurrentPadding(&padding);
+		framesAvailable = m_AudioBufferFrameCount - padding;
+		framesToWrite = min<uint32_t>(framesAvailable, remainingFrames);
+		m_AudioRenderClient->GetBuffer(framesToWrite, &physicalAudioBuffer);
+		memcpy(physicalAudioBuffer, src, framesToWrite * m_DefaultWAVMixFormat->nChannels * sizeof(float));
+		m_AudioRenderClient->ReleaseBuffer(framesToWrite, 0);
+		remainingFrames -= framesToWrite;
+		for (auto index = m_CurrentMixFrame; index < m_CurrentMixFrame + framesToWrite; index++)
+		{
+			m_AudioMixBuffer[index] = 0.0f;
+		}
+		for (auto& request : m_AudioRequestQueue)
+		{
+			request.currentFrame += framesToWrite;
+		}
+		m_CurrentMixFrame += framesToWrite;
+	}
+	std::erase_if(m_AudioRequestQueue, [&](primitives::PlaySoundRequest& request) { return request.currentFrame > -request.frameCount; });
+}
 
 Application::Application():
 	m_IMMDeviceEnumerator{nullptr},
 	m_IMMDevice{nullptr},
 	m_AudioClient{ nullptr},
 	m_AudioRenderClient{nullptr},
-	m_AudioData{nullptr},
+	m_AudioBufferFrameCount{ 0 },
+	m_AudioMixMaxFrameCount{ 65536 },
+	m_CurrentMixFrame{ 0 },
+	m_CurrentMixFrameCount{ 0 },
+	m_AudioMixBuffer(size_t(m_AudioMixMaxFrameCount) , 0.0f),
 	m_DefaultWAVMixFormat{nullptr},
 	m_ExitApplication{false}
 {
@@ -70,64 +153,48 @@ Application::~Application()
 	CoUninitialize();
 }
 
-int Application::RenderAudioData(Sound& sound)
+bool Application::LoadAudioSourcesFromFile(std::ifstream& ifs)
 {
-	size_t sampleCount = sound.frameCount * sound.numChannels;
-	std::vector<float> audioBuffer(sampleCount);
-	if (sound.numChannels == 1) // mono audio
+	if (!ifs.is_open())
 	{
-		audioBuffer.resize(sampleCount * 2);
+		throw std::runtime_error("Failed to open file for reading !!!");
 	}
-	// Will be used later for mixing multiple audio sources
-	for (size_t index = 0; index < sampleCount; index++)
+	PakHeader pakHeader{};
+	ifs.read(
+		reinterpret_cast<char*>(&pakHeader),
+		sizeof(PakHeader)
+	);
+	assert(pakHeader.magic == 0x4B434150);
+	for (auto itemIndex = 0; itemIndex < pakHeader.itemCount; itemIndex++)
 	{
-		if (sound.bitsPerSample == 16)
-		{
-			int16_t* s = reinterpret_cast<int16_t*>(sound.PCMData);
+		AssetHandle assetHandle{ 0,0 };
+		ifs.read(
+			reinterpret_cast<char*>(&assetHandle),
+			sizeof(AssetHandle)
+		);
+		PakHeader itemHeader{};
+		ifs.read(
+			reinterpret_cast<char*>(&itemHeader),
+			sizeof(PakHeader)
+		);
+		assert(itemHeader.magic == 0x4B434150);
+		assert(itemHeader.itemCount == 1);
+		auto sound = SoundReader::ReadSoundClipFromFile(ifs, soundBlockAllocator);
+		m_SoundMap[assetHandle] = sound;
+	}
+	return true;
+}
 
-			if (sound.numChannels == 1)
-			{
-				audioBuffer[2 * index + 0] = s[index];
-				audioBuffer[2 * index + 1] = s[index];
-			}
-			if (sound.numChannels == 2)
-			{
-				audioBuffer[index] = s[index] / 32768.0f;
-			}
-		}
-		if (sound.bitsPerSample == 32)
-		{
-			float* s = reinterpret_cast<float*> (sound.PCMData);
-
-			if (sound.numChannels == 1)
-			{
-				audioBuffer[2 * index + 0] = 0.25 * (min(1.0f, max(s[index], -1.0f)));
-				audioBuffer[2 * index + 1] = 0.25 * (min(1.0f, max(s[index], -1.0f)));
-			}
-			if (sound.numChannels == 2)
-			{
-				audioBuffer[index] = s[index] / 32768.0f;
-			}
-		}
-	}
-	uint32_t remainingFrames = sound.frameCount - sound.currentFrame;
-	while (remainingFrames > 0 && sound.playing && !m_ExitApplication)
+int Application::RenderAudiRequest(primitives::PlaySoundRequest& request)
+{
+	auto& assetHandle = request.SoundID;
+	if (!m_SoundMap.contains(assetHandle))
 	{
-		float* src = audioBuffer.data() + sound.currentFrame * sound.numChannels;
-		uint32_t padding{ 0 };
-		uint32_t framesAvailable{ 0 };
-		uint32_t framesToWrite{ 0 };
-		BYTE* physicalAudioBuffer{ nullptr };
-		m_AudioClient->GetCurrentPadding(&padding);
-		framesAvailable = m_AudioBufferFrameCount - padding;
-		framesToWrite = min(framesAvailable, remainingFrames);
-		m_AudioRenderClient->GetBuffer(framesToWrite, &physicalAudioBuffer);
-		memcpy(physicalAudioBuffer, src, framesToWrite * m_DefaultWAVMixFormat->nChannels * sizeof(float));
-		m_AudioRenderClient->ReleaseBuffer(framesToWrite, 0);
-		remainingFrames -= framesToWrite;
-		sound.currentFrame += framesToWrite;
+		return -1;
 	}
-	sound.currentFrame = 0;
-	sound.playing = false;
+	auto& sound = m_SoundMap[assetHandle];
+	request.currentFrame = 0;
+	request.frameCount = sound.frameCount;
+	m_AudioRequestQueue.emplace_back(std::move(request));
 	return 0;
 }

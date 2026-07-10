@@ -254,7 +254,6 @@ inline void ComponentPanel<T>::Run()
 			}
 
 		}
-
 		ImGui::EndPopup();
 	}
 
@@ -359,7 +358,6 @@ inline void ComponentPanel<T>::Run()
 			character->AddComponent<physics::PhysicsState>(ps);
 			character->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{});
 		}
-
 		ImGui::End();
 	}
 
@@ -369,9 +367,9 @@ inline void ComponentPanel<T>::Run()
 		auto entity = entt::entity((uint32_t)selectedCharacter);
 		auto character = activeScene->GetSceneCharacter(entity);
 		ImGui::Begin("Character Editor");
-		if (character.HasComponent<physics::PhysicsState>())
+		if (character->HasComponent<physics::PhysicsState>())
 		{
-			auto& physicsState = character.GetComponent<physics::PhysicsState>();
+			auto& physicsState = character->GetComponent<physics::PhysicsState>();
 			ImGui::TextUnformatted("Physics Component");
 			float orientation[] = { physicsState.orientation.w, physicsState.orientation.x , physicsState.orientation.y , physicsState.orientation.z };
 			float position[] = { physicsState.position.x , physicsState.position.y , physicsState.position.z , 1.0f };
@@ -394,46 +392,46 @@ inline void ComponentPanel<T>::Run()
 			if (ImGui::InputFloat("mass", &physicsState.mass));
 		}
 
-		if (character.HasComponent<primitives::MeshInstance>())
+		if (character->HasComponent<primitives::MeshInstance>())
 		{
 			char buffer[256] = "";
-			auto& meshInstance = character.GetComponent<primitives::MeshInstance>();
+			auto& meshInstance = character->GetComponent<primitives::MeshInstance>();
 			ImGui::TextUnformatted("Mesh Instance");
 			ImGui::Separator();
 			sprintf(buffer, "HWORD: %d LWORD %d", (int)meshInstance.m_Handle.m_HWORD, (int)meshInstance.m_Handle.m_LWORD);
 			ImGui::TextUnformatted(buffer);
 		}
 
-		if (character.HasComponent<scripting::ControlScript>())
+		if (character->HasComponent<scripting::ControlScript>())
 		{
 			char buffer[256] = "";
-			auto& scriptInstance = character.GetComponent<scripting::ControlScript>();
+			auto& scriptInstance = character->GetComponent<scripting::ControlScript>();
 			ImGui::TextUnformatted("Script Instance");
 			ImGui::Separator();
 			sprintf(buffer, "HWORD: %d LWORD %d", (int)scriptInstance.m_Handle.m_HWORD, (int)scriptInstance.m_Handle.m_LWORD);
 			ImGui::TextUnformatted(buffer);
 		}
 
-		if (character.HasComponent<Character*>())
+		if (character->HasComponent<Character*>())
 		{
 			ImGui::TextUnformatted("Children");
 		}
 
-		if (character.HasComponent<primitives::Parent>())
+		if (character->HasComponent<primitives::Parent>())
 		{
 			ImGui::TextUnformatted("Parent");
-			auto& parent = character.GetComponent<primitives::Parent>();
+			auto& parent = character->GetComponent<primitives::Parent>();
 			char buffer[256] = "";
 			sprintf(buffer, "Character %d", (int)parent.ParentEntity);
 			ImGui::TextUnformatted(buffer);
-			if (character.HasComponent<primitives::ParticleSystem>())
+			if (character->HasComponent<primitives::ParticleSystem>())
 			{
 				bool showParticleEditor = false;
 				ImGui::TextUnformatted("Particle System");
 				ImGui::Checkbox("Open Editor", &showParticleEditor);
 				//if (showParticleEditor)
 				{
-					auto& ps = character.GetComponent<primitives::ParticleSystem>();
+					auto& ps = character->GetComponent<primitives::ParticleSystem>();
 					int numParticles = ps.m_NumParticles;
 					int maxNumParticles = ps.m_MaxNumParticles;
 					int particleRate = ps.m_ParticleRate;
@@ -670,7 +668,7 @@ inline void ComponentPanel<T>::Run()
 				ImGui::Text("Adding Components");
 				ImGui::Separator();
 				{
-					if (!(character.HasComponent<physics::PhysicsState>()))
+					if (!(character->HasComponent<physics::PhysicsState>()))
 					{
 						if (ImGui::Button("PhysicsState  "))
 						{
@@ -704,17 +702,17 @@ inline void ComponentPanel<T>::Run()
 							ps.linear_acceleration = glm::vec3(linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]);
 							ps.angular_acceleration = glm::vec3(angular_acceleration[0], angular_acceleration[1], linear_acceleration[2]);
 							ps.inertia = glm::vec3(inertia[0], inertia[1], inertia[2]);
-							character.AddComponent<physics::PhysicsState>(ps);
+							character->AddComponent<physics::PhysicsState>(ps);
 						}
 					}
-					if (!character.HasComponent<primitives::MeshInstance>())
+					if (!character->HasComponent<primitives::MeshInstance>())
 					{
 						if (ImGui::Button("Mesh  Instance"))
 						{
 
 						}
 					}
-					if (!character.HasComponent<scripting::ControlScript>())
+					if (!character->HasComponent<scripting::ControlScript>())
 					{
 						if (ImGui::Button("Script Instance"))
 						{
@@ -730,25 +728,25 @@ inline void ComponentPanel<T>::Run()
 				ImGui::Text("Removing Components");
 				ImGui::Separator();
 				{
-					if (character.HasComponent<physics::PhysicsState>())
+					if (character->HasComponent<physics::PhysicsState>())
 					{
 						if (ImGui::Button("PhysicsState  "))
 						{
-							character.RemoveComponent<physics::PhysicsState>();
+							character->RemoveComponent<physics::PhysicsState>();
 						}
 					}
-					if (character.HasComponent<primitives::MeshInstance>())
+					if (character->HasComponent<primitives::MeshInstance>())
 					{
 						if (ImGui::Button("Mesh  Instance"))
 						{
-							character.RemoveComponent<primitives::MeshInstance>();
+							character->RemoveComponent<primitives::MeshInstance>();
 						}
 					}
-					if (character.HasComponent<scripting::ControlScript>())
+					if (character->HasComponent<scripting::ControlScript>())
 					{
 						if (ImGui::Button("Script Instance"))
 						{
-							character.RemoveComponent<scripting::ControlScript>();
+							character->RemoveComponent<scripting::ControlScript>();
 						}
 					}
 				}

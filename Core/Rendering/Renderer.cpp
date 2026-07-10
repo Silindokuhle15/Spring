@@ -10,66 +10,6 @@ bool operator==(const ParticleRange& a, const ParticleRange& b)
     return a.Offset == b.Offset;
 }
 
-void Renderer::SetUpForRendering()
-{
-    glCreateBuffers(1, &m_VertexBuffer);
-  
-    unsigned int vertex_buffer_size = sizeof(primitives::Vertex) * MAX_CHARACTER_BUFFER_SIZE;
-    unsigned int index_buffer_size = sizeof(unsigned int) * MAX_CHARACTER_BUFFER_SIZE;
-    unsigned int material_buffer_size = sizeof(MTLMaterial) * MAX_MATERIALBATCH_BUFFER_SIZE;
-    unsigned int modelMatrix_buffer_size = sizeof(glm::mat4) * MAX_INSTANCEBATCH_BUFFER_SIZE;
-    unsigned int maxBufferSize = sizeof(glm::vec4) * MAX_PARTICLE_BUFFER_SIZE;
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
-    glNamedBufferData(m_VertexBuffer, vertex_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_IndexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
-    glNamedBufferData(m_IndexBuffer, index_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_MaterialBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_MaterialBuffer);
-    glNamedBufferData(m_MaterialBuffer, material_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_ModelMatrixInstanceBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
-    glNamedBufferData(m_ModelMatrixInstanceBuffer, modelMatrix_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
-    // PARTICLE BUFFERS
-    glCreateBuffers(1, &m_GpuBuffers.PositionBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
-    glNamedBufferData(m_GpuBuffers.PositionBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_GpuBuffers.VelocityBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
-    glNamedBufferData(m_GpuBuffers.VelocityBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_GpuBuffers.LifetimeAndSizeBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.LifetimeAndSizeBuffer);
-    glNamedBufferData(m_GpuBuffers.LifetimeAndSizeBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
-    glCreateBuffers(1, &m_GpuBuffers.ColorBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.ColorBuffer);
-    glNamedBufferData(m_GpuBuffers.ColorBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
-    BufferLayout layout{
-        {ShaderDataType::Float3, "Position"},
-        {ShaderDataType::Float2, "TexCoord"},
-        {ShaderDataType::Float,  "ID"},
-        {ShaderDataType::Float3, "Normal"}
-    };
-    m_VAO.Bind();
-    m_VAO.SetBufferLayout(layout);
-
-    GLuint numPts = MAX_PARTICLE_BUFFER_SIZE;
-    m_GpuBuffers.Positions = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.PositionBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.Velocities = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.VelocityBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.LifetimeAndSize = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.LifetimeAndSizeBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.Color = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.ColorBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-
-}
-
 void Renderer::UploadBuffer(const VertexBuffer& vertex_buffer) const
 {
     glNamedBufferSubData(m_VertexBuffer, 0, vertex_buffer.Size(), vertex_buffer.m_Buffer.data());
@@ -106,28 +46,32 @@ void Renderer::ParticleSystemSync(Scene* scene)
 
             if (particleSystem.m_EmitterInfo.m_Shape == primitives::EmitterShape::POINT)
             {
-                std::uniform_real_distribution<float> rangesX(-particleSystem.m_EmitterInfo.m_VectorTwo.x, particleSystem.m_EmitterInfo.m_VectorTwo.x);
-                std::uniform_real_distribution<float> rangesY(-particleSystem.m_EmitterInfo.m_VectorTwo.y, particleSystem.m_EmitterInfo.m_VectorTwo.y);
-                std::uniform_real_distribution<float> rangesZ(-particleSystem.m_EmitterInfo.m_VectorTwo.z, particleSystem.m_EmitterInfo.m_VectorTwo.z);
+                float absX = glm::abs(particleSystem.m_EmitterInfo.m_VectorTwo.x);
+                float absY = glm::abs(particleSystem.m_EmitterInfo.m_VectorTwo.y);
+                float absZ = glm::abs(particleSystem.m_EmitterInfo.m_VectorTwo.z);
+                std::uniform_real_distribution<float> rangesX(-absX, absX);
+                std::uniform_real_distribution<float> rangesY(-absY, absY);
+                std::uniform_real_distribution<float> rangesZ(-absZ, absZ);
+                std::uniform_real_distribution<float> rangesR(-1.0f, 1.0f);
 
                 for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 {
                     m_GpuBuffers.Positions[index] = particleSystem.m_EmitterInfo.m_VectorOne;
-                    if (particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled)
+                    if (particleSystem.m_EmitterInfo.m_Flags.m_Unused2)
                     {
-                        float x = rangesX(rng);
-                        float y = rangesY(rng);
-                        float z = rangesZ(rng);
-                        m_GpuBuffers.Velocities[index] = glm::vec4(x, y, z, 0.0);
+                        float x = rangesR(rng);
+                        float y = rangesR(rng);
+                        float z = rangesR(rng);
+                        m_GpuBuffers.Velocities[index] = glm::vec4(x, y, z, 0.0) * particleSystem.m_Unused1;
                     }
                     else
                     {
                         m_GpuBuffers.Velocities[index] = glm::vec4(
-                            particleSystem.m_EmitterInfo.m_VectorTwo.x,
-                            particleSystem.m_EmitterInfo.m_VectorTwo.y,
-                            particleSystem.m_EmitterInfo.m_VectorTwo.z,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
                             particleSystem.m_EmitterInfo.m_VectorTwo.w
-                        );
+                        ) ;
                     }
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
@@ -139,10 +83,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto radius = particleSystem.m_EmitterInfo.m_VectorOne.w;
                 auto center = glm::vec3(particleSystem.m_EmitterInfo.m_VectorOne);
                 auto normal = glm::vec3(particleSystem.m_EmitterInfo.m_VectorTwo);
-
                 std::uniform_real_distribution<float> rangesR(-radius, radius);
                 std::uniform_real_distribution<float> angle(-glm::pi<float>(), glm::pi<float>());
-
                 glm::vec3 a{ 0 };
                 if (normal.x < 0.9)
                 {
@@ -152,27 +94,27 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 {
                     a = glm::vec3(0, 1, 0);
                 }
-                float v1 = 0.0;
-                float v2 = 0.0;
-
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
                 for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 {
+                    float randomAngle = angle(rng);
+                    float radialDistribution = radius;
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
                     {
-                        v1 = rangesR(rng);
-                        v2 = rangesR(rng);
+                        radialDistribution = rangesR(rng);
                     }
-                    else
-                    {
-                        float randomAngle = angle(rng);
-                        v1 = radius * glm::cos(randomAngle);
-                        v2 = radius * glm::sin(randomAngle);
-                    }
+                    float v1 = radialDistribution * glm::cos(randomAngle);
+                    float v2 = radialDistribution * glm::sin(randomAngle);
                     auto newPos = center + v1 * u + v2 * v;
                     m_GpuBuffers.Positions[index] = glm::vec4(newPos, radius);
-                    m_GpuBuffers.Velocities[index] = particleSystem.m_EmitterInfo.m_VectorTwo;
+                    m_GpuBuffers.Velocities[index] = glm::vec4(
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.w
+                    );
+
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
@@ -184,7 +126,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto center = glm::vec3(particleSystem.m_EmitterInfo.m_VectorOne);
                 auto height = particleSystem.m_EmitterInfo.m_VectorTwo.w;
                 auto normal = glm::vec3(particleSystem.m_EmitterInfo.m_VectorTwo);
-
                 std::uniform_real_distribution<float> rangesR(-radius, radius);
                 std::uniform_real_distribution<float> angleDist(-glm::pi<float>(), glm::pi<float>());
                 std::uniform_real_distribution<float> heightDist(0.0f, 1.0f);
@@ -202,7 +143,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
-
                 for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 {
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
@@ -219,7 +159,12 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     }
                     auto newPos = center + v1 * u + v2 * v + h1 * normal;
                     m_GpuBuffers.Positions[index] = glm::vec4(newPos, radius);
-                    m_GpuBuffers.Velocities[index] = particleSystem.m_EmitterInfo.m_VectorTwo;
+                    m_GpuBuffers.Velocities[index] = glm::vec4(
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.w
+                    );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
@@ -246,81 +191,71 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::normalize(glm::cross(normal, a));
                 auto v = glm::normalize(glm::cross(normal, u));
-
                 glm::vec3 newPoint{ 0 };
                 for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 {
-                    float randomAngle = angleDist(rng);
-                    float randomHeight = height * heightDist(rng);
-                    float angle = 0.0f;
+                    float randomAngle = halfAngle;
+                    float randomHeight = height;
                     float planeAngle = radiusDist(rng);
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
                     {
-                        angle = randomAngle;
-                        float randomRadius = randomHeight * glm::tan(glm::radians(angle));
-                        auto axisPoint = apex + normal * randomHeight;
-                        newPoint = axisPoint + randomRadius * (glm::cos(planeAngle) * u + glm::sin(planeAngle) * v);
+                        randomAngle = angleDist(rng);
+                        planeAngle = radiusDist(rng);
+                        randomHeight = height * heightDist(rng);
                     }
-                    else
-                    {
-                        angle = halfAngle;
-                        float randomRadius = randomHeight * glm::tan(glm::radians(angle));
-                        auto axisPoint = apex + normal * height;
-                        newPoint = axisPoint + randomRadius * (glm::cos(planeAngle) * u + glm::sin(planeAngle) * v);
-                    }
-
+                    float randomRadius = randomHeight * glm::tan(glm::radians(randomAngle));
+                    auto axisPoint = apex + normal * randomHeight;
+                    newPoint = axisPoint + randomRadius * (glm::cos(planeAngle) * u + glm::sin(planeAngle) * v);
                     auto velocity = glm::normalize(newPoint - apex);
                     m_GpuBuffers.Positions[index] = glm::vec4(newPoint, halfAngle);
-                    m_GpuBuffers.Velocities[index] = glm::vec4(velocity, particleSystem.m_EmitterInfo.m_VectorTwo.w);
+                    m_GpuBuffers.Velocities[index] = glm::vec4(
+                        velocity.x * particleSystem.m_Unused1,
+                        velocity.y * particleSystem.m_Unused1,
+                        velocity.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.w
+                    );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
-
             }
 
             if (particleSystem.m_EmitterInfo.m_Shape == primitives::EmitterShape::SPHERE)
             {
                 auto radius = particleSystem.m_EmitterInfo.m_VectorOne.w;
                 auto center = glm::vec3(particleSystem.m_EmitterInfo.m_VectorOne);
-                float v1 = 0.0f;
-                float v2 = 0.0f;
-                std::uniform_real_distribution<float> rangesR(-radius, radius);
-                //std::uniform_real_distribution<float> angle(-glm::pi<float>(), glm::pi<float>());
                 std::uniform_real_distribution<float> dist01(0.0, 1.0);
                 constexpr float M_PI = 3.1415962f;
                 for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 {
                     glm::vec3 randomOffset{ 0 };
+                    float u = 1.0f;
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
                     {
-                        v1 = rangesR(rng);
-                        v2 = rangesR(rng);
+                        u = dist01(rng);
                     }
-                    else
-                    {
-                        float u = dist01(rng);
-                        float u1 = dist01(rng);
-                        float u2 = dist01(rng);
-
-                        // Correct 3D radial distribution
-                        float d = std::cbrt(u * (radius * radius * radius));
-                        // Uniform direction on sphere
-                        float theta = 2.0 * M_PI * u1;
-                        float z = 2.0 * u2 - 1.0;     // cos(phi)
-                        float s = std::sqrt(1.0 - z * z);
-
-                        float x = d * s * std::cos(theta);
-                        float y = d * s * std::sin(theta);
-                        float zc = d * z;
-                        randomOffset = glm::vec3(x, y, zc);
-                    }
+                    float u1 = dist01(rng);
+                    float u2 = dist01(rng);
+                    // Correct 3D radial distribution
+                    float d = std::cbrt(u * (radius * radius * radius));
+                    // Uniform direction on sphere
+                    float theta = 2.0 * M_PI * u1;
+                    float z = 2.0 * u2 - 1.0;     // cos(phi)
+                    float s = std::sqrt(1.0 - z * z);
+                    float x = d * s * std::cos(theta);
+                    float y = d * s * std::sin(theta);
+                    float zc = d * z;
+                    randomOffset = glm::vec3(x, y, zc);
                     m_GpuBuffers.Positions[index] = glm::vec4(center + randomOffset, radius);
-                    m_GpuBuffers.Velocities[index] = particleSystem.m_EmitterInfo.m_VectorTwo;
+                    m_GpuBuffers.Velocities[index] = glm::vec4(
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.w
+                    );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
-            }
-            
+            }            
             particleSystem.m_EmitterInfo.m_Flags.m_Unused1 = false;
         }
 
@@ -385,7 +320,7 @@ uint32_t Renderer::AllocateParticles(uint32_t num_particles)
     for (auto rangeIterator = m_FreeRanges.begin(); rangeIterator != m_FreeRanges.end();)
     {
         auto availableSize = rangeIterator->Size;
-        if (num_particles < availableSize)
+        if (num_particles <= availableSize)
         {
             currentOffset = rangeIterator->Offset;
             ParticleRange allocatedRange{ currentOffset, (num_particles)};            
@@ -462,41 +397,81 @@ void Renderer::DebugParticleRanges()
     std::cout << "\n}\n";
 }
 
+Renderer::Renderer() :
+    counter{ 0 },
+    counterLimit{ 64 },
+    m_Ts{ 0 },
+    m_VertexBuffer{ 0 },
+    m_IndexBuffer{ 0 },
+    m_MaterialBuffer{ 0 },
+    m_ModelMatrixInstanceBuffer{ 0 },
+    m_InstanceGroups{},
+    m_InstanceGroupKeys{},
+    m_InstanceGroupsMap{},
+    m_AllocatedRanges{},
+    m_FreeRanges{ {0, 16384} }
+{
+    unsigned int vertex_buffer_size = sizeof(primitives::Vertex) * MAX_CHARACTER_BUFFER_SIZE;
+    unsigned int index_buffer_size = sizeof(unsigned int) * MAX_CHARACTER_BUFFER_SIZE;
+    unsigned int material_buffer_size = sizeof(MTLMaterial) * MAX_MATERIALBATCH_BUFFER_SIZE;
+    unsigned int modelMatrix_buffer_size = sizeof(glm::mat4) * MAX_INSTANCEBATCH_BUFFER_SIZE;
+    unsigned int maxBufferSize = sizeof(glm::vec4) * MAX_PARTICLE_BUFFER_SIZE;
+
+    glCreateBuffers(1, &m_VertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
+    glNamedBufferData(m_VertexBuffer, vertex_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_IndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
+    glNamedBufferData(m_IndexBuffer, index_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_MaterialBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_MaterialBuffer);
+    glNamedBufferData(m_MaterialBuffer, material_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_ModelMatrixInstanceBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
+    glNamedBufferData(m_ModelMatrixInstanceBuffer, modelMatrix_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+
+    // PARTICLE BUFFERS
+    glCreateBuffers(1, &m_GpuBuffers.PositionBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
+    glNamedBufferData(m_GpuBuffers.PositionBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_GpuBuffers.VelocityBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
+    glNamedBufferData(m_GpuBuffers.VelocityBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_GpuBuffers.LifetimeAndSizeBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.LifetimeAndSizeBuffer);
+    glNamedBufferData(m_GpuBuffers.LifetimeAndSizeBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
+
+    glCreateBuffers(1, &m_GpuBuffers.ColorBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.ColorBuffer);
+    glNamedBufferData(m_GpuBuffers.ColorBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
+
+    BufferLayout layout{
+        {ShaderDataType::Float3, "Position"},
+        {ShaderDataType::Float2, "TexCoord"},
+        {ShaderDataType::Float,  "ID"},
+        {ShaderDataType::Float3, "Normal"}
+    };
+    m_VAO.Bind();
+    m_VAO.SetBufferLayout(layout);
+
+    GLuint numPts = MAX_PARTICLE_BUFFER_SIZE;
+    m_GpuBuffers.Positions = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.PositionBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.Velocities = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.VelocityBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.LifetimeAndSize = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.LifetimeAndSizeBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.Color = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.ColorBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+}
+
 Renderer::~Renderer()
 {
     glUnmapNamedBuffer(m_GpuBuffers.PositionBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.VelocityBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.LifetimeAndSizeBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.ColorBuffer);
-}
-
-void Renderer::DrawInstanced(const RenderCommand& cmd , AssetManager& asset_manager, uint64_t instance_count) const
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDrawBuffer(GL_BACK);
-    glUseProgram(0);
-    UploadMaterialData(cmd, asset_manager);
-    UploadUniformData(cmd, asset_manager);
-    auto viewportX = cmd.m_Viewport[0];
-    auto viewportY = cmd.m_Viewport[1];
-    auto viewportW = cmd.m_Viewport[2];
-    auto viewportH = cmd.m_Viewport[3];
-    glViewport(viewportX, viewportY, viewportW, viewportH);
-    
-    if (!(cmd.m_FrameBufferHandle.m_LWORD == U64_DEF || cmd.m_FrameBufferHandle.m_LWORD == 0))
-    {
-        auto& frameBuffer = asset_manager.GetAsset<unsigned int>(cmd.m_FrameBufferHandle);
-        auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(cmd.m_FrameBufferHandle);
-        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-        glBindTexture(GL_TEXTURE_2D, texture.m_Texture);
-        glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    }
-    if (!(cmd.m_TextureHandle.m_LWORD == U64_DEF || cmd.m_TextureHandle.m_LWORD == 0))
-    {
-        auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(cmd.m_TextureHandle);
-        glBindTextureUnit(0, texture.m_Texture);
-    }
-    glDrawArraysInstanced((GLenum)cmd.m_PrimitiveType, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount, instance_count);
 }
 
 void Renderer::UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const
@@ -629,41 +604,55 @@ void Renderer::UploadUniformData(const ParticleCommand& cmd, AssetManager& asset
     auto& shader = asset_manager.GetShader(cmd.m_ShaderHandle);
     auto shaderHandlePlatform = shader.GetHandle();
     shader.Bind();
-
-    for (auto& uniformFloat : cmd.m_UniformBuffer.m_FloatMap)
+    if(!cmd.m_UniformBuffer.m_FloatMap.empty())
     {
-        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat.first.c_str());
-        glUniform1f(uniformLocation, uniformFloat.second);
+        for (auto& uniformFloat : cmd.m_UniformBuffer.m_FloatMap)
+        {
+            auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat.first.c_str());
+            glUniform1f(uniformLocation, uniformFloat.second);
+        }
     }
-    for (auto& uniformFloat2 : cmd.m_UniformBuffer.m_Float2Map)
+    if(!cmd.m_UniformBuffer.m_Float2Map.empty())
     {
-        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat2.first.c_str());
-        auto x = uniformFloat2.second.x;
-        auto y = uniformFloat2.second.y;
-        glUniform2f(uniformLocation, x, y);
+        for (auto& uniformFloat2 : cmd.m_UniformBuffer.m_Float2Map)
+        {
+            auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat2.first.c_str());
+            auto x = uniformFloat2.second.x;
+            auto y = uniformFloat2.second.y;
+            glUniform2f(uniformLocation, x, y);
+        }
     }
-    for (auto& uniformFloat3 : cmd.m_UniformBuffer.m_Float3Map)
+    if(!cmd.m_UniformBuffer.m_Float3Map.empty())
     {
-        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat3.first.c_str());
-        auto x = uniformFloat3.second.x;
-        auto y = uniformFloat3.second.y;
-        auto z = uniformFloat3.second.z;
-        glUniform3f(uniformLocation, x, y, z);
+        for (auto& uniformFloat3 : cmd.m_UniformBuffer.m_Float3Map)
+        {
+            auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat3.first.c_str());
+            auto x = uniformFloat3.second.x;
+            auto y = uniformFloat3.second.y;
+            auto z = uniformFloat3.second.z;
+            glUniform3f(uniformLocation, x, y, z);
+        }
     }
-    for (auto& uniformFloat4 : cmd.m_UniformBuffer.m_Float4Map)
+    if(!cmd.m_UniformBuffer.m_Float4Map.empty())
     {
-        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat4.first.c_str());
-        auto x = uniformFloat4.second.x;
-        auto y = uniformFloat4.second.y;
-        auto z = uniformFloat4.second.z;
-        auto w = uniformFloat4.second.w;
-        glUniform4f(uniformLocation, x, y, z, w);
+        for (auto& uniformFloat4 : cmd.m_UniformBuffer.m_Float4Map)
+        {
+            auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformFloat4.first.c_str());
+            auto x = uniformFloat4.second.x;
+            auto y = uniformFloat4.second.y;
+            auto z = uniformFloat4.second.z;
+            auto w = uniformFloat4.second.w;
+            glUniform4f(uniformLocation, x, y, z, w);
+        }
     }
-    for (auto& uniformMat4 : cmd.m_UniformBuffer.m_Mat4Map)
+    if(!cmd.m_UniformBuffer.m_Mat4Map.empty())
     {
-        auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformMat4.first.c_str());
-        auto mat = uniformMat4.second;
-        glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(mat));
+        for (auto& uniformMat4 : cmd.m_UniformBuffer.m_Mat4Map)
+        {
+            auto uniformLocation = glGetUniformLocation(shaderHandlePlatform, uniformMat4.first.c_str());
+            auto mat = uniformMat4.second;
+            glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, glm::value_ptr(mat));
+        }
     }
 }
 
@@ -690,6 +679,35 @@ void Renderer::DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffe
         }
         DrawInstanced(cmd, asset_manager);
     }
+}
+
+void Renderer::DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint64_t instance_count) const
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDrawBuffer(GL_BACK);
+    glUseProgram(0);
+    UploadMaterialData(cmd, asset_manager);
+    UploadUniformData(cmd, asset_manager);
+    auto viewportX = cmd.m_Viewport[0];
+    auto viewportY = cmd.m_Viewport[1];
+    auto viewportW = cmd.m_Viewport[2];
+    auto viewportH = cmd.m_Viewport[3];
+    glViewport(viewportX, viewportY, viewportW, viewportH);
+
+    if (!(cmd.m_FrameBufferHandle.m_LWORD == U64_DEF || cmd.m_FrameBufferHandle.m_LWORD == 0))
+    {
+        auto& frameBuffer = asset_manager.GetAsset<unsigned int>(cmd.m_FrameBufferHandle);
+        auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(cmd.m_FrameBufferHandle);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        glBindTexture(GL_TEXTURE_2D, texture.m_Texture);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    }
+    if (!(cmd.m_TextureHandle.m_LWORD == U64_DEF || cmd.m_TextureHandle.m_LWORD == 0))
+    {
+        auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(cmd.m_TextureHandle);
+        glBindTextureUnit(0, texture.m_Texture);
+    }
+    glDrawArraysInstanced((GLenum)cmd.m_PrimitiveType, (GLint)cmd.m_IndexBufferOffset, (GLsizei)cmd.m_IndexCount, instance_count);
 }
 
 void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager)
@@ -770,24 +788,26 @@ void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, Ve
 
 void Renderer::DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager)
 {
-    glEnable(GL_PROGRAM_POINT_SIZE);
-
-    for (auto& particleCommand : command_queue)
+    if (!command_queue.empty())
     {
-        uint32_t bufferOffset = static_cast<uint32_t>(particleCommand.m_BufferOffset);
-        uint32_t numParticles = static_cast<uint32_t>(particleCommand.m_NumParticles);
-        UploadUniformData(particleCommand, asset_manager);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_GpuBuffers.PositionBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, m_GpuBuffers.VelocityBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.LifetimeAndSizeBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, m_GpuBuffers.LifetimeAndSizeBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.ColorBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_GpuBuffers.ColorBuffer);
-        glDrawArraysInstanced(GL_POINTS, bufferOffset, 1, numParticles);
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        for (auto& particleCommand : command_queue)
+        {
+            uint32_t bufferOffset = static_cast<uint32_t>(particleCommand.m_BufferOffset);
+            uint32_t numParticles = static_cast<uint32_t>(particleCommand.m_NumParticles);
+            UploadUniformData(particleCommand, asset_manager);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_GpuBuffers.PositionBuffer);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, m_GpuBuffers.VelocityBuffer);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.LifetimeAndSizeBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, m_GpuBuffers.LifetimeAndSizeBuffer);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.ColorBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_GpuBuffers.ColorBuffer);
+            glDrawArraysInstanced(GL_POINTS, bufferOffset, 1, numParticles);
+        }
+        glDisable(GL_PROGRAM_POINT_SIZE);
     }
-    glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 void Renderer::SetActiveCamera(std::shared_ptr<Camera> camera)

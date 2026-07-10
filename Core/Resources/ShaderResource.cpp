@@ -1,7 +1,7 @@
 #include "ShaderResource.h"
 #include <fstream>
 
-ShaderResource::ShaderResource(const std::initializer_list<ShaderInfo> shader_infos) :
+ShaderResource::ShaderResource(const std::vector<ShaderInfo> shader_infos) :
     m_Info{ shader_infos }
 {
     std::ifstream is;

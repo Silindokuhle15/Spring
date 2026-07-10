@@ -48,7 +48,7 @@ inline void ParticleSystemPanel::Run()
 		}
 
 		ImGui::Separator();
-
+		/*/
 		// ---------- System list ----------
 		for (int i = 0; i < activeScene->m_ParticleSystems.size(); i++)
 		{
@@ -60,7 +60,7 @@ inline void ParticleSystemPanel::Run()
 				selectedParticleSystem = i;
 				showParticleEditor = true;
 			}
-
+		
 			ImGui::PopID();
 		}
 
@@ -324,6 +324,8 @@ inline void ParticleSystemPanel::Run()
 			}
 			ImGui::End();
 		}
+
+		/**/
 	}
 }
 

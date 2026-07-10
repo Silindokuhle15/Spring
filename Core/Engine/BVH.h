@@ -22,10 +22,10 @@ uint32_t count_leading_zeros(uint32_t n);
 
 struct BVEntry
 {
-	uint64_t ID = 0;
+	uint32_t ID = 0;
 	uint64_t MORTON_CODE = 0xFFFFFFFFFFFFFFFFULL;
 public:
-	BVEntry(uint64_t id, uint64_t morton_code) :
+	BVEntry(uint32_t id, uint64_t morton_code) :
 		ID{ id },
 		MORTON_CODE{ morton_code }
 	{
@@ -161,7 +161,7 @@ public:
 	T m_Bounds;
 	BVNode* m_Left;
 	BVNode* m_Right;
-	BVNode(uint64_t id, uint64_t morton_code, const T& bounds, BVNode* left, BVNode* right):
+	BVNode(uint32_t id, uint64_t morton_code, const T& bounds, BVNode* left, BVNode* right):
 		m_MortonCode{id, morton_code},
 		m_Bounds{bounds},
 		m_Left{left},
@@ -239,7 +239,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 		const U& lb = left->m_Bounds;
 		const U& rb = right->m_Bounds;
 		U merged = merge<U>(lb, rb);
-		return allocator.allocate<BVNode<U>>(BVNode<U>(static_cast<uint64_t>(-1), -1, merged, left, right));
+		return allocator.allocate<BVNode<U>>(BVNode<U>(static_cast<uint32_t>(-1), -1, merged, left, right));
 	}
 	else if (right && !left)
 	{
@@ -262,11 +262,11 @@ BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 		[&](const BVNode<U>& u, const BVNode<U>& v) { 
 			return (u.m_MortonCode < v.m_MortonCode);
 		});
-	return create_sub_tree<U>(list, 0, static_cast<uint64_t>(list.size() - 1), allocator );
+	return create_sub_tree<U>(list, 0, static_cast<uint32_t>(list.size() - 1), allocator );
 }
 
 template<typename U>
-void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint64_t>& total_intersections, std::vector<const BVNode<U>*>& buffer)
+void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint32_t>& total_intersections, std::vector<const BVNode<U>*>& buffer)
 {
 	//if (!tree_node)
 	//	return;

@@ -190,23 +190,18 @@ primitives::Mesh OBJObjectLoader::LoadObjectFromFile(const char* file_path, bool
 		mesh.m_SubMeshes.push_back(std::move(sub));
 	}
 
-	if (mesh.m_SubMeshes.size() == 1) {
+	if (mesh.m_SubMeshes.size() == 1)
+	{
 		const primitives::Mesh& submesh = mesh.m_SubMeshes.front();
-
-		// Clear existing mesh data to ensure we're overwriting the data
 		mesh.m_VertexIndices.clear();
 		mesh.m_V.clear();
-
-		// Copy data from the submesh into the main mesh
 		mesh.m_VertexIndices = submesh.m_VertexIndices;
 		mesh.m_V = submesh.m_V;
-
-		// Optionally copy materials if needed (if not already set)
-		if (mesh.m_Materials.empty()) {
+		if (mesh.m_Materials.empty()) 
+		{
 			mesh.m_Materials = submesh.m_Materials;
 		}
 		mesh.m_MaterialGroupHandle = materialGroupHandle;
-		// Clear the submeshes vector
 		mesh.m_SubMeshes.clear();
 	}
 	return mesh;
@@ -457,7 +452,7 @@ primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
 		sizeof(header)
 	);
 
-	assert(header.magic == 0x4853454D);
+	assert(header.magic == magic::MESH_MAGIC);
 	primitives::Mesh mesh;
 
 	mesh.m_V.resize(header.vertexCount);
@@ -470,6 +465,7 @@ primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
 			reinterpret_cast<char*>(&subMeshHeader),
 			sizeof(subMeshHeader)
 		);
+		assert(subMeshHeader.magic == magic::MESH_MAGIC);
 		std::streampos dataOffset = subMeshHeader.offset;
 		size_t dataSize = subMeshHeader.size;
 		ifs.seekg(dataOffset);
@@ -589,7 +585,7 @@ MTLMaterial MaterialReader::ReadMaterialFromFile(std::ifstream& ifs)
 		reinterpret_cast<char*>(&materialHeader),
 		sizeof(MaterialFileHeader)
 	);
-	assert(materialHeader.magic = 0x4C52544D);
+	assert(materialHeader.magic = magic::MATERIAL_MAGIC);
 	auto tempVec = glm::vec4(0);
 	MTLMaterial material{ tempVec, tempVec, tempVec, tempVec };
 	ifs.read(
@@ -780,7 +776,7 @@ DDS_HEADER TextureReader::ReadDDSHeader(std::ifstream& ifs)
 		reinterpret_cast<char*>(&magic),
 		sizeof(uint32_t)
 	);
-	assert(magic == 0x20534444);
+	assert(magic == 0x20534444);				//RIFF
 	ifs.read(
 		reinterpret_cast<char*>(&ddsHeader),
 		sizeof(DDS_HEADER)
@@ -828,13 +824,14 @@ ShaderFileHeader ShaderReader::ReadShaderProgramHeader(std::ifstream& ifs)
 {
 	if (!ifs.is_open())
 	{
-		throw std::runtime_error("Failedf to open file for reading !!!");
+		throw std::runtime_error("Failed to open file for reading !!!");
 	}
 	ShaderFileHeader pakHeader{};
 	ifs.read(
 		reinterpret_cast<char*>(&pakHeader.magic),
 		sizeof(uint32_t)
 	);
+	assert(pakHeader.magic == magic::SHADER_MAGIC);
 	ifs.read(
 		reinterpret_cast<char*>(&pakHeader.version),
 		sizeof(uint32_t)
@@ -920,4 +917,7 @@ int ShaderWriter::WriteShaderProgramHeaderToFile(std::ofstream& ofs, const Shade
 	return 0;
 }
 
-
+int ScriptWriter::WriteScriptDataToFile(std::ofstream& ofs, const char* file_path)
+{
+	return SoundWriter::WriteSoundToFile(ofs, file_path);
+}

@@ -104,10 +104,7 @@ bool Scene::Deserialize()
 
 Character* Scene::CreateSceneObject(uint32_t hint)
 {
-	auto desired = entt::entity(hint);
-	//Character ch(m_Registry.create(desired), this); // ch is created as a stack object and destroyed on return;
-	//auto newCharacter = m_CharacterAllocator.allocate(Character(m_Registry.create(desired), this)); // a temporary Character object is created on the stack and then copied from, what happens on return?
-	auto entity = m_Registry.create(desired);
+	auto entity = m_Registry.create(entt::entity(hint));
 	auto newCharacter = m_CharacterAllocator.allocate(entity, this);
 	m_EntityCharacterMap[entity] = newCharacter;
 	return newCharacter;
@@ -189,7 +186,38 @@ void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsSt
 	uint32_t bits = 21;
 	auto& pos = physics_state.position;
 	auto& orientation = physics_state.orientation;
-	
+
+	glm::vec3 localMin(bound.xMin, bound.yMin, bound.zMin);
+	glm::vec3 localMax(bound.xMax, bound.yMax, bound.zMax);
+	glm::vec3 center = (localMin + localMax) * 0.5f;
+	glm::vec3 halfExtents = (localMax - localMin) * 0.5f;
+	glm::vec3 worldCenter = pos + orientation * center;
+	glm::mat3 R = glm::mat3_cast(orientation);
+	glm::mat3 absR;
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			absR[i][j] = glm::abs(R[i][j]);
+		}
+	}
+	glm::vec3 worldHalfExtents = absR * halfExtents;
+	glm::vec3 worldMin = worldCenter - worldHalfExtents;
+	glm::vec3 worldMax = worldCenter + worldHalfExtents;
+	primitives::Bound3D worldBound
+	{
+		worldMin.x, worldMin.y, worldMin.z,
+		worldMax.x, worldMax.y, worldMax.z,
+	};
+
+	auto y = static_cast<uint32_t>(glm::floor((worldMax.x - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+	auto z = static_cast<uint32_t>(glm::floor((worldMax.y - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+	auto x = static_cast<uint32_t>(glm::floor((worldMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
+
+	auto morton_code = morton_encode_3d32(x, y, z);
+	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint32_t>(entity), morton_code, worldBound, nullptr, nullptr});
+
+	/*/
 	auto localMin =  orientation * ( glm::vec3(bound.xMin, bound.yMin, bound.zMin));
 	auto localMax =  orientation * ( glm::vec3(bound.xMax, bound.yMax, bound.zMax));
 
@@ -221,6 +249,7 @@ void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsSt
 
 	auto morton_code = morton_encode_3d32(x, y, z);
 	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint32_t>(entity), morton_code, worldBound, nullptr, nullptr});
+	/**/
 }
 
 void Scene::OnInit()
@@ -250,7 +279,7 @@ void Scene::OnUpdate(float ts)
 	auto boundView = m_Registry.view<physics::PhysicsState, primitives::Bound3D>();
 	for (auto [entity, physicsState, localBound] : boundView.each())
 	{
-		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * (float)m_Ts * 5.0f;
+		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * m_Ts;
 		physics::PhysicsState ps = physicsState;
 		AddBVBoundEntry(entity, ps, localBound);
 	}
@@ -298,7 +327,8 @@ int Scene::LoadSceneFromFile()
 			"materialPack",
 			"texturePack",
 			"shaderPack",
-			"soundPack"
+			"soundPack",
+			"scriptPack"
 		}
 	);
 	m_LuaEngine.Run();
@@ -320,7 +350,7 @@ int Scene::LoadSceneFromFile()
 					}
 					break;
 				}
-				else if (var == "dynamic_geometry")
+				if (var == "dynamic_geometry")
 				{
 					auto n = luaL_len(pLuaState, -1);
 					for (auto i = 1; i <= n; i++)
@@ -352,7 +382,7 @@ int Scene::LoadSceneFromFile()
 						}
 					}
 				}
-				else if (var == "shader")
+				if (var == "shader")
 				{
 					if (lua_getfield(pLuaState, -1, "VShaderPath"))
 					{
@@ -413,6 +443,13 @@ int Scene::LoadSceneFromFile()
 					soundPack = str;
 					lua_pop(pLuaState, 1);
 				}
+				if (var == "scriptPack")
+				{
+					str = lua_tostring(pLuaState, -1);
+					scriptPack = str;
+					lua_pop(pLuaState, 1);
+				}
+				break;
 		}
 	}
 	return 0;

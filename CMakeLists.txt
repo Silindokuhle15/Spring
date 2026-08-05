@@ -176,7 +176,8 @@ set(SHARED_SOURCES
 "Core/Audio/WAV.h"
 "Core/Audio/Sound.h"
 
- "Core/Primitives/Vertex.h")
+"Core/Primitives/Vertex.h"
+)
 # Executable-specific files 
 set(EDITOR_SOURCES
 "SpringEditor.cpp" 

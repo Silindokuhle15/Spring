@@ -43,7 +43,7 @@ namespace primitives
 		float m_Ts;
 		float m_AccumulatedTime;
 		float m_Duration;
-		float m_Unused1;
+		float m_InitialSpeed;
 
 		AssetHandle m_ShaderHandle;
 	};

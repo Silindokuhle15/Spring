@@ -830,8 +830,6 @@ namespace scripting {
 
     int ScriptMgr::IsKeyDown(lua_State* L)
     {
-        //Scene* scene = lua_checkScene(L, 1);
-        //auto keyString = lua_tostring(L, 2);
         auto keyString = lua_tostring(L, 1);
         std::string key{ keyString };
         if (key == "w" && (GetAsyncKeyState(0x57) & 0x8000))

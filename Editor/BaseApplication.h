@@ -34,6 +34,7 @@ public:
 	AssetHandle m_LobbyMeshHandle;
 	AssetHandle m_LobbyGraphicsShaderHandle;
 	AssetHandle m_ParticleGraphicsShaderHandle;
+	AssetHandle m_ParticleTextureHandle;
 	AssetManager m_AssetManager;
 
     //--------- COMPONENTS ----------//
@@ -60,7 +61,7 @@ public:
 	void DrawSceneCharacters(AssetManager& asset_manager);
 	void DrawParticleSystems(AssetManager& asset_manager);
 public:
-	BaseApplication(uint64_t width, uint64_t height, const char* title);
+	BaseApplication(uint32_t width, uint32_t height, const char* title);
 	BaseApplication() = default;
     ~BaseApplication();
 
@@ -75,7 +76,7 @@ private:
 
         // Initialize OPENFILENAME
         ofn.lStructSize = sizeof(ofn);
-        ofn.hwndOwner = m_AppWindow.m_Hwnd;
+        ofn.hwndOwner = m_AppWindow.m_WindowHandle;
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
         ofn.nFilterIndex = 1;
@@ -96,7 +97,7 @@ private:
             return "";
         }
         // show the file name selected
-        SetWindowText(GetDlgItem(m_AppWindow.m_Hwnd, IMPORT_FROM_EDITBOX), szFile);
+        SetWindowText(GetDlgItem(m_AppWindow.m_WindowHandle, IMPORT_FROM_EDITBOX), szFile);
         return std::string(szFile);
     }
     bool showCreateNewSceneWindow = false;

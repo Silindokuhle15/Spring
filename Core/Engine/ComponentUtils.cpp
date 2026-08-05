@@ -253,6 +253,7 @@ namespace primitives
 			{"time_step", particle_system.m_Ts},
 			{"accumulated_time", particle_system.m_AccumulatedTime},
 			{"duration", particle_system.m_Duration},
+			{"initialSpeed", particle_system.m_InitialSpeed},
 			{"asset_handle", particle_system.m_ShaderHandle}
 		};
 	}
@@ -266,6 +267,7 @@ namespace primitives
 		j.at("time_step").get_to(particle_system.m_Ts);
 		j.at("accumulated_time").get_to(particle_system.m_AccumulatedTime);
 		j.at("duration").get_to(particle_system.m_Duration);
+		j.at("initialSpeed").get_to(particle_system.m_InitialSpeed);
 		j.at("asset_handle").get_to(particle_system.m_ShaderHandle);
 	}
 }

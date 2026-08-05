@@ -7,8 +7,8 @@ enum ShaderType {
 };
 struct ShaderInfo
 {
-	std::string filePath;
 	ShaderType shaderType;
+	std::string filePath;
 };
 class ShaderResource
 {

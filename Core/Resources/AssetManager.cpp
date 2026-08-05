@@ -31,11 +31,13 @@ bool AssetManager::Serialize(const std::string& filename)
     std::string texturePath = tempPath + "_TXTR.pak";
     std::string shaderPath = tempPath + "_SHDR.pak";
     std::string soundPath = tempPath + "_SWND.pak";
+    std::string scriptPath = tempPath + "_SCRP.pak";
     SerializeMaterialPack(materialPath);
     SerializeMeshPack(meshPath);
     SerializeTexturePack(texturePath);
     SerializeShaderPack(shaderPath);
     SerializeSoundPack(soundPath);
+    SerializeScriptPack(scriptPath);
     return true;
 }
 
@@ -315,10 +317,6 @@ bool AssetManager::SerializeShaderPack(const std::string& filename)
         auto& shaderInfo = shaderResource.GetShaderInfo();
         auto& shaderSources = shaderResource.GetShaderSources();
         uint32_t stageCount{ 0 };
-        for (auto& shaderSource : shaderSources)
-        {
-
-        }
         assert(shaderInfo.size() == shaderSources.size());
         for (auto index = 0; index < shaderSources.size(); index++)
         {
@@ -421,6 +419,49 @@ bool AssetManager::SerializeSoundPack(const std::string& filename)
     return true;
 }
 
+bool AssetManager::SerializeScriptPack(const std::string& filename)
+{
+    std::ofstream ofs(filename, std::ios::binary);
+    if (!ofs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for writing !!!");
+    }
+    PakHeader pakHeader{};
+    uint32_t scriptCount{ 0 };
+    auto startOffset = ofs.tellp();
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    auto dataStartOffset = ofs.tellp();
+    for (auto& script : m_ScriptMap)
+    {
+        auto& assetHandle = script.first;
+        auto& scriptData = script.second;
+        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        ofs.write(
+            reinterpret_cast<const char*>(&assetHandle),
+            sizeof(AssetHandle)
+        );
+        ScriptWriter::WriteScriptDataToFile(ofs, resource.m_Filepath.c_str());
+        scriptCount++;
+    }
+    auto dataEndOffset = ofs.tellp();
+    uint32_t size = dataEndOffset - dataStartOffset;
+    uint32_t offset = static_cast<uint32_t>(dataStartOffset);
+    pakHeader.size = size;
+    pakHeader.offset = offset;
+    pakHeader.itemCount = scriptCount;
+    ofs.seekp(startOffset);
+    ofs.write(
+        reinterpret_cast<const char*>(&pakHeader),
+        sizeof(PakHeader)
+    );
+    ofs.seekp(dataEndOffset);
+    ofs.close();
+    return true;
+}
+
 bool AssetManager::Deserialize(const std::string& filepath)
 {
     using json = nlohmann::json;
@@ -489,7 +530,7 @@ bool AssetManager::DeserializeMaterialPack(const std::string filepath)
 
 bool AssetManager::DeserializeMeshPack(const std::string& filepath)
 {
-    PakHeader header;
+    PakHeader header{};
     std::ifstream ifs(filepath, std::ios::binary);
     if (!ifs.is_open())
     {
@@ -661,6 +702,45 @@ bool AssetManager::DeserializeShaderPack(const std::string& filepath)
     return true;
 }
 
+bool AssetManager::DeserializeScriptPack(const std::string& filepath)
+{
+    PakHeader header{};
+    std::ifstream ifs(filepath, std::ios::binary);
+    if (!ifs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for reading !!!");
+    }
+    ifs.read(
+        reinterpret_cast<char*>(&header),
+        sizeof(PakHeader)
+    );
+    assert(header.magic == 0x4B434150);
+    for (auto index = 0; index < header.itemCount; index++)
+    {
+        AssetHandle assetHandle{ 0,0 };
+        ifs.read(
+            reinterpret_cast<char*>(&assetHandle),
+            sizeof(AssetHandle)
+        );
+        PakHeader itemHeader{};
+        ifs.read(
+            reinterpret_cast<char*>(&itemHeader),
+            sizeof(PakHeader)
+        );
+        assert(itemHeader.magic == 0x4B434150);
+        std::string scriptData;
+        scriptData.resize(itemHeader.size);
+        ifs.seekg(itemHeader.offset);
+        ifs.read(
+            reinterpret_cast<char*>(scriptData.data()),
+            itemHeader.size
+        );
+        m_ScriptMap[assetHandle] = scriptData;
+    }
+    ifs.close();
+    return true;
+}
+
 void AssetManager::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)
 {
     GLuint target = 0;
@@ -738,10 +818,11 @@ void AssetManager::CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base)
     }
 }
 
-AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths)
+TextureBase<GL_Texture> AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths)
 {
     auto& rightPath = image_file_paths.front();
     auto extension = rightPath.substr(rightPath.find('.'));
+    TextureBase<GL_Texture> map;
     if (extension == ".DDS")
     {
         std::ifstream ifsRight(image_file_paths[0], std::ios::binary);
@@ -774,7 +855,6 @@ AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& im
         size_t behindBufferSize = 0;
         auto behindBuffer = LoadDDSIntoMemory(ifsBehind, behindBufferSize);
 
-        TextureBase<GL_Texture> map;
         map.m_Height = static_cast<uint64_t>(rightDDSHeader.dwHeight);
         map.m_Width = static_cast<uint64_t>(rightDDSHeader.dwWidth);
         map.m_TextureFormat = _TextureFormat::RGBA_BPTC_UNORM;
@@ -802,17 +882,6 @@ AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& im
         ifsBottom.close();
         ifsFront.close();
         ifsBehind.close();
-
-        std::string flatPath{ "" };
-        for (auto& string : image_file_paths)
-        {
-            flatPath += string + "+";
-        }
-        AssetHandle assetHandle = CreateAssetHandleFromPath(flatPath.c_str());
-        m_TextureMap[assetHandle] = map;
-        AssetResource cubeMapResource{ AssetType::CubeMap, flatPath };
-        m_AssetResourceAndHandleMap[cubeMapResource] = assetHandle;
-        return assetHandle;
     }
     else
     {
@@ -828,32 +897,28 @@ AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& im
         stbi_uc* front = stbi_load(image_file_paths[4].c_str(), &width, &height, &channels, desired_channels);
         stbi_uc* behind = stbi_load(image_file_paths[5].c_str(), &width, &height, &channels, desired_channels);
 
-        TextureBase<GL_Texture> cubeMap;
-
-        cubeMap.m_Height = static_cast<uint64_t>(width);
-        cubeMap.m_Width = static_cast<uint64_t>(height);
+        map.m_Height = static_cast<uint64_t>(width);
+        map.m_Width = static_cast<uint64_t>(height);
 
         switch (channels)
         {
         case 3:
-            cubeMap.m_TextureFormat = _TextureFormat::RGB8;
+            map.m_TextureFormat = _TextureFormat::RGB8;
             break;
         case 4:
-            cubeMap.m_TextureFormat = _TextureFormat::RGBA8;
+            map.m_TextureFormat = _TextureFormat::RGBA8;
             break;
         }
+        map.m_TextureSource = _TextureSource::GL_ATTACHMENT;
+        map.m_TextureTarget = _TextureTarget::TEXTURE_CUBE;
+        CreateOpenGLTexture(map);
 
-        cubeMap.m_TextureSource = _TextureSource::GL_ATTACHMENT;
-        cubeMap.m_TextureTarget = _TextureTarget::TEXTURE_CUBE;
-
-        CreateOpenGLTexture(cubeMap);
-
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, right);
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, left);
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, top);
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, bottom);
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, front);
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 0, 0, cubeMap.m_Width, cubeMap.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, behind);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, right);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, left);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, top);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, bottom);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, front);
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, 0, 0, map.m_Width, map.m_Height, GL_RGBA, GL_UNSIGNED_BYTE, behind);
 
         stbi_image_free(right);
         stbi_image_free(left);
@@ -861,18 +926,8 @@ AssetHandle AssetManager::CreateOpenGLCubeMap(const std::vector<std::string>& im
         stbi_image_free(bottom);
         stbi_image_free(front);
         stbi_image_free(behind);
-
-        std::string flatPath{ "" };
-        for (auto& string : image_file_paths)
-        {
-            flatPath += string + "+";
-        }
-        AssetHandle assetHandle = CreateAssetHandleFromPath(flatPath.c_str());
-        m_TextureMap[assetHandle] = cubeMap;
-        AssetResource cubeMapResource{ AssetType::CubeMap, flatPath };
-        m_AssetResourceAndHandleMap[cubeMapResource] = assetHandle;
-        return assetHandle;
     }
+    return map;
 }
 
 AssetHandle AssetManager::CreateOpenGLFrameBuffer(TextureBase<GL_Texture>& tex_base)

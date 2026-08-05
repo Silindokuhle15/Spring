@@ -134,7 +134,7 @@ public:
         event.m_Handled = true;
         m_pActiveCamera->SetEye(camPos);
     }
-    virtual void OnUpdate(TimeStep ts) override
+    virtual void OnUpdate(float ts) override
     {
         m_Delta = ts;
         if (m_ActiveScene != nullptr)
@@ -164,7 +164,7 @@ public:
 
         // Initialize OPENFILENAME
         ofn.lStructSize = sizeof(ofn);
-        ofn.hwndOwner = win32_window->m_Hwnd;
+        ofn.hwndOwner = win32_window->m_WindowHandle;
         ofn.lpstrFile = szFile;
         ofn.nMaxFile = sizeof(szFile);
         ofn.nFilterIndex = 1;
@@ -185,7 +185,7 @@ public:
             return "";
         }
         // show the file name selected
-        SetWindowText(GetDlgItem(win32_window->m_Hwnd, IMPORT_FROM_EDITBOX), szFile);
+        SetWindowText(GetDlgItem(win32_window->m_WindowHandle, IMPORT_FROM_EDITBOX), szFile);
 
         return std::string(szFile);
         // Keep a copy of the file name
@@ -219,7 +219,7 @@ public:
         //if (type_name.compare("class std::shared_ptr<class BaseApplication>") == 0)
         if (type_name.compare("class std::shared_ptr<class Win32Window>") == 0)
         {
-            ImGui_ImplWin32_Init(m_ParentWindow->m_Hwnd);
+            ImGui_ImplWin32_Init(m_ParentWindow->m_WindowHandle);
         }
         const char* gl_ver = "#version 450";
         ImGui_ImplOpenGL3_Init(gl_ver);

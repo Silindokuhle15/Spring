@@ -4,8 +4,8 @@
 class VertexBuffer
 {
 public:
-	uint64_t m_BufferOffset = 0;
-	uint64_t m_BufferElementCount = 0;
+	uint32_t m_BufferOffset = 0;
+	uint32_t m_BufferElementCount = 0;
 	std::vector<primitives::Vertex> m_Buffer;
 	std::vector<uint32_t> m_Indices;
 	void Clear()
@@ -14,14 +14,14 @@ public:
 	}
 	void UpdateBuffer(std::vector<primitives::Vertex> buffer)
 	{
-		m_BufferOffset = static_cast<uint64_t>(sizeof(primitives::Vertex) * m_Buffer.size());
-		m_BufferElementCount = static_cast<uint64_t>(m_Buffer.size());
+		m_BufferOffset = static_cast<uint32_t>(sizeof(primitives::Vertex) * m_Buffer.size());
+		m_BufferElementCount = static_cast<uint32_t>(m_Buffer.size());
 		m_Buffer.insert(m_Buffer.end(), buffer.begin(), buffer.end());
 		
 	}
-	uint64_t Size() const { return static_cast<uint64_t>(sizeof(primitives::Vertex) * m_Buffer.size()); }
+	uint32_t Size() const { return static_cast<uint32_t>(sizeof(primitives::Vertex) * m_Buffer.size()); }
 
-	VertexBuffer(uint64_t initial_capacity = 65536)
+	VertexBuffer(uint32_t initial_capacity = 65536)
 	{
 		m_Buffer.reserve(initial_capacity);
 	}

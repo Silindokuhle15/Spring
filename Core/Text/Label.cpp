@@ -93,7 +93,7 @@ void Label::SetGlyphArray(const std::vector<int>& glyphs)
 	m_GlyphArray = glyphs;
 }
 
-const int64_t Label::GetX() const
+const int32_t Label::GetX() const
 {
 	return m_PosX;
 }
@@ -103,7 +103,7 @@ void Label::SetX(const int64_t& x)
 	m_PosX = x;
 }
 
-const int64_t Label::GetY() const
+const int32_t Label::GetY() const
 {
 	return m_PosY;
 }
@@ -113,32 +113,32 @@ void Label::SetY(const int64_t& y)
 	m_PosY = y;
 }
 
-const uint64_t Label::GetWidth() const
+const uint32_t Label::GetWidth() const
 {
 	return m_Width;
 }
 
-void Label::SetWidth(const uint64_t& width)
+void Label::SetWidth(const uint32_t& width)
 {
 	m_Width = width;
 }
 
-const uint64_t Label::GetHeight() const
+const uint32_t Label::GetHeight() const
 {
 	return m_Height;
 }
 
-void Label::SetHeight(const uint64_t& height)
+void Label::SetHeight(const uint32_t& height)
 {
 	m_Height = height;
 }
 
-const uint64_t Label::GetBorderWidth() const
+const uint32_t Label::GetBorderWidth() const
 {
 	return m_BorderWidth;
 }
 
-void Label::SetBorderWidth(const uint64_t& borderWidth)
+void Label::SetBorderWidth(const uint32_t& borderWidth)
 {
 	m_BorderWidth = borderWidth;
 }
@@ -169,25 +169,18 @@ void Label::GenerateGlyphBoxes()
 			// Place the Sqaures
 			auto glyphIndex = m_FormattedIndices[row][col];
 			float id = static_cast<float>(glyphIndex);
-
-			double x_offset = static_cast<float>(col * xScale) - 0.5* m_FormattedIndices[row].size();
-			double y_offset = static_cast<float>(row * yScale);
-
+			float x_offset = static_cast<float>(col * xScale) - 0.5* m_FormattedIndices[row].size();
+			float y_offset = static_cast<float>(row * yScale);
 			x_offset += (col == 0 ? 0.0 : spacingX);
 			y_offset += (row == 0 ? 0.0 : spacingY);
-
-			double x_scale = 0.1;
-			double y_scale = 0.1;
-			double z_scale = 0.1;
-
+			float x_scale = 0.1;
+			float y_scale = 0.1;
+			float z_scale = 0.1;
 			GlyphBox glyphBox;
-			
 			glm::mat4 transform = glm::scale(glm::mat4(1.0f), glm::vec3(x_scale, y_scale, z_scale));
 			transform = glm::translate(transform, glm::vec3(x_offset, y_offset, z_offset));
-
 			glyphBox.SetTransform(transform);
 			glyphBox.SetGlyphID(id);
-
 			m_GlyphBoxes.push_back(glyphBox);
 		}
 	}

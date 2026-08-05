@@ -249,11 +249,16 @@ void BaseApplication::DrawMenuBarPanel()
                         auto& shader = p.second;
                         auto platformHandle = shader.GetHandle();
                         ImGui::PushID(platformHandle);
-                        char buffer[128] = "";
-                        sprintf(buffer, "%llu%llu", handle.m_HWORD, handle.m_LWORD);
-                        if (ImGui::Selectable(buffer), selectedShader == platformHandle)
+                        char hWordBuffer[64] = "";
+						char lWordBuffer[64] = "";
+						sprintf(hWordBuffer, "%llu", handle.m_HWORD);
+						sprintf(lWordBuffer, "%llu", handle.m_LWORD);
+                        if (ImGui::Selectable(hWordBuffer), selectedShader == platformHandle)
                         {
+							if (ImGui::Button(lWordBuffer))
+							{
 
+							}
                         }
                         ImGui::PopID();
                     }
@@ -865,7 +870,7 @@ void BaseApplication::DrawParticleSystemEditor()
 				ps.m_EmitterInfo.m_VectorTwo.w = w2;
 			}
 
-			float initialSpeed = ps.m_Unused1;
+			float initialSpeed = ps.m_InitialSpeed;
 			float colorOne[] = { 0,0,0, 1 };
 			float colorTwo[] = { 0.45f, 0.55f, 0.45f, 1.0f };
 			float colorThree[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -875,7 +880,7 @@ void BaseApplication::DrawParticleSystemEditor()
 			ImGui::InputInt("Max Particles", &maxNumParticles);
 			ImGui::InputInt("Particles per second", &particleRate);
 			ImGui::InputFloat("Duration", &ps.m_Duration);
-			ImGui::InputFloat("Initial Speed", &ps.m_Unused1);
+			ImGui::InputFloat("Initial Speed", &ps.m_InitialSpeed);
 			if (ImGui::Button("Size over lifetime"));
 			if (ImGui::Button("Speed over lifetime"));
 			if (ImGui::Checkbox("Color over lifetime", &editColorOverLifetime));
@@ -928,8 +933,9 @@ void BaseApplication::Run()
 
     //scripting::ScriptMgr::expose_scene_camera(m_Scene->GetLuaState(), m_pUILayer.m_pActiveCamera.get(), "camera");
     m_LobbyGraphicsShaderHandle = AssetHandle{ 3531024263087085773, 10156511931093447336 }; //LevelOne
-    m_ParticleGraphicsShaderHandle = AssetHandle{ 10104892876724591594,	13049350730236798254 };
-
+    m_ParticleGraphicsShaderHandle = AssetHandle{ 6016858150360079293, 10861247056247163883 };
+	m_ParticleTextureHandle = AssetHandle{ 8245083312122777658,	11598444192254758931 };
+	m_AssetManager.DeserializeScriptPack("C:/dev/Astron Battles/Assets/LevelOne_asset_SCRP.pak");
     if (m_Scene)
     {
         m_Scene->SetAssetManager(&m_AssetManager);
@@ -999,6 +1005,7 @@ void BaseApplication::OnUpdate()
 
 void BaseApplication::ShutDown()
 {
+
 }
 
 void BaseApplication::OnMouseMove(event::MouseMoveEvent& event)
@@ -1037,8 +1044,8 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
         cmd.m_MaterialHandle = meshInstance.m_Handle;
         cmd.m_VertexBufferOffset = geometryBuffer.m_BufferOffset;
         cmd.m_IndexBufferOffset = geometryBuffer.m_BufferElementCount;
-        cmd.m_CommandSize = static_cast<uint64_t>(sizeof(primitives::Vertex) * mesh.m_V.size());
-        cmd.m_IndexCount = static_cast<uint64_t>(mesh.m_V.size());
+        cmd.m_CommandSize = static_cast<uint32_t>(sizeof(primitives::Vertex) * mesh.m_V.size());
+        cmd.m_IndexCount = static_cast<uint32_t>(mesh.m_V.size());
         cmd.m_PrimitiveType = GL_TRIANGLES;
         cmd.m_Viewport[0] = 0;
         cmd.m_Viewport[1] = 0;
@@ -1067,6 +1074,7 @@ void BaseApplication::DrawParticleSystems(AssetManager& asset_manager)
             cmd.m_BufferOffset = particleSystem.m_BufferOffset;
             cmd.m_NumParticles = particleSystem.m_NumParticles;
             cmd.m_ShaderHandle = m_ParticleGraphicsShaderHandle;
+			cmd.m_TextureHandle = m_ParticleTextureHandle;
             cmd.m_UniformBuffer.m_FloatMap["bufferOffset"] = static_cast<float>(particleSystem.m_BufferOffset);
             cmd.m_UniformBuffer.m_Mat4Map["View"] = view;
             cmd.m_UniformBuffer.m_Mat4Map["Proj"] = proj;
@@ -1076,12 +1084,11 @@ void BaseApplication::DrawParticleSystems(AssetManager& asset_manager)
     m_pActiveRenderer->DrawParticles(commandQueue, asset_manager);
 }
 
-BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* title)
+BaseApplication::BaseApplication(uint32_t width, uint32_t height, const char* title)
     :
     m_AppWindow{width, height, title},
     m_ExitWindow{false},
     //m_Scene{},
-    //m_Scene{std::make_shared<Scene>("C:/dev/Spring/Assets/Projects/Lobby.lua")},
     m_Scene{std::make_shared<Scene>("C:/dev/Astron Battles/Assets/Scripts/LevelOne.lua")},
     m_pUILayer{std::shared_ptr<Win32Window>(&m_AppWindow)},
     m_AssetManager{}
@@ -1091,7 +1098,6 @@ BaseApplication::BaseApplication(uint64_t width, uint64_t height, const char* ti
     event::Dispatcher::RegisterListener(m_pUILayer);
 
     newSceneNameBuffer = new char[512];
-    newSceneNameBuffer[511] = '\0';
     memset(newSceneNameBuffer, 0, sizeof(char) * 512);
     meshPackBuffer = new char[512];
     memset(meshPackBuffer, 0, sizeof(char) * 512);

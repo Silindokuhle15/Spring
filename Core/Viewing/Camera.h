@@ -1,7 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
-#include "TimeStep.h"
 enum class PROJECTION
 {
 	ORTHOGRAPHIC = 0,
@@ -11,18 +10,17 @@ enum class PROJECTION
 class CameraView
 {
 public:
+	uint32_t m_Width;
+	uint32_t m_Height;
+	float m_AspectRatio;
+	float m_Speed;
+	float m_Delta;
+
 	glm::vec3 m_eye;
 	glm::vec3 m_center;
 	glm::vec3 m_up;
 	glm::quat m_orientation;
 	glm::mat4 m_View;
-
-	int m_Width;
-	int m_Height;
-	float m_AspectRatio;
-
-	float m_Speed = 1.0f;
-	TimeStep m_Delta;
 
 	virtual glm::vec3 GetCenter() const { return m_center; }
 	virtual glm::vec3 GetEye() const { return m_eye; }
@@ -44,7 +42,7 @@ public:
 		m_View = glm::lookAt(m_eye, m_center, m_up);
 	}
 
-	virtual void OnUpdate(TimeStep delta_time) 
+	virtual void OnUpdate(float delta_time) 
 	{
 		m_Delta = delta_time;
 	}
@@ -53,6 +51,8 @@ public:
 		m_Width{1920},
 		m_Height{1080},
 		m_AspectRatio{1.0f},
+		m_Speed{1.0f},
+		m_Delta{0.0f},
 		m_eye{ 0.0f, 0.0f, 0.0f },
 		m_center{0.0f, 0.0f, 1.0f},
 		m_up{0.0f, 1.0f, 0.0},
@@ -66,8 +66,8 @@ public:
 class _Projection
 {
 public:
-	glm::mat4 m_ProjectionMatrix;
 	PROJECTION m_ProjectionType;
+	glm::mat4 m_ProjectionMatrix;
 	virtual glm::mat4 GetP() const { return m_ProjectionMatrix; }
 	_Projection() : m_ProjectionMatrix{ glm::mat4(1.0f)}, m_ProjectionType { PROJECTION::PERSPECTIVE } {}
 };

@@ -11,8 +11,6 @@
 class AssetManager
 {
 private:
-	BlockAllocator<BYTE> soundBlockAllocator;
-private:
 	friend class BaseApplication;
 	std::map<AssetHandle, unsigned int> m_FrameBufferMap;
 	std::map<AssetHandle, Shader> m_ShaderMap;
@@ -22,6 +20,8 @@ private:
 	std::map<AssetHandle, primitives::Mesh> m_MeshMap;
 	std::map<AssetHandle, std::string> m_ScriptMap;
 	std::map<AssetHandle, Sound> m_SoundMap;
+private:
+	BlockAllocator<BYTE> soundBlockAllocator;
 public:
 	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
 	std::map<AssetHandle, AssetResource> m_AssetHandleAndResourceMap;
@@ -47,14 +47,16 @@ public:
 	bool SerializeTexturePack(const std::string& filename);
 	bool SerializeShaderPack(const std::string& filename);
 	bool SerializeSoundPack(const std::string& filename);
+	bool SerializeScriptPack(const std::string& filename);
 	bool Deserialize(const std::string& filepath);
 	bool DeserializeMaterialPack(const std::string filepath);
 	bool DeserializeMeshPack(const std::string& filepath);
 	bool DeserializeTexturePack(const std::string& filepath);
 	bool DeserializeShaderPack(const std::string& filepath);
+	bool DeserializeScriptPack(const std::string& filepath);
 	
 	void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
-	AssetHandle CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths);
+	TextureBase<GL_Texture> CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths);
 	AssetHandle CreateOpenGLFrameBuffer(TextureBase<GL_Texture>& tex_base);
 
 	template<typename T>
@@ -76,6 +78,7 @@ public:
 				infos[0].shaderType = ShaderType::COMPUTE;
 				ShaderResource r{ infos};
 				Shader shader{ r };
+				m_ShaderResourceMap[assetHandle] = r;
 				m_ShaderMap[assetHandle] = shader;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
 				m_AssetHandleAndResourceMap[assetHandle] = resource;
@@ -147,7 +150,12 @@ public:
 			}
 			if (resource.m_Type == AssetType::CubeMap)
 			{
-
+				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
+				auto imageFilePaths = getWords(resource.m_Filepath, "+");
+				auto map = CreateOpenGLCubeMap(imageFilePaths);
+				m_TextureMap[assetHandle] = map;
+				m_AssetResourceAndHandleMap[resource] = assetHandle;
+				m_AssetHandleAndResourceMap[assetHandle] = resource;
 			}
 			if (resource.m_Type == AssetType::SoundClipResource)
 			{
@@ -178,8 +186,7 @@ public:
 	
 	primitives::Mesh& GetMesh(const AssetHandle& handle)
 	{
-		auto& mesh = m_MeshMap[handle];
-		return mesh;
+		return m_MeshMap[handle];
 	}
 
 	Sound& GetSound(const AssetHandle& handle)

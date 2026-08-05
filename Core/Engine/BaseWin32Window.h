@@ -4,53 +4,68 @@
 #include <GL/glew.h>
 #include <GL/wglew.h>
 #include <cstdint>
-#include "TimeStep.h"
 
+constexpr const char* CLASS_NAME = "Win32Window";
 template <class WindowClass>
 class BaseWindowClass
 {
 public:
-	HWND m_Hwnd;
-	HINSTANCE m_Handle;
-
-	uint64_t m_StartTime;
-	uint64_t m_EndTime;
-
+	HINSTANCE m_ApplicationHandle;
+	HWND m_WindowHandle;
 	virtual void OnUpdate() = 0;
-	virtual uint64_t StartTimer() = 0;
-	virtual uint64_t EndTimer() = 0;
 	virtual void SwapBuffer() = 0;
 
-	BOOL CreateWin32Window(uint64_t width, uint64_t height, const char* app_name)
+	bool RegisterWindowClass()
 	{
-		m_Handle = GetModuleHandle(NULL);
-		const char CLASS_NAME[] = "Win32Window";
 		WNDCLASS wc = { };
 		wc.lpfnWndProc = WindowClass::WindowProcedure;
-		wc.hInstance = m_Handle;
+		wc.hInstance = m_ApplicationHandle;
 		wc.lpszClassName = CLASS_NAME;
 		wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 
-		
-		RECT rect{};
-		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		if (!RegisterClass(&wc))
+		{
+			return false;
+		}
+		return true;
+	}
+	bool UnRegisterWindowClass()
+	{
+		if (!UnregisterClass(CLASS_NAME, m_ApplicationHandle))
+		{
+			return false;
+		}
+		return true;
+	}
 
-		auto idth = GetSystemMetrics(SM_CXSCREEN);
-		auto eight = GetSystemMetrics(SM_CYSCREEN);
-		RegisterClass(&wc);
-		m_Hwnd = CreateWindowEx(
-			0, // Optional window styles.
-			CLASS_NAME, // Window class
-			app_name, // Window text
-			WS_OVERLAPPEDWINDOW, // Window style
-			// Size and position
+	BOOL CreateWin32Window(uint32_t width, uint32_t height, const char* app_name)
+	{
+		m_ApplicationHandle = GetModuleHandle(NULL);
+		if (!RegisterWindowClass())
+		{
+			return FALSE;
+		}
+		//auto width = GetSystemMetrics(SM_CXSCREEN);
+		//auto height = GetSystemMetrics(SM_CYSCREEN);
+		RECT rect{};
+		auto windowStyle = WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &rect, 0);
+		m_WindowHandle = CreateWindowEx(
+			0,
+			CLASS_NAME,
+			app_name,
+			windowStyle,
 			0, 0, static_cast<int>(rect.right), static_cast<int>(rect.bottom),
-			NULL, // Parent window
-			NULL, // Menu
-			m_Handle, // Instance handle
+			NULL,
+			NULL,
+			m_ApplicationHandle,
 			this // Additional application data
 		);
-		return (m_Hwnd ? TRUE : FALSE);
+		if (!m_WindowHandle)
+		{
+			return FALSE;
+		}
+		return TRUE;
 	}
 	static LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
@@ -61,7 +76,7 @@ public:
 			CREATESTRUCT* pCreate = (CREATESTRUCT*)lParam;
 			pWindowComponent = (WindowClass*)pCreate->lpCreateParams;
 			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pWindowComponent);
-			pWindowComponent->m_Hwnd = hwnd;
+			pWindowComponent->m_WindowHandle = hwnd;
 		}
 		else
 		{
@@ -77,6 +92,6 @@ public:
 		}
 	}
 
-	BaseWindowClass() : m_Hwnd{ NULL }, m_Handle{ NULL } {}
+	BaseWindowClass() : m_ApplicationHandle{ NULL }, m_WindowHandle{ NULL } {}
 	virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 };

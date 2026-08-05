@@ -7,6 +7,8 @@
 #include "VertexBuffer.h"
 #include "RenderCommand.h"
 
+constexpr uint64_t U64_DEF = 14757395258967641292;
+
 struct ParticleRange
 {
     uint32_t Offset;
@@ -26,7 +28,6 @@ struct ParticleSystemBuffer
     glm::vec4* Color = nullptr;
 };
 
-constexpr uint64_t U64_DEF = 14757395258967641292;
 class Renderer
 {
 public:
@@ -54,14 +55,14 @@ public:
     void BeginFrame();
     void SetActiveCamera(std::shared_ptr<Camera> camera);
 
-    void DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint64_t instance_count = 1) const;
+    void DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint32_t instance_count = 1) const;
     void DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager) const;
     void DrawBufferInstanced(std::vector<RenderCommand>& command_queue, VertexBuffer& vertex_buffer, AssetManager& asset_manager);
-    void DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager);
+    void DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager) const;
     void UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const;
     void UploadUniformData(const RenderCommand& cmd, AssetManager& asset_manager) const;
     void UploadUniformData(const ParticleCommand& cmd, AssetManager& asset_manager) const;
-    void OnUpdate(TimeStep delta);
+    void OnUpdate(float delta);
 
     void EndFrame();
 
@@ -69,31 +70,26 @@ public:
     void Clear(GLbitfield flags = GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) const;
     void Flush() const;
 
-    void ParticleSystemSync(Scene * scene);
     uint32_t AllocateParticles(uint32_t num_particles);
     bool DeallocateParticles(ParticleRange range);
     void MergeFreeRanges();
     void DebugParticleRanges();
+    void ParticleSystemSync(Scene* scene);
 
     Renderer();
     ~Renderer();
     std::vector<RenderCommand> m_CommandBuffer;
 
 private:
-    std::vector<TextureBase<GL_Texture>> m_Textures;
-    std::vector<glm::mat4> m_ActiveTransforms;
-    std::vector<Shader> m_ActiveShaders;
     std::shared_ptr<Camera> m_pActiveCamera;
-
     std::vector<std::vector<RenderCommand>> m_InstanceGroups;
-    std::map<int, std::vector<RenderCommand>> m_InstanceGroupsMap;
     std::vector<int> m_InstanceGroupKeys;
+    std::map<int, std::vector<RenderCommand>> m_InstanceGroupsMap;
     std::vector<glm::mat4> m_ModelMatrices;
 
-    ParticleSystemBuffer m_GpuBuffers;
     std::vector<ParticleRange> m_AllocatedRanges;
     std::vector<ParticleRange> m_FreeRanges;
-
+    ParticleSystemBuffer m_GpuBuffers;
 };
 
 #endif

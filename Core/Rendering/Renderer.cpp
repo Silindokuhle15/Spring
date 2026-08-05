@@ -62,14 +62,14 @@ void Renderer::ParticleSystemSync(Scene* scene)
                         float x = rangesR(rng);
                         float y = rangesR(rng);
                         float z = rangesR(rng);
-                        m_GpuBuffers.Velocities[index] = glm::vec4(x, y, z, 0.0) * particleSystem.m_Unused1;
+                        m_GpuBuffers.Velocities[index] = glm::vec4(x, y, z, 0.0) * particleSystem.m_InitialSpeed;
                     }
                     else
                     {
                         m_GpuBuffers.Velocities[index] = glm::vec4(
-                            particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
-                            particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
-                            particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_InitialSpeed,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_InitialSpeed,
+                            particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_InitialSpeed,
                             particleSystem.m_EmitterInfo.m_VectorTwo.w
                         ) ;
                     }
@@ -109,9 +109,9 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     auto newPos = center + v1 * u + v2 * v;
                     m_GpuBuffers.Positions[index] = glm::vec4(newPos, radius);
                     m_GpuBuffers.Velocities[index] = glm::vec4(
-                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_InitialSpeed,
                         particleSystem.m_EmitterInfo.m_VectorTwo.w
                     );
 
@@ -160,9 +160,9 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     auto newPos = center + v1 * u + v2 * v + h1 * normal;
                     m_GpuBuffers.Positions[index] = glm::vec4(newPos, radius);
                     m_GpuBuffers.Velocities[index] = glm::vec4(
-                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_InitialSpeed,
                         particleSystem.m_EmitterInfo.m_VectorTwo.w
                     );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
@@ -209,9 +209,9 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     auto velocity = glm::normalize(newPoint - apex);
                     m_GpuBuffers.Positions[index] = glm::vec4(newPoint, halfAngle);
                     m_GpuBuffers.Velocities[index] = glm::vec4(
-                        velocity.x * particleSystem.m_Unused1,
-                        velocity.y * particleSystem.m_Unused1,
-                        velocity.z * particleSystem.m_Unused1,
+                        velocity.x * particleSystem.m_InitialSpeed,
+                        velocity.y * particleSystem.m_InitialSpeed,
+                        velocity.z * particleSystem.m_InitialSpeed,
                         particleSystem.m_EmitterInfo.m_VectorTwo.w
                     );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
@@ -247,9 +247,9 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     randomOffset = glm::vec3(x, y, zc);
                     m_GpuBuffers.Positions[index] = glm::vec4(center + randomOffset, radius);
                     m_GpuBuffers.Velocities[index] = glm::vec4(
-                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_Unused1,
-                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_Unused1,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.x * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.y * particleSystem.m_InitialSpeed,
+                        particleSystem.m_EmitterInfo.m_VectorTwo.z * particleSystem.m_InitialSpeed,
                         particleSystem.m_EmitterInfo.m_VectorTwo.w
                     );
                     m_GpuBuffers.LifetimeAndSize[index] = glm::vec4(0.0f, particleSystem.m_Duration, 0.0f, 1.0f);
@@ -485,10 +485,9 @@ void Renderer::UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_MaterialBuffer);
     glShaderStorageBlockBinding(shaderHandlePlatform, 0, 0);
 
-    /**/
-    for (auto index{0}; index < materialGroup.size(); index++)
+    /*/
+    for (auto index = 0; index < materialGroup.size(); index++)
     {
-        /**/
         auto& material = materialGroup[index];
         glm::vec4 KaNs{ 0 };
         glm::vec4 KdNi{ 0 };
@@ -547,11 +546,13 @@ void Renderer::UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_
         MTLMaterial tempMaterial{ KaNs, KdNi, KsD, KeIllum };
         GLint materialOffset = index * sizeof(MTLMaterial);
         glNamedBufferSubData(m_MaterialBuffer, materialOffset, sizeof(MTLMaterial), &tempMaterial);
-        /*/
+    }
+    /**/
+    for (auto index = 0; index < newMaterialGroup.size(); index++)
+    {
         auto& newMaterial = newMaterialGroup[index];
         GLuint materialOffset = index * sizeof(MTLMaterial);
         glNamedBufferSubData(m_MaterialBuffer, materialOffset, sizeof(MTLMaterial), &newMaterial);
-        /**/
     }
     /**/
 }
@@ -661,7 +662,6 @@ void Renderer::DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffe
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     UploadBuffer(vertex_buffer);
-
     for (auto& cmd : command_queue)
     {
         glEnable(GL_CULL_FACE);
@@ -681,7 +681,7 @@ void Renderer::DrawBuffer(std::vector<RenderCommand>& command_queue, VertexBuffe
     }
 }
 
-void Renderer::DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint64_t instance_count) const
+void Renderer::DrawInstanced(const RenderCommand& cmd, AssetManager& asset_manager, uint32_t instance_count) const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDrawBuffer(GL_BACK);
@@ -722,7 +722,7 @@ void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, Ve
 
     for (auto& renderCommand : command_queue)
     {
-        /*
+        /**/
         uint64_t indexCount = renderCommand.m_IndexCount;
         size_t index = 0;
         while (index < m_InstanceGroupKeys.size() && m_InstanceGroupKeys[index] != indexCount)
@@ -737,12 +737,58 @@ void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, Ve
         }
         m_InstanceGroups[index].reserve(command_queue.size());
         m_InstanceGroups[index].push_back(std::move(renderCommand));
-        */
+        /**/
+        /*/
         m_InstanceGroupsMap[renderCommand.m_IndexCount].push_back(
             std::move(renderCommand)
         );
+        /**/
     }
+    GLintptr currentBufferOffset{ 0 };
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_ModelMatrixInstanceBuffer);
+    for (auto groupIndex = 0; groupIndex < m_InstanceGroups.size(); groupIndex++)
+    {
+        auto& group = m_InstanceGroups[groupIndex];
+        uint64_t glDisableBits{ 0 };
+        AssetHandle shaderHandle{ 0,0 };
+        AssetHandle materialHandle{ 0, 0 };
+        std::vector<glm::mat4> tempBuffer(group.size());
+        for (auto cmdIndex = 0; cmdIndex < group.size(); cmdIndex++)
+        {
+            auto& cmd = group[cmdIndex];
+            shaderHandle = cmd.m_ShaderHandle;
+            materialHandle = cmd.m_MaterialHandle;
+            auto& uniformBuffer = cmd.m_UniformBuffer;
+            auto& modelMatrix = uniformBuffer.m_Mat4Map["Model"];
+            tempBuffer[cmdIndex] = modelMatrix;
+            glDisableBits = cmd.m_EnableBits;
+        }
 
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+
+        if (glDisableBits & 0x1)
+        {
+            glDisable(GL_CULL_FACE);
+        }
+        if (glDisableBits & 0x10)
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
+        auto& shader = asset_manager.GetShader(shaderHandle);
+        auto& materialGroup = asset_manager.GetMaterial(materialHandle);
+        auto shaderHandlePlatform = shader.GetHandle();
+        shader.Bind();
+
+        glNamedBufferSubData(m_ModelMatrixInstanceBuffer, 0, sizeof(glm::mat4) * tempBuffer.size(), tempBuffer.data());
+        auto& front = group.front();
+        uint32_t instanceCount = static_cast<uint32_t>(group.size());
+        DrawInstanced(front, asset_manager, instanceCount);
+        currentBufferOffset += sizeof(glm::mat4) * tempBuffer.size();
+    }
+    /*/
     for (auto& group : m_InstanceGroupsMap)
     {
         m_ModelMatrices.clear();
@@ -781,12 +827,13 @@ void Renderer::DrawBufferInstanced(std::vector<RenderCommand>& command_queue, Ve
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_ModelMatrixInstanceBuffer);
         glNamedBufferSubData(m_ModelMatrixInstanceBuffer, 0, sizeof(glm::mat4) * m_ModelMatrices.size(), m_ModelMatrices.data());
         auto& front = group.second.front();
-        uint64_t instanceCount = static_cast<uint64_t>(group.second.size());
+        uint32_t instanceCount = static_cast<uint32_t>(group.second.size());
         DrawInstanced(front, asset_manager, instanceCount);
     }
+    /**/
 }
 
-void Renderer::DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager)
+void Renderer::DrawParticles(std::vector<ParticleCommand>& command_queue, AssetManager& asset_manager) const
 {
     if (!command_queue.empty())
     {
@@ -796,6 +843,11 @@ void Renderer::DrawParticles(std::vector<ParticleCommand>& command_queue, AssetM
             uint32_t bufferOffset = static_cast<uint32_t>(particleCommand.m_BufferOffset);
             uint32_t numParticles = static_cast<uint32_t>(particleCommand.m_NumParticles);
             UploadUniformData(particleCommand, asset_manager);
+            if (!(particleCommand.m_TextureHandle.m_LWORD == U64_DEF || particleCommand.m_TextureHandle.m_LWORD == 0))
+            {
+                auto& texture = asset_manager.GetAsset<TextureBase<GL_Texture>>(particleCommand.m_TextureHandle);
+                glBindTextureUnit(0, texture.m_Texture);
+            }
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, m_GpuBuffers.PositionBuffer);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
@@ -815,7 +867,7 @@ void Renderer::SetActiveCamera(std::shared_ptr<Camera> camera)
     m_pActiveCamera = camera;
 }
 
-void Renderer::OnUpdate(TimeStep ts)
+void Renderer::OnUpdate(float ts)
 {
     m_Ts = ts;
 }

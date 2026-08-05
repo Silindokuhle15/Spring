@@ -17,6 +17,22 @@ T max(T a, T b)
 {
 	return a >= b ? a : b;
 }
+constexpr uint32_t AudioBufferCapacity = 256;
+constexpr uint32_t AudioBufferCapacity2x = AudioBufferCapacity * 2;
+
+struct AudioBuffer
+{
+	uint32_t currentFrame = 0;
+	uint32_t bufferCapacity = AudioBufferCapacity;
+	std::vector<float> data;
+};
+constexpr enum AudioFormat
+{
+	Format16BitMono = 1,
+	Format16BitStereo,
+	Format32BitMono,
+	Format32BitStereo
+};
 
 class Application : public event::IEventListener
 {
@@ -28,14 +44,22 @@ private:
 protected:
 	uint32_t m_AudioBufferFrameCount;
 	uint32_t m_AudioMixMaxFrameCount;
-	uint32_t m_CurrentMixFrame;
-	uint32_t m_CurrentMixFrameCount;
 	WAVEFORMATEX* m_DefaultWAVMixFormat;
 	BlockAllocator<BYTE> soundBlockAllocator;
 	std::map<AssetHandle, Sound> m_SoundMap;
 	std::vector<primitives::PlaySoundRequest> m_AudioRequestQueue;
-	std::vector<float> m_AudioMixBuffer;
+	float m_MasterVolume;
+	uint32_t m_AudioWriteIndex = 0;
+	uint32_t m_AudioReadIndex = 1;
+	std::atomic<uint32_t> m_AudioReady{ 2 };
+	AudioBuffer m_AudioMixBuffer[3];
 	void advanceAudioMix();
+	void recordAudioBuffer();
+	void mix16BitMono(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix);
+	void mix16BitStereo(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix);
+	void mix32BitMono(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix);
+	void mix32BitStereo(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix);
+	AudioFormat getAudioFormat(uint32_t bits_per_sample, uint32_t num_channels);
 public:
 	std::atomic_bool m_ExitApplication;
 public:

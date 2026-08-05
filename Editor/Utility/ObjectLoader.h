@@ -5,6 +5,16 @@
 #include "Allocator.h"
 #include "StringUtils.h"
 
+namespace magic
+{
+	constexpr uint32_t PAK_MAGIC = 0x4B434150;					//"PACK"
+	constexpr uint32_t MATERIAL_MAGIC = 0x4C52544D;				//"MTRL"
+	constexpr uint32_t MATERIAL_GROUP_MAGIC = 0x5047544D;		//"MTGP"
+	constexpr uint32_t MESH_MAGIC = 0x4853454D;					//"MESH"
+	constexpr uint32_t SHADER_MAGIC = 0x52444853;				//"SHDR"
+	constexpr uint32_t SCRIPT_MAGIC = 0x50524353;				//"SCRP"
+}
+
 class ObjectLoader
 {
 private:
@@ -39,11 +49,8 @@ public:
 class OBJObjectLoader : public ObjectLoader
 {
 public:
-	//int LoadObjectFromFile(const char* file_path) override;
 	static primitives::Mesh LoadObjectFromFile(const char* file_path, bool flag);
-	//int LoadMaterialFromFile(const char* file_path) override;
 	static int LoadMaterialFromFile(const char* file_path, std::vector<std::string>& material_names, std::vector<Material>& materials);
-
 };
 
 struct DDS_PIXELFORMAT
@@ -88,7 +95,7 @@ struct DDS_HEADER_DX10
 struct PakHeader
 {
 public:
-	uint32_t magic = 0x4B434150; //"PACK"
+	uint32_t magic = magic::PAK_MAGIC; 
 	uint32_t version = 1;
 	uint32_t offset = 0;
 	uint32_t size = 0;
@@ -98,7 +105,7 @@ public:
 struct MaterialGroupHeader
 {
 public:
-	uint32_t magic = 0x5047544D; //"MTGP"
+	uint32_t magic = magic::MATERIAL_GROUP_MAGIC; 
 	uint32_t version = 1;
 	uint32_t offset = 0;
 	uint32_t size = 0;
@@ -108,7 +115,7 @@ public:
 struct MaterialFileHeader
 {
 public:
-	uint32_t magic = 0x4C52544D; //"MTRL"
+	uint32_t magic = magic::MATERIAL_MAGIC;
 	uint32_t version = 1;
 	uint32_t offset = 0;
 	uint32_t size = 0;
@@ -117,7 +124,7 @@ public:
 struct MeshFileHeader
 {
 public:
-	uint32_t magic = 0x4853454D; //"MESH"
+	uint32_t magic = magic::MESH_MAGIC; 
 	uint32_t version = 1;
 	uint32_t offset = 0;
 	uint32_t size = 0;
@@ -129,12 +136,21 @@ public:
 struct ShaderFileHeader
 {
 public:
-	uint32_t magic = 0x52444853; // SHDR
+	uint32_t magic = magic::SHADER_MAGIC;
 	uint32_t version = 1;
 	uint32_t offset = 0;
 	uint32_t size = 0;
 	uint32_t stageCount = 0;
 	uint32_t stageMask = 0;
+};
+
+struct ScriptFileHeader 
+{
+public:
+	uint32_t magic = magic::SCRIPT_MAGIC; 
+	uint32_t version = 1;
+	uint32_t offset = 0;
+	uint32_t size = 0;
 };
 
 class MaterialWriter
@@ -208,5 +224,11 @@ class ShaderReader
 public:
 	static std::string LoadShaderSourceIntoMemory(std::ifstream& ifs, uint32_t size);
 	static ShaderFileHeader ReadShaderProgramHeader(std::ifstream& ifs);
+};
+
+class ScriptWriter
+{
+public:
+	static int WriteScriptDataToFile(std::ofstream& ofs, const char* file_path);
 };
 #endif

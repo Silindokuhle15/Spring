@@ -3,80 +3,135 @@
 
 void Application::advanceAudioMix()
 {
-	m_CurrentMixFrame = (m_CurrentMixFrame >= m_CurrentMixFrameCount) ? 0 : m_CurrentMixFrame;
+	auto& audioReadBuffer = m_AudioMixBuffer[m_AudioReadIndex];
+	uint32_t remainingFrames = audioReadBuffer.bufferCapacity - audioReadBuffer.currentFrame;
+	uint32_t framesAvailable{ 0 };
+	uint32_t framesToWrite{ 0 };
+	uint32_t padding{ 0 };
+
+	while (remainingFrames > 0 && !m_ExitApplication.load())
+	{
+		float* src = audioReadBuffer.data.data() + audioReadBuffer.currentFrame;
+		BYTE* physicalAudioBuffer{ nullptr };
+		m_AudioClient->GetCurrentPadding(&padding);
+		framesAvailable = m_AudioBufferFrameCount - padding;
+		framesToWrite = std::min(framesAvailable, remainingFrames);
+		m_AudioRenderClient->GetBuffer(framesToWrite, &physicalAudioBuffer);
+		memcpy(physicalAudioBuffer, src, framesToWrite * m_DefaultWAVMixFormat->nChannels * sizeof(float));
+		m_AudioRenderClient->ReleaseBuffer(framesToWrite, 0);
+		audioReadBuffer.currentFrame += framesToWrite;
+		remainingFrames -= framesToWrite;
+	}
+	uint32_t newest = m_AudioReady.exchange(m_AudioReadIndex, std::memory_order_acq_rel);
+	if (newest == m_AudioReadIndex)
+	{
+		return;
+	}
+	m_AudioReadIndex = newest;
+}
+
+void Application::recordAudioBuffer()
+{
+	std::erase_if(m_AudioRequestQueue, [&](primitives::PlaySoundRequest& request) { return request.currentFrame >= request.frameCount; });
+	auto& audioWriteBuffer = m_AudioMixBuffer[m_AudioWriteIndex];
+	std::fill(audioWriteBuffer.data.begin(), audioWriteBuffer.data.end(), 0.0f);
 	for (auto& request : m_AudioRequestQueue)
 	{
 		auto& currentFrame = request.currentFrame;
 		auto& frameCount = request.frameCount;
-		if (currentFrame >= frameCount)
-		{
-			continue;
-		}
 		auto& assetHandle = request.SoundID;
 		auto& sound = m_SoundMap[assetHandle];
-		m_CurrentMixFrameCount = max<uint32_t>(m_CurrentMixFrameCount, sound.frameCount);
-		if (sound.numChannels == 1)
+		uint32_t framesToMix = std::min(audioWriteBuffer.bufferCapacity, frameCount - currentFrame);
+		const AudioFormat format = getAudioFormat(sound.bitsPerSample,sound.numChannels);
+		switch (format)
 		{
-
+		case AudioFormat::Format16BitMono:
+			mix16BitMono(audioWriteBuffer, sound, currentFrame, framesToMix);
+			break;
+		case AudioFormat::Format16BitStereo:
+			mix16BitStereo(audioWriteBuffer, sound, currentFrame, framesToMix);
+			break;
+		case AudioFormat::Format32BitMono:
+			mix32BitMono(audioWriteBuffer, sound, currentFrame, framesToMix);
+			break;
+		case AudioFormat::Format32BitStereo:
+			mix32BitStereo(audioWriteBuffer, sound, currentFrame, framesToMix);
+			break;
 		}
-		for (auto frameIndex = currentFrame; frameIndex < frameCount; frameIndex++)
-		{
-			if (sound.bitsPerSample == 16)
-			{
-				int16_t* s = reinterpret_cast<int16_t*>(sound.PCMData);
-
-				if (sound.numChannels == 1)
-				{
-					m_AudioMixBuffer[2 * frameIndex + 0] = s[frameIndex];
-					m_AudioMixBuffer[2 * frameIndex + 1] = s[frameIndex];
-				}
-				if (sound.numChannels == 2)
-				{
-					m_AudioMixBuffer[frameIndex] = s[frameIndex] / 32768.0f;
-				}
-			}
-			if (sound.bitsPerSample == 32)
-			{
-				float* s = reinterpret_cast<float*> (sound.PCMData);
-
-				if (sound.numChannels == 1)
-				{
-					m_AudioMixBuffer[2 * frameIndex + 0] += 0.25 * (min<float>(1.0f, max<float>(s[frameIndex], -1.0f)));
-					m_AudioMixBuffer[2 * frameIndex + 1] += 0.25 * (min<float>(1.0f, max<float>(s[frameIndex], -1.0f)));
-				}
-				if (sound.numChannels == 2)
-				{
-					m_AudioMixBuffer[frameIndex] += s[frameIndex] / 32768.0f;
-				}
-			}
-		}
+		request.currentFrame += framesToMix;
 	}
-	uint32_t remainingFrames = m_CurrentMixFrameCount - m_CurrentMixFrame;
-	if (remainingFrames > 0 && !m_ExitApplication.load())
+	for (size_t index = 0; index < audioWriteBuffer.bufferCapacity; index++)
 	{
-		float* src = m_AudioMixBuffer.data() + m_CurrentMixFrame;
-		uint32_t padding{ 0 };
-		uint32_t framesAvailable{ 0 };
-		uint32_t framesToWrite{ 0 };
-		BYTE* physicalAudioBuffer{ nullptr };
-		m_AudioClient->GetCurrentPadding(&padding);
-		framesAvailable = m_AudioBufferFrameCount - padding;
-		framesToWrite = min<uint32_t>(framesAvailable, remainingFrames);
-		m_AudioRenderClient->GetBuffer(framesToWrite, &physicalAudioBuffer);
-		memcpy(physicalAudioBuffer, src, framesToWrite * m_DefaultWAVMixFormat->nChannels * sizeof(float));
-		m_AudioRenderClient->ReleaseBuffer(framesToWrite, 0);
-		remainingFrames -= framesToWrite;
-		for (auto index = m_CurrentMixFrame; index < m_CurrentMixFrame + framesToWrite; index++)
-		{
-			m_AudioMixBuffer[index] = 0.0f;
-		}
-		for (auto& request : m_AudioRequestQueue)
-		{
-			request.currentFrame += framesToWrite;
-		}
-		m_CurrentMixFrame += framesToWrite;
+		auto& sample = audioWriteBuffer.data[index];
+		audioWriteBuffer.data[index] = std::clamp(sample, -1.0f, 1.0f);
 	}
-	std::erase_if(m_AudioRequestQueue, [&](primitives::PlaySoundRequest& request) { return request.currentFrame > -request.frameCount; });
+	audioWriteBuffer.currentFrame = 0;
+	m_AudioWriteIndex = m_AudioReady.exchange(m_AudioWriteIndex, std::memory_order_acq_rel);
+}
+
+void Application::mix16BitMono(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix)
+{
+	const int16_t* s = reinterpret_cast<const int16_t*>(sound.PCMData);
+	const float volume = m_MasterVolume;
+	const float int16Scale = 1.0f / 32768.0f;
+	for (uint32_t frameIndex = 0; frameIndex < frames_to_mix; frameIndex++)
+	{
+		uint32_t requestReadIndex = frameIndex + start_frame;
+		uint32_t writeIndex = frameIndex * 2;
+		auto sample = s[requestReadIndex] * int16Scale;
+		write_buffer.data[writeIndex + 0] += volume * sample;
+		write_buffer.data[writeIndex + 1] += volume * sample;
+	}
+}
+
+void Application::mix16BitStereo(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix)
+{
+	const int16_t* s = reinterpret_cast<const int16_t*>(sound.PCMData);
+	const float volume = m_MasterVolume;
+	const float int16Scale = 1.0f / 32768.0f;
+	for (uint32_t frameIndex = 0; frameIndex < frames_to_mix; frameIndex++)
+	{
+		uint32_t requestReadIndex = frameIndex + start_frame;
+		uint32_t writeIndex = frameIndex * 2;
+		write_buffer.data[writeIndex + 0] += volume * s[requestReadIndex * 2 + 0] * int16Scale;
+		write_buffer.data[writeIndex + 1] += volume * s[requestReadIndex * 2 + 1] * int16Scale;
+	}
+}
+
+void Application::mix32BitMono(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix)
+{
+	const float* s = reinterpret_cast<const float*>(sound.PCMData);
+	const float volume = m_MasterVolume;
+	for (uint32_t frameIndex = 0; frameIndex < frames_to_mix; frameIndex++)
+	{
+		uint32_t requestReadIndex = frameIndex + start_frame;
+		uint32_t writeIndex = frameIndex * 2;
+		auto sample = s[requestReadIndex];
+		write_buffer.data[writeIndex + 0] += volume * sample;
+		write_buffer.data[writeIndex + 1] += volume * sample;
+	}
+}
+
+void Application::mix32BitStereo(AudioBuffer& write_buffer, Sound& sound, uint32_t start_frame, uint32_t frames_to_mix)
+{
+	const float* s = reinterpret_cast<const float*>(sound.PCMData);
+	const float volume = m_MasterVolume;
+	for (uint32_t frameIndex = 0; frameIndex < frames_to_mix; frameIndex++)
+	{
+		uint32_t requestReadIndex = frameIndex + start_frame;
+		uint32_t writeIndex = frameIndex * 2;
+		write_buffer.data[writeIndex + 0] += volume * s[requestReadIndex * 2 + 0];
+		write_buffer.data[writeIndex + 1] += volume * s[requestReadIndex * 2 + 1];
+	}
+}
+
+AudioFormat Application::getAudioFormat(uint32_t bits_per_sample, uint32_t num_channels)
+{
+	if (bits_per_sample == 16 && num_channels == 1) { return AudioFormat::Format16BitMono; }
+	if (bits_per_sample == 16 && num_channels == 2) { return AudioFormat::Format16BitStereo; }
+	if (bits_per_sample == 32 && num_channels == 1) { return AudioFormat::Format32BitMono; }
+	if (bits_per_sample == 32 && num_channels == 2) { return AudioFormat::Format32BitStereo; }
+	throw std::runtime_error("Unsupported Audio Format !!!");
 }
 
 Application::Application():
@@ -85,10 +140,8 @@ Application::Application():
 	m_AudioClient{ nullptr},
 	m_AudioRenderClient{nullptr},
 	m_AudioBufferFrameCount{ 0 },
-	m_AudioMixMaxFrameCount{ 65536 },
-	m_CurrentMixFrame{ 0 },
-	m_CurrentMixFrameCount{ 0 },
-	m_AudioMixBuffer(size_t(m_AudioMixMaxFrameCount) , 0.0f),
+	m_MasterVolume{0.25f},
+	m_AudioMixBuffer{},
 	m_DefaultWAVMixFormat{nullptr},
 	m_ExitApplication{false}
 {
@@ -144,6 +197,9 @@ Application::Application():
 		throw std::runtime_error("AudioClient:GetService(IAudioRenderClient) failed: !!!");
 	}
 	m_AudioClient->Start();
+	m_AudioMixBuffer[0] = AudioBuffer(0, AudioBufferCapacity, std::vector<float>(size_t(AudioBufferCapacity2x), 0.0f));
+	m_AudioMixBuffer[1] = AudioBuffer(0, AudioBufferCapacity, std::vector<float>(size_t(AudioBufferCapacity2x), 0.0f));
+	m_AudioMixBuffer[2] = AudioBuffer(0, AudioBufferCapacity, std::vector<float>(size_t(AudioBufferCapacity2x), 0.0f));
 }
 
 Application::~Application()
@@ -164,7 +220,7 @@ bool Application::LoadAudioSourcesFromFile(std::ifstream& ifs)
 		reinterpret_cast<char*>(&pakHeader),
 		sizeof(PakHeader)
 	);
-	assert(pakHeader.magic == 0x4B434150);
+	assert(pakHeader.magic == magic::PAK_MAGIC);
 	for (auto itemIndex = 0; itemIndex < pakHeader.itemCount; itemIndex++)
 	{
 		AssetHandle assetHandle{ 0,0 };
@@ -177,7 +233,7 @@ bool Application::LoadAudioSourcesFromFile(std::ifstream& ifs)
 			reinterpret_cast<char*>(&itemHeader),
 			sizeof(PakHeader)
 		);
-		assert(itemHeader.magic == 0x4B434150);
+		assert(itemHeader.magic == magic::PAK_MAGIC);
 		assert(itemHeader.itemCount == 1);
 		auto sound = SoundReader::ReadSoundClipFromFile(ifs, soundBlockAllocator);
 		m_SoundMap[assetHandle] = sound;

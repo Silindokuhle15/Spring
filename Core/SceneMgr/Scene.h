@@ -22,7 +22,6 @@ public:
 	friend class Character;
 	friend class Renderer;
 	friend class scripting::ScriptMgr;
-
 	float m_Ts;
 	float m_AccumulatedTime;
 	std::string asset_pack;
@@ -32,6 +31,7 @@ public:
 	std::string texturePack;
 	std::string shaderPack;
 	std::string soundPack;
+	std::string scriptPack;
 
 	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;

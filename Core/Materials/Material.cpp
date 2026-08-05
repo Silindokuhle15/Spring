@@ -21,6 +21,65 @@ void Material::AddNewUniform(const LayoutInfo& uniform)
 {
 	m_Uniforms.push_back(uniform);
 }
+MTLMaterial Material::GetMTLMaterial()
+{
+    glm::vec4 KaNs{ 0 };
+    glm::vec4 KdNi{ 0 };
+    glm::vec4 KsD{ 0 };
+    glm::vec4 KeIllum{ 0 };
+    for (auto& materialComponent : m_Uniforms1f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        if (name == "Ns")
+        {
+            KaNs[3] = data.x;
+        }
+        if (name == "Ni")
+        {
+            KdNi[3] = data.x;
+        }
+        if (name == "d")
+        {
+            KsD[3] = data.x;
+        }
+        if (name == "illum")
+        {
+            KeIllum[3] = data.x;
+        }
+    }
+    for (auto& materialComponent : m_Uniforms3f)
+    {
+        auto& name = materialComponent.first;
+        auto& data = materialComponent.second;
+        if (name == "Kd")
+        {
+            KaNs[0] = data.x;
+            KaNs[1] = data.y;
+            KaNs[2] = data.z;
+        }
+        if (name == "Ka")
+        {
+            KdNi[0] = data.x;
+            KdNi[1] = data.y;
+            KdNi[2] = data.z;
+        }
+        if (name == "Ks")
+        {
+            KsD[0] = data.x;
+            KsD[1] = data.y;
+            KsD[2] = data.z;;
+        }
+        if (name == "Ke")
+        {
+            KeIllum[0] = data.x;
+            KeIllum[1] = data.y;
+            KeIllum[2] = data.z;
+        }
+    }
+    MTLMaterial material{KaNs, KdNi, KsD, KeIllum};
+	return material;
+}
 /*
 
 void Material::SetUniformI(const std::string& uniform_name, int value) const

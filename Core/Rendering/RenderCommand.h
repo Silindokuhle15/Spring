@@ -8,13 +8,13 @@ class RenderCommand
 public:
     uint64_t m_EnableBits;
     uint64_t m_EntityID;
-    uint64_t m_TargetBuffer;
-    uint64_t m_VertexBufferOffset;
-    uint64_t m_IndexBufferOffset;
-    uint64_t m_CommandSize;
-    uint64_t m_IndexCount;
-    uint64_t m_PrimitiveType;
-    uint64_t m_Viewport[4];
+    uint32_t m_TargetBuffer;
+    uint32_t m_VertexBufferOffset;
+    uint32_t m_IndexBufferOffset;
+    uint32_t m_CommandSize;
+    uint32_t m_IndexCount;
+    uint32_t m_PrimitiveType;
+    uint32_t m_Viewport[4];
     AssetHandle m_ShaderHandle;
     AssetHandle m_MaterialHandle;
     AssetHandle m_TextureHandle;
@@ -25,9 +25,10 @@ public:
 class ParticleCommand
 {
 public:
-    uint64_t m_BufferOffset;
-    uint64_t m_NumParticles;
+    uint32_t m_BufferOffset;
+    uint32_t m_NumParticles;
     AssetHandle m_ShaderHandle;
+    AssetHandle m_TextureHandle;
     UniformBuffer m_UniformBuffer;
 };
 

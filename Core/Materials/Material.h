@@ -41,6 +41,7 @@ public:
     void OnInit();
     void OnUpdate();
     void AddNewUniform(const LayoutInfo& uniform);
+    MTLMaterial GetMTLMaterial();
     /*
     void SetUniformI(const std::string& uniform_name, int value) const;
     void SetUniform2I(const std::string& uniform_name, int i, int j) const;

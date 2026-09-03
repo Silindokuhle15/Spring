@@ -60,8 +60,8 @@ namespace primitives
 	void to_json(json& j, const primitives::EmitterInfo& emitter_info);
 	void from_json(const json& j, primitives::EmitterInfo& emitter_info);
 
-	void to_json(json& j, const primitives::ParticleSystem& particle_system);
-	void from_json(const json& j, primitives::ParticleSystem& particle_system);
+	//void to_json(json& j, const primitives::ParticleSystem& particle_system);
+	//void from_json(const json& j, primitives::ParticleSystem& particle_system);
 }
 
 namespace scripting

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _BOUNDING_VOLUME_H_
+#define _BOUNDING_VOLUME_H_
 #include "glm/glm.hpp"
 #include "Bound.h"
 
@@ -22,3 +23,4 @@ public:
 	static BoundingVolume CreateBoundingVolume(uint64_t id, const glm::vec3& centroid, float size);
 	static BoundingVolume CreateBoundingVolume(uint64_t id, const primitives::Bound3D& bound);
 };
+#endif

@@ -13,6 +13,16 @@
 #include "BVH.h"
 #include "Application.h"
 
+namespace FILTER
+{
+    constexpr const char* DDS_FILTER = ".DDS";
+    constexpr const char* LUA_FILTER = ".lua";
+    constexpr const char* OBJ_FILTER = ".obj";
+    constexpr const char* PAK_FILTER = ".pak";
+    constexpr const char* PNG_FILTER = ".png";
+}
+
+constexpr float updateInterval = 1.0f / 60.0f;
 class Renderer;
 
 class BaseApplication : public Application
@@ -34,7 +44,6 @@ public:
 	AssetHandle m_LobbyMeshHandle;
 	AssetHandle m_LobbyGraphicsShaderHandle;
 	AssetHandle m_ParticleGraphicsShaderHandle;
-	AssetHandle m_ParticleTextureHandle;
 	AssetManager m_AssetManager;
 
     //--------- COMPONENTS ----------//

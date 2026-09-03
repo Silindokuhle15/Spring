@@ -43,18 +43,10 @@ bool AssetManager::Serialize(const std::string& filename)
 
 bool AssetManager::SerializeMaterialPack(const std::string& filename)
 {
-    PakHeader header;
     std::ofstream ofs(filename, std::ios::binary);
-    if (!ofs.is_open())
-    {
-        throw std::runtime_error("Failed to open file !!!");
-    }
     auto startOffset = ofs.tellp();
-    ofs.write(
-        reinterpret_cast<const char*>(&header),
-        sizeof(PakHeader)
-    );
-    auto dataOffset = ofs.tellp();
+    PakHeader header;
+    PakWriter::WritePakHeader(ofs, header);
     uint32_t itemCount = 0;
     for (auto& group : m_MaterialGroupMap)
     {
@@ -62,18 +54,14 @@ bool AssetManager::SerializeMaterialPack(const std::string& filename)
         auto& matGroup = group.second;
         if (!((assetHandle.m_HWORD == 0 && assetHandle.m_LWORD == 0) || matGroup.empty()))
         {
-            MaterialGroupHeader groupHeader;
-            uint32_t materialCount = 0;
+            auto dataStartOffset = ofs.tellp();
+            PakHeader itemHeader;
+            PakWriter::WritePakHeader(ofs, itemHeader);
+            PakWriter::WriteAssetHandle(ofs, assetHandle);
             auto groupStartOffset = ofs.tellp();
-            ofs.write(
-                reinterpret_cast<const char*>(&groupHeader),
-                sizeof(MaterialGroupHeader)
-            );
-            auto groupDataStartOffset = ofs.tellp();
-            ofs.write(
-                reinterpret_cast<const char*>(&assetHandle),
-                sizeof(AssetHandle)
-            );
+            MaterialGroupHeader groupHeader;
+            MaterialWriter::WriteMaterialGroupHeader(ofs, groupHeader);
+            uint32_t materialCount = 0;
             for (auto& material : matGroup)
             {
                 glm::vec4 KaNs{ 0 };
@@ -135,71 +123,41 @@ bool AssetManager::SerializeMaterialPack(const std::string& filename)
                 MaterialWriter::WriteMaterialToFile(ofs, tempMaterial);
                 ++materialCount;
             }
-            auto groupDataEndOffset = ofs.tellp();
-            uint32_t groupSize = groupDataEndOffset - groupDataStartOffset;
-            uint32_t groupOffset = static_cast<uint32_t>(groupDataStartOffset);
-            groupHeader.offset = groupOffset;
-            groupHeader.size = groupSize;
-            groupHeader.materialCount = materialCount;
-            ofs.seekp(groupStartOffset);
-            ofs.write(
-                reinterpret_cast<const char*>(&groupHeader),
-                sizeof(MaterialGroupHeader)
-            );
-            ofs.seekp(groupDataEndOffset);
+            MaterialWriter::RewriteMaterialGroupHeader(ofs, groupHeader, groupStartOffset, materialCount);
+            PakWriter::RewritePakHeader(ofs, itemHeader, dataStartOffset, 1);
             ++itemCount;
         }
     }
-    auto endOffset = ofs.tellp();
-    uint32_t size = endOffset - dataOffset;
-    uint32_t offset = static_cast<uint32_t>(dataOffset);
-    header.offset = offset;
-    header.size = size;
-    header.itemCount = itemCount;
-    ofs.seekp(startOffset);
-    ofs.write(
-        reinterpret_cast<const char*>(&header),
-        sizeof(PakHeader)
-    );
-    ofs.seekp(endOffset);
+    PakWriter::RewritePakHeader(ofs, header, startOffset, itemCount);
+    ofs.close();
     return true;
 }
 
 bool AssetManager::SerializeMeshPack(const std::string& filename)
 {
-    PakHeader pakHeader;
-    std::ofstream ofs1(filename, std::ios::binary);
-    if (!ofs1.is_open())
+    std::ofstream ofs(filename, std::ios::binary);
+    if (!ofs.is_open())
     {
         throw std::runtime_error("Failed to open file for writing !!!");
     }
-    auto startOffset = ofs1.tellp();
-    ofs1.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(pakHeader)
-    );
-    auto dataOffset = ofs1.tellp();
+    auto startOffset = ofs.tellp();
+    PakHeader pakHeader;
+    PakWriter::WritePakHeader(ofs, pakHeader);
     uint32_t itemCount = 0;
-    for (auto& mesh : m_MeshMap)
+    for (auto& m : m_MeshMap)
     {
-        auto& v1 = mesh.first;
-        auto& v2 = mesh.second;
-        MeshWriter::WriteMeshToFile(ofs1, v2);
+        auto& assetHandle = m.first;
+        auto& mesh = m.second;
+        auto subDataStartOffset = ofs.tellp();
+        PakHeader itemHeader{};
+        PakWriter::WritePakHeader(ofs, itemHeader);
+        PakWriter::WriteAssetHandle(ofs, assetHandle);
+        MeshWriter::WriteMeshToFile(ofs, mesh);
+        PakWriter::RewritePakHeader(ofs, itemHeader, subDataStartOffset, 1);
         ++itemCount;
     }
-    auto endOffset = ofs1.tellp();
-    uint32_t size = endOffset - dataOffset;
-    uint32_t offset = static_cast<uint32_t>(dataOffset);
-    pakHeader.size = size;
-    pakHeader.offset = offset;
-    pakHeader.itemCount = itemCount;
-    ofs1.seekp(startOffset);
-    ofs1.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(pakHeader)
-    );
-    ofs1.seekp(endOffset);
-    ofs1.close();
+    PakWriter::RewritePakHeader(ofs, pakHeader, startOffset, itemCount);
+    ofs.close();
     return true;
 }
 
@@ -210,13 +168,9 @@ bool AssetManager::SerializeTexturePack(const std::string& filename)
     {
         throw std::runtime_error("Failed to open file for writing !!!");
     }
-    PakHeader header{};
     auto startOffset = ofs.tellp();
-    ofs.write(
-        reinterpret_cast<const char*>(&header),
-        sizeof(PakHeader)
-    );
-    auto dataStartOffset = ofs.tellp();
+    PakHeader header{};
+    PakWriter::WritePakHeader(ofs, header);
     uint32_t itemCount = 0;
     for (auto& t : m_TextureMap)
     {
@@ -225,153 +179,85 @@ bool AssetManager::SerializeTexturePack(const std::string& filename)
         for (auto& r : m_AssetResourceAndHandleMap)
         {
             auto& resource = r.first;
-            auto& handle = r.second;
-            if (textureHandle == handle)
+            auto& assetHandle = r.second;
+            if (textureHandle == assetHandle)
             {
                 auto& filepath = resource.m_Filepath;
                 auto words = getWords(filepath, "+");
                 auto itemCount = words.size();
                 auto extension = words.front().substr(filepath.find('.'));
-                if (extension == ".DDS")
+                if (extension == ".DDS" || extension == ".dds")
                 {
-                    PakHeader subHeader{};
-                    uint32_t subItemCount = 0;
                     auto subDataStartOffset = ofs.tellp();
-                    ofs.write(
-                        reinterpret_cast<const char*>(&subHeader),
-                        sizeof(PakHeader)
-                    );
-                    ofs.write(
-                        reinterpret_cast<const char*>(&textureHandle),
-                        sizeof(AssetHandle)
-                    );
+                    PakHeader subHeader{};
+                    PakWriter::WritePakHeader(ofs, subHeader);
+                    PakWriter::WriteAssetHandle(ofs, textureHandle);
+                    uint32_t subItemCount = 0;
                     for (auto& word : words)
                     {
                         TextureWriter::WriteDDSTextureToFile(ofs, word.c_str());
                         ++subItemCount;
                     }
-                    auto subDataEndOffset = ofs.tellp();
-                    uint32_t subDataOffset = static_cast<uint32_t>(subDataStartOffset);
-                    uint32_t subDataSize = static_cast<uint32_t>(subDataStartOffset - subDataEndOffset);
-                    subHeader.offset = subDataOffset;
-                    subHeader.size = subDataSize;
-                    subHeader.itemCount = subItemCount;
-                    ofs.seekp(subDataStartOffset);
-                    ofs.write(
-                        reinterpret_cast<const char*>(&subHeader),
-                        sizeof(PakHeader)
-                    );
-                    ofs.seekp(subDataEndOffset);
+                    PakWriter::RewritePakHeader(ofs, subHeader, subDataStartOffset, subItemCount);
                 }
             }
         }
         ++itemCount;
     }
-    auto dataEndOffset = ofs.tellp();
-    uint32_t offset = static_cast<uint32_t>(dataStartOffset);
-    uint32_t size = static_cast<uint32_t>(dataEndOffset - dataStartOffset);
-    header.itemCount = itemCount;
-    header.offset = offset;
-    header.size = size;
-    ofs.seekp(startOffset);
-    ofs.write(
-        reinterpret_cast<const char*>(&header),
-        sizeof(PakHeader)
-    );
-    ofs.seekp(dataEndOffset);
+    PakWriter::RewritePakHeader(ofs, header, startOffset, itemCount);
+    ofs.close();
     return false;
 }
 
 bool AssetManager::SerializeShaderPack(const std::string& filename)
 {
-    PakHeader pakHeader{};
-    uint32_t programCount = 0;
     std::ofstream ofs(filename, std::ios::binary);
     if (!ofs.is_open())
     {
         throw std::runtime_error("Failed to open file for writing !!!");
     }
     auto startOffset = ofs.tellp();
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    auto dataOffset = ofs.tellp();
+    PakHeader pakHeader{};
+    PakWriter::WritePakHeader(ofs, pakHeader);
+    uint32_t programCount = 0;
     for (auto& program : m_ShaderMap)
     {
-        auto& assetHandle = program.first;
-        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
-        auto& resourceCombinedPath = resource.m_Filepath;
-        PakHeader programHeader{};
-        auto programStartOffset = ofs.tellp();
-        ofs.write(
-            reinterpret_cast<const char*>(&programHeader),
-            sizeof(PakHeader)
-        );
+        const auto& assetHandle = program.first;
+        const auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        const auto& resourceCombinedPath = resource.m_Filepath;
         auto programDataStartOffset = ofs.tellp();
-        ofs.write(
-            reinterpret_cast<const char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
-        auto& shaderResource = m_ShaderResourceMap[assetHandle];
-        auto& shaderInfo = shaderResource.GetShaderInfo();
-        auto& shaderSources = shaderResource.GetShaderSources();
+        PakHeader programHeader{};
+        PakWriter::WritePakHeader(ofs, programHeader);
+        PakWriter::WriteAssetHandle(ofs, assetHandle);
+        const auto& shaderResource = m_ShaderResourceMap[assetHandle];
+        const auto& shaderInfo = shaderResource.GetShaderInfo();
+        const auto& shaderSources = shaderResource.GetShaderSources();
         uint32_t stageCount{ 0 };
         assert(shaderInfo.size() == shaderSources.size());
         for (auto index = 0; index < shaderSources.size(); index++)
         {
-            auto& stageInfo = shaderInfo[index];
-            auto& shaderSource = shaderSources[index];
-
-            ShaderFileHeader stageHeader{};
+            const auto& stageInfo = shaderInfo[index];
+            const auto& shaderSource = shaderSources[index];
             auto stageStartOffset = ofs.tellp();
+            ShaderFileHeader stageHeader{};
             ShaderWriter::WriteShaderProgramHeaderToFile(ofs, stageHeader);
-            auto stageDataStartOffset = ofs.tellp();
             ofs.write(
                 reinterpret_cast<const char*>(shaderSource.data()),
                 shaderSource.size()
             );
-            auto stageDataEndOffset = ofs.tellp();
-            uint32_t size = stageDataEndOffset - stageDataStartOffset;
-            uint32_t offset = static_cast<uint32_t>(stageDataStartOffset);
-            stageHeader.offset = offset;
-            stageHeader.size = size;
-            stageHeader.stageCount = 1;
-            stageHeader.stageMask = stageInfo.shaderType;
-            ofs.seekp(stageStartOffset);
-            ofs.write(
-                reinterpret_cast<const char*>(&stageHeader),
-                sizeof(ShaderFileHeader)
+            ShaderWriter::ReWriteShaderProgramHeaderToFile(
+                ofs,
+                stageHeader,
+                stageStartOffset,
+                1,
+                stageInfo.shaderType
             );
-            ofs.seekp(stageDataEndOffset);
             stageCount++;
         }
-        auto programDataEndOffset = ofs.tellp();
-        uint32_t programSize = programDataEndOffset - programDataStartOffset;
-        uint32_t programOffset = static_cast<uint32_t>(programStartOffset);
-        programHeader.offset = programOffset;
-        programHeader.size = programSize;
-        programHeader.itemCount = stageCount;
-        ofs.seekp(programStartOffset);
-        ofs.write(
-            reinterpret_cast<const char*>(&programHeader),
-            sizeof(PakHeader)
-        );
-        ofs.seekp(programDataEndOffset);
         programCount++;
+        PakWriter::RewritePakHeader(ofs, programHeader, programDataStartOffset, stageCount);
     }
-    auto endOffset = ofs.tellp();
-    uint32_t size = endOffset - dataOffset;
-    uint32_t offset = static_cast<uint32_t>(dataOffset);
-    pakHeader.size = size;
-    pakHeader.offset = offset;
-    pakHeader.itemCount = programCount;
-    ofs.seekp(startOffset);
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    ofs.seekp(endOffset);
+    PakWriter::RewritePakHeader(ofs, pakHeader, startOffset, programCount);
     ofs.close();
     return true;
 }
@@ -383,38 +269,24 @@ bool AssetManager::SerializeSoundPack(const std::string& filename)
     {
         throw std::runtime_error("Failed to open file for writing !!!");
     }
-    PakHeader pakHeader{};
-    uint32_t soundCount{ 0 };
     auto startOffset = ofs.tellp();
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    auto dataStartOffset = ofs.tellp();
+    PakHeader pakHeader{};
+    PakWriter::WritePakHeader(ofs, pakHeader);
+    uint32_t soundCount{ 0 };
     for (auto& sound : m_SoundMap)
     {
-        auto& assetHandle = sound.first;
-        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
-        auto& filePath = resource.m_Filepath;
-        ofs.write(
-            reinterpret_cast<const char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
+        const auto& assetHandle = sound.first;
+        const auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        const auto& filePath = resource.m_Filepath;
+        auto subDataStartOffset = ofs.tellp();
+        PakHeader itemHeader;
+        PakWriter::WritePakHeader(ofs, itemHeader);
+        PakWriter::WriteAssetHandle(ofs, assetHandle);
         SoundWriter::WriteSoundToFile(ofs, filePath.c_str());
+        PakWriter::RewritePakHeader(ofs, itemHeader, subDataStartOffset, 1);
         soundCount++;
     }
-    auto dataEndOffset = ofs.tellp();
-    uint32_t size = dataEndOffset - dataStartOffset;
-    uint32_t offset = static_cast<uint32_t>(dataStartOffset);
-    pakHeader.size = size;
-    pakHeader.offset = offset;
-    pakHeader.itemCount = soundCount;
-    ofs.seekp(startOffset);
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    ofs.seekp(dataEndOffset);
+    PakWriter::RewritePakHeader(ofs, pakHeader, startOffset, soundCount);
     ofs.close();
     return true;
 }
@@ -426,38 +298,24 @@ bool AssetManager::SerializeScriptPack(const std::string& filename)
     {
         throw std::runtime_error("Failed to open file for writing !!!");
     }
-    PakHeader pakHeader{};
-    uint32_t scriptCount{ 0 };
     auto startOffset = ofs.tellp();
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    auto dataStartOffset = ofs.tellp();
+    PakHeader pakHeader{};
+    PakWriter::WritePakHeader(ofs, pakHeader);
+    uint32_t scriptCount{ 0 };
     for (auto& script : m_ScriptMap)
     {
-        auto& assetHandle = script.first;
-        auto& scriptData = script.second;
-        auto& resource = m_AssetHandleAndResourceMap[assetHandle];
-        ofs.write(
-            reinterpret_cast<const char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
+        const auto& assetHandle = script.first;
+        const auto& scriptData = script.second;
+        const auto& resource = m_AssetHandleAndResourceMap[assetHandle];
+        auto subDataStartOffset = ofs.tellp();
+        PakHeader itemHeader;
+        PakWriter::WritePakHeader(ofs, itemHeader);
+        PakWriter::WriteAssetHandle(ofs, assetHandle);
         ScriptWriter::WriteScriptDataToFile(ofs, resource.m_Filepath.c_str());
+        PakWriter::RewritePakHeader(ofs, itemHeader, subDataStartOffset, 1);
         scriptCount++;
     }
-    auto dataEndOffset = ofs.tellp();
-    uint32_t size = dataEndOffset - dataStartOffset;
-    uint32_t offset = static_cast<uint32_t>(dataStartOffset);
-    pakHeader.size = size;
-    pakHeader.offset = offset;
-    pakHeader.itemCount = scriptCount;
-    ofs.seekp(startOffset);
-    ofs.write(
-        reinterpret_cast<const char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    ofs.seekp(dataEndOffset);
+    PakWriter::RewritePakHeader(ofs, pakHeader, startOffset, scriptCount);
     ofs.close();
     return true;
 }
@@ -491,35 +349,21 @@ bool AssetManager::Deserialize(const std::string& filepath)
 
 bool AssetManager::DeserializeMaterialPack(const std::string filepath)
 {
-    PakHeader header;
     std::ifstream ifs(filepath, std::ios::binary);
     if (!ifs.is_open())
     {
         throw std::runtime_error("Failed to open Mesh Pack !!!");
     }
-    ifs.read(
-        reinterpret_cast<char*>(&header),
-        sizeof(PakHeader)
-    );
-    assert(header.magic == 0x4B434150);
+    const PakHeader header = PakReader::ReadPakHeader(ifs);
     for (auto index = 0; index < header.itemCount; index++)
     {
-        MaterialGroupHeader groupHeader;
-        AssetHandle assetHandle{ 0,0 };
-        ifs.read(
-            reinterpret_cast<char*>(&groupHeader),
-            sizeof(MaterialGroupHeader)
-        );
-        assert(groupHeader.magic == 0x5047544D);
-        ifs.read(
-            reinterpret_cast<char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
-
+        const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
+        const AssetHandle assetHandle = PakReader::ReadAssetHandle(ifs);
+        const MaterialGroupHeader groupHeader = MaterialReader::ReaderMaterialGroupHeader(ifs);
         std::vector<MTLMaterial> materialGroup(groupHeader.materialCount);
         for (auto index = 0; index < groupHeader.materialCount; index++)
         {
-            auto material = MaterialReader::ReadMaterialFromFile(ifs);
+            const auto material = MaterialReader::ReadMaterialFromFile(ifs);
             materialGroup[index] = material;
         }
         m_NewMaterialGroupMap[assetHandle] = materialGroup;
@@ -530,20 +374,16 @@ bool AssetManager::DeserializeMaterialPack(const std::string filepath)
 
 bool AssetManager::DeserializeMeshPack(const std::string& filepath)
 {
-    PakHeader header{};
     std::ifstream ifs(filepath, std::ios::binary);
     if (!ifs.is_open())
     {
         throw std::runtime_error("Failed to open Mesh Pack !!!");
     }
-    
-    ifs.read(
-        reinterpret_cast<char*>(&header),
-        sizeof(PakHeader)
-    );
-    assert(header.magic == 0x4B434150);
+    const PakHeader header = PakReader::ReadPakHeader(ifs);
     for (auto index = 0; index < header.itemCount; index++)
     {
+        const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
+        const AssetHandle readAssetHandle = PakReader::ReadAssetHandle(ifs);
         auto mesh = MeshReader::ReadMeshFromFile(ifs);
         auto& assetHandle = mesh.m_MaterialGroupHandle;
         mesh.m_Materials = m_MaterialGroupMap[assetHandle];
@@ -555,38 +395,20 @@ bool AssetManager::DeserializeMeshPack(const std::string& filepath)
 
 bool AssetManager::DeserializeTexturePack(const std::string& filepath)
 {
-    PakHeader pakHeader{};
     std::ifstream ifs(filepath, std::ios::binary);
     if (!ifs.is_open())
     {
         throw std::runtime_error("Failed to open file for reading !!!");
     }
-    ifs.read(
-        reinterpret_cast<char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
-    assert(pakHeader.magic == 0x4B434150);
+    const PakHeader pakHeader = PakReader::ReadPakHeader(ifs);
     for (auto index = 0; index < pakHeader.itemCount; index++)
     {
-        PakHeader subHeader{};
-        ifs.read(
-            reinterpret_cast<char*>(&subHeader),
-            sizeof(PakHeader)
-        );
-        assert(subHeader.magic == 0x4B434150);
-        AssetHandle assetHandle{};
-        ifs.read(
-            reinterpret_cast<char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
+        const PakHeader subHeader = PakReader::ReadPakHeader(ifs);
+        const AssetHandle assetHandle = PakReader::ReadAssetHandle(ifs);
         if (subHeader.itemCount == 1) // Texture2D
         {
-            PakHeader itemHeader{};
-            ifs.read(
-                reinterpret_cast<char*>(&itemHeader),
-                sizeof(PakHeader)
-            );
-            auto ddsHeader = TextureReader::ReadDDSHeader(ifs);
+            const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
+            const auto ddsHeader = TextureReader::ReadDDSHeader(ifs);
             byte* buffer = new byte[itemHeader.size];
             TextureReader::LoadDDSTextureIntoMemory(ifs, itemHeader.size, buffer);
             TextureBase<GL_Texture> glTexture;
@@ -608,12 +430,7 @@ bool AssetManager::DeserializeTexturePack(const std::string& filepath)
             DDS_HEADER ddsHeader{};
             for (auto subIndex = 0; subIndex < subHeader.itemCount; subIndex++)
             {
-                PakHeader itemHeader{};
-                ifs.read(
-                    reinterpret_cast<char*>(&itemHeader),
-                    sizeof(PakHeader)
-                );
-                assert(itemHeader.magic == 0x4B434150);
+                const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
                 ddsHeader = TextureReader::ReadDDSHeader(ifs);
                 bufferSizes[subIndex] = itemHeader.size;
                 buffers[subIndex] = new byte[itemHeader.size];
@@ -651,32 +468,21 @@ bool AssetManager::DeserializeShaderPack(const std::string& filepath)
     {
         throw std::runtime_error("Failed to open file for reading !!!");
     }
-    PakHeader pakHeader{};
-    ifs.read(
-        reinterpret_cast<char*>(&pakHeader),
-        sizeof(PakHeader)
-    );
+    const PakHeader pakHeader = PakReader::ReadPakHeader(ifs);
     for (size_t index = 0; index < pakHeader.itemCount; index++)
     {
-        PakHeader programHeader{};
-        ifs.read(
-            reinterpret_cast<char*>(&programHeader),
-            sizeof(PakHeader)
-        );
-        AssetHandle assetHandle{ 0,0 };
-        ifs.read(
-            reinterpret_cast<char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
+        const PakHeader programHeader = PakReader::ReadPakHeader(ifs);
+        const AssetHandle assetHandle = PakReader::ReadAssetHandle(ifs);
         std::vector<ShaderType> types(programHeader.itemCount);
         std::vector<std::string> sources(programHeader.itemCount);  
         for (auto stageIndex = 0; stageIndex < programHeader.itemCount; stageIndex++)
         {
             auto stageInfo = ShaderReader::ReadShaderProgramHeader(ifs);
-            sources[stageIndex].resize(stageInfo.size);
+            const auto readSize = stageInfo.size - sizeof(ShaderFileHeader);
+            sources[stageIndex].resize(readSize);
             ifs.read(
                 reinterpret_cast<char*>(sources[stageIndex].data()),
-                stageInfo.size
+                readSize
             );
             ShaderType typeInfo{};
             switch (stageInfo.stageMask)
@@ -695,8 +501,11 @@ bool AssetManager::DeserializeShaderPack(const std::string& filepath)
                 break;
             }
         }
-        Shader shader{ types, sources };
-        m_ShaderMap[assetHandle] = shader;
+        if (programHeader.itemCount > 0)
+        {
+            Shader shader{ types, sources };
+            m_ShaderMap[assetHandle] = shader;
+        }
     }
     ifs.close();
     return true;
@@ -704,36 +513,23 @@ bool AssetManager::DeserializeShaderPack(const std::string& filepath)
 
 bool AssetManager::DeserializeScriptPack(const std::string& filepath)
 {
-    PakHeader header{};
     std::ifstream ifs(filepath, std::ios::binary);
     if (!ifs.is_open())
     {
         throw std::runtime_error("Failed to open file for reading !!!");
     }
-    ifs.read(
-        reinterpret_cast<char*>(&header),
-        sizeof(PakHeader)
-    );
-    assert(header.magic == 0x4B434150);
+    const auto header = PakReader::ReadPakHeader(ifs);
+    assert(header.magic == magic::PAK_MAGIC);
     for (auto index = 0; index < header.itemCount; index++)
     {
-        AssetHandle assetHandle{ 0,0 };
-        ifs.read(
-            reinterpret_cast<char*>(&assetHandle),
-            sizeof(AssetHandle)
-        );
-        PakHeader itemHeader{};
-        ifs.read(
-            reinterpret_cast<char*>(&itemHeader),
-            sizeof(PakHeader)
-        );
-        assert(itemHeader.magic == 0x4B434150);
+        const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
+        const AssetHandle assetHandle = PakReader::ReadAssetHandle(ifs);
         std::string scriptData;
-        scriptData.resize(itemHeader.size);
-        ifs.seekg(itemHeader.offset);
+        const std::size_t readSize = itemHeader.size - (sizeof(PakHeader) + sizeof(AssetHandle));
+        scriptData.resize(readSize);
         ifs.read(
             reinterpret_cast<char*>(scriptData.data()),
-            itemHeader.size
+            readSize
         );
         m_ScriptMap[assetHandle] = scriptData;
     }

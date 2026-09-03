@@ -1,9 +1,6 @@
-#pragma once
-#include <cstddef>
-#include <cstdlib>
-#include <vector>
+#ifndef _BVH_H_
+#define _BVH_H_
 #include <cassert>
-#include <new>
 #include <algorithm>
 #include <iostream>
 #include <glm/glm.hpp>
@@ -328,3 +325,4 @@ void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree
 		}
 	}
 }
+#endif

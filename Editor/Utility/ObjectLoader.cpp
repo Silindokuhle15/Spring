@@ -355,7 +355,7 @@ int MeshWriter::WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh
 	auto startOffset = ofs.tellp();
 	ofs.write(
 		reinterpret_cast<const char*>(&header),
-		sizeof(header)
+		sizeof(MeshFileHeader)
 	);
 
 	for (auto index = 0; index < mesh.m_SubMeshes.size(); index++)
@@ -369,13 +369,14 @@ int MeshWriter::WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh
 		auto subMeshStartOffset = ofs.tellp();
 		ofs.write(
 			reinterpret_cast<const char*>(&subMeshHeader),
-			sizeof(subMeshHeader)
+			sizeof(MeshFileHeader)
 		);
 		auto subMeshDataOffset = ofs.tellp();
-		ofs.write(
-			reinterpret_cast<const char*>(&subMesh.m_MaterialGroupHandle),
-			sizeof(AssetHandle)
-		);
+		//ofs.write(
+		//	reinterpret_cast<const char*>(&subMesh.m_MaterialGroupHandle),
+		//	sizeof(AssetHandle)
+		//);
+		PakWriter::WriteAssetHandle(ofs, subMesh.m_MaterialGroupHandle);
 		ofs.write(
 			reinterpret_cast<const char*>(subMesh.m_V.data()),
 			sizeof(primitives::Vertex) * subMesh.m_V.size()
@@ -393,16 +394,17 @@ int MeshWriter::WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh
 		ofs.seekp(subMeshStartOffset);
 		ofs.write(
 			reinterpret_cast<const char*>(&subMeshHeader),
-			sizeof(subMeshHeader)
+			sizeof(MeshFileHeader)
 		);
 		ofs.seekp(subMeshEndOffset);
 	}
 
 	auto dataOffset = ofs.tellp();
-	ofs.write(
-		reinterpret_cast<const char*>(&mesh.m_MaterialGroupHandle),
-		sizeof(AssetHandle)
-	);
+	//ofs.write(
+	//	reinterpret_cast<const char*>(&mesh.m_MaterialGroupHandle),
+	//	sizeof(AssetHandle)
+	//);
+	PakWriter::WriteAssetHandle(ofs, mesh.m_MaterialGroupHandle);
 	ofs.write(
 		reinterpret_cast<const char*>(mesh.m_V.data()),
 		sizeof(primitives::Vertex) * mesh.m_V.size()
@@ -422,7 +424,7 @@ int MeshWriter::WriteMeshToFile(std::ofstream& ofs, const primitives::Mesh& mesh
 	ofs.seekp(startOffset);
 	ofs.write(
 		reinterpret_cast<const char*>(&header),
-		sizeof(header)
+		sizeof(MeshFileHeader)
 	);
 	ofs.seekp(endOffset);
 	return 0;
@@ -449,7 +451,7 @@ primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
 	}
 	ifs.read(
 		reinterpret_cast<char*>(&header),
-		sizeof(header)
+		sizeof(MeshFileHeader)
 	);
 
 	assert(header.magic == magic::MESH_MAGIC);
@@ -463,7 +465,7 @@ primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
 		MeshFileHeader subMeshHeader;
 		ifs.read(
 			reinterpret_cast<char*>(&subMeshHeader),
-			sizeof(subMeshHeader)
+			sizeof(MeshFileHeader)
 		);
 		assert(subMeshHeader.magic == magic::MESH_MAGIC);
 		std::streampos dataOffset = subMeshHeader.offset;
@@ -506,6 +508,38 @@ primitives::Mesh MeshReader::ReadMeshFromFile(std::ifstream& ifs)
 		sizeof(uint32_t) * header.indexCount
 	);
 	return mesh;
+}
+
+void MaterialWriter::WriteMaterialGroupHeader(std::ofstream& ofs, const MaterialGroupHeader& group_header)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	ofs.write(
+		reinterpret_cast<const char*>(&group_header),
+		sizeof(MaterialGroupHeader)
+	);
+}
+
+void MaterialWriter::RewriteMaterialGroupHeader(std::ofstream& ofs, MaterialGroupHeader& group_header, std::streampos& header_start_offset, uint32_t material_count)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	auto groupDataEndOffset = ofs.tellp();
+	uint32_t groupSize = groupDataEndOffset - header_start_offset;
+	uint32_t groupOffset = static_cast<uint32_t>(header_start_offset);
+	group_header.offset = groupOffset;
+	group_header.size = groupSize;
+	group_header.materialCount = material_count;
+	ofs.seekp(header_start_offset);
+	ofs.write(
+		reinterpret_cast<const char*>(&group_header),
+		sizeof(MaterialGroupHeader)
+	);
+	ofs.seekp(groupDataEndOffset);
 }
 
 int MaterialWriter::WriteMaterialToFile(const char* file_path, const MTLMaterial& material)
@@ -561,6 +595,26 @@ int MaterialWriter::WriteMaterialToFile(std::ofstream& ofs, const MTLMaterial& m
 	);
 	ofs.seekp(endOffset);
 	return 0;
+}
+
+const MaterialFileHeader MaterialReader::ReadMaterialFileHeader(std::ifstream& ifs)
+{
+	return MaterialFileHeader();
+}
+
+const MaterialGroupHeader MaterialReader::ReaderMaterialGroupHeader(std::ifstream& ifs)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	MaterialGroupHeader groupHeader;
+	ifs.read(
+		reinterpret_cast<char*>(&groupHeader),
+		sizeof(MaterialGroupHeader)
+	);
+	assert(groupHeader.magic == magic::MATERIAL_GROUP_MAGIC);
+	return groupHeader;
 }
 
 MTLMaterial MaterialReader::ReadMaterialFromFile(const char* file_path)
@@ -627,27 +681,10 @@ int SoundWriter::WriteSoundToFile(std::ofstream& ofs, const char* path_to_source
 	{
 		throw std::runtime_error("Failed to load Sound file into memory !!!");
 	}
-	PakHeader header{};
-	header.itemCount = 1;
-	auto startOffset = ofs.tellp();
-	ofs.write(
-		reinterpret_cast<const char*>(&header),
-		sizeof(PakHeader)
-	);
-	auto dataStartOffset = ofs.tellp();
 	ofs.write(
 		reinterpret_cast<const char*>(soundBuffer.data()),
 		size
 	);
-	auto dataEndOffset = ofs.tellp();
-	header.offset = static_cast<uint32_t>(dataStartOffset);
-	header.size = static_cast<uint32_t>(size);
-	ofs.seekp(startOffset);
-	ofs.write(
-		reinterpret_cast<const char*>(&header),
-		sizeof(PakHeader)
-	);
-	ofs.seekp(dataEndOffset);
 	ifs.close();
 	return 0;
 }
@@ -826,33 +863,12 @@ ShaderFileHeader ShaderReader::ReadShaderProgramHeader(std::ifstream& ifs)
 	{
 		throw std::runtime_error("Failed to open file for reading !!!");
 	}
-	ShaderFileHeader pakHeader{};
+	ShaderFileHeader shaderFileHeader{};
 	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.magic),
-		sizeof(uint32_t)
+		reinterpret_cast<char*>(&shaderFileHeader),
+		sizeof(ShaderFileHeader)
 	);
-	assert(pakHeader.magic == magic::SHADER_MAGIC);
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.version),
-		sizeof(uint32_t)
-	);
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.offset),
-		sizeof(uint32_t)
-	);
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.size),
-		sizeof(uint32_t)
-	);
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.stageCount),
-		sizeof(uint32_t)
-	);
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader.stageMask),
-		sizeof(uint32_t)
-	);
-	return pakHeader;
+	return shaderFileHeader;
 }
 
 int ShaderWriter::WriteShaderProgramToFile(const char* pak_name, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages)
@@ -873,10 +889,7 @@ int ShaderWriter::WriteShaderProgramToFile(std::ofstream& ofs, AssetHandle& asse
 	{
 		throw std::runtime_error("Failed to open file for writing !!!");
 	}
-	ofs.write(
-		reinterpret_cast<const char*>(&asset_handle),
-		sizeof(AssetHandle)
-	);
+	PakWriter::WriteAssetHandle(ofs, asset_handle);
 	ofs.write(
 		reinterpret_cast<const char*>(&num_stages),
 		sizeof(uint32_t)
@@ -891,33 +904,108 @@ int ShaderWriter::WriteShaderProgramHeaderToFile(std::ofstream& ofs, const Shade
 		throw std::runtime_error("Failed to open file for writing !!!");
 	}
 	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.magic),
-		sizeof(uint32_t)
+		reinterpret_cast<const char*>(&shader_file_header),
+		sizeof(ShaderFileHeader)
 	);
+	return 0;
+}
+
+int ShaderWriter::ReWriteShaderProgramHeaderToFile(std::ofstream& ofs, ShaderFileHeader& shader_file_header, std::streampos& header_start_offset, uint32_t stage_count, uint32_t stage_mask)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	auto stageDataEndOffset = ofs.tellp();
+	uint32_t size = stageDataEndOffset - header_start_offset;
+	uint32_t offset = static_cast<uint32_t>(header_start_offset);
+	shader_file_header.offset = offset;
+	shader_file_header.size = size;
+	shader_file_header.stageCount = stage_count;
+	shader_file_header.stageMask = stage_mask;
+	ofs.seekp(header_start_offset);
 	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.version),
-		sizeof(uint32_t)
+		reinterpret_cast<const char*>(&shader_file_header),
+		sizeof(ShaderFileHeader)
 	);
-	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.offset),
-		sizeof(uint32_t)
-	);
-	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.size),
-		sizeof(uint32_t)
-	);
-	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.stageCount),
-		sizeof(uint32_t)
-	);
-	ofs.write(
-		reinterpret_cast<const char*>(&shader_file_header.stageMask),
-		sizeof(uint32_t)
-	);
+	ofs.seekp(stageDataEndOffset);
 	return 0;
 }
 
 int ScriptWriter::WriteScriptDataToFile(std::ofstream& ofs, const char* file_path)
 {
 	return SoundWriter::WriteSoundToFile(ofs, file_path);
+}
+
+void PakWriter::WritePakHeader(std::ofstream& ofs, PakHeader& header)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+}
+
+void PakWriter::WriteAssetHandle(std::ofstream& ofs, const AssetHandle& asset_handle)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	}
+	ofs.write(
+		reinterpret_cast<const char*>(&asset_handle),
+		sizeof(AssetHandle)
+	);
+}
+
+void PakWriter::RewritePakHeader(std::ofstream& ofs, PakHeader& header, std::streampos& header_start_offset, uint32_t item_count)
+{
+	if (!ofs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for writing !!!");
+	};
+	auto dataEndOffset = ofs.tellp();
+	uint32_t size = dataEndOffset - header_start_offset;
+	uint32_t offset = static_cast<uint32_t>(header_start_offset);
+	header.size = size;
+	header.offset = offset;
+	header.itemCount = item_count;
+	ofs.seekp(header_start_offset);
+	ofs.write(
+		reinterpret_cast<const char*>(&header),
+		sizeof(PakHeader)
+	);
+	ofs.seekp(dataEndOffset);
+}
+
+const PakHeader PakReader::ReadPakHeader(std::ifstream& ifs)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	PakHeader header{};
+	ifs.read(
+		reinterpret_cast<char*>(&header),
+		sizeof(PakHeader)
+	);
+	assert(header.magic == magic::PAK_MAGIC);
+	return header;
+}
+
+const AssetHandle PakReader::ReadAssetHandle(std::ifstream& ifs)
+{
+	if (!ifs.is_open())
+	{
+		throw std::runtime_error("Failed to open file for reading !!!");
+	}
+	AssetHandle assetHandle{ 0,0 };
+	ifs.read(
+		reinterpret_cast<char*>(&assetHandle),
+		sizeof(AssetHandle)
+	);
+	return assetHandle;
 }

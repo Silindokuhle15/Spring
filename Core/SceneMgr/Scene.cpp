@@ -42,6 +42,7 @@ bool Scene::Serialize()
 
 		jScene["characters"].push_back(jCharacter);
 	}
+	/*/
 	auto parentView = GetView<primitives::Parent, primitives::ParticleSystem, std::string>();
 	for (auto [entity, parent, particleSystem, tag] : parentView.each())
 	{
@@ -53,6 +54,7 @@ bool Scene::Serialize()
 
 		jScene["children"].push_back(jCharacter);
 	}
+	/**/
 	ofs << jScene.dump(4);
 	ofs.close();
 	std::cout << title << " created!!!" << std::endl;
@@ -91,12 +93,12 @@ bool Scene::Deserialize()
 		auto id = jCharacter["id"].get<int>();
 		auto tag = jCharacter["tag"].get<std::string>();
 		auto parent = jCharacter["parent"].get<int>();
-		auto particleSystem = jCharacter["particle_system"].get<primitives::ParticleSystem>();
+		//auto particleSystem = jCharacter["particle_system"].get<primitives::ParticleSystem>();
 
 		auto child = CreateSceneObject((uint32_t)id);
 		child->AddComponent<std::string>(tag);
 		child->AddComponent<primitives::Parent>(primitives::Parent{ entt::entity(parent) });
-		child->AddComponent<primitives::ParticleSystem>(particleSystem);
+		//child->AddComponent<primitives::ParticleSystem>(particleSystem);
 	}
 	ifs.close();
 	return true;

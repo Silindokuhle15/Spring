@@ -15,6 +15,19 @@ std::string GetFilenameWithoutExtension(const std::string& path)
 	return filename;
 }
 
+std::string combineWords(const std::vector<std::string>& words, const char* delim)
+{
+	auto iter = words.cbegin();
+	std::string combinedWords = *iter;
+	iter++;
+	while (iter != words.cend())
+	{
+		combinedWords += delim + *iter;
+		iter++;
+	}
+	return combinedWords;
+}
+
 std::vector<std::string> getWords(const std::string& s, const char* delim) {
 	std::vector<std::string> tokens;
 	size_t start = 0, end;

@@ -1,15 +1,5 @@
 #include "Renderer.h"
 
-bool operator<(const ParticleRange& a, const ParticleRange& b)
-{
-    return ((a.Offset < b.Offset));
-}
-
-bool operator==(const ParticleRange& a, const ParticleRange& b)
-{
-    return a.Offset == b.Offset;
-}
-
 void Renderer::UploadBuffer(const VertexBuffer& vertex_buffer) const
 {
     glNamedBufferSubData(m_VertexBuffer, 0, vertex_buffer.Size(), vertex_buffer.m_Buffer.data());
@@ -30,19 +20,28 @@ void Renderer::ParticleSystemSync(Scene* scene)
     static std::mt19937_64 rng(std::random_device{}());
     auto& registry = scene->m_Registry;
     auto& assetManager = scene->m_AssetManager;
-    auto view = registry.view<primitives::ParticleSystem>();
-    for (auto [entity, particleSystem] : view.each())
+    auto view = registry.view<primitives::ParticleSystemInstance>();
+    for (auto [entity, particleSystemInstance] : view.each())
     {
-        if (particleSystem.m_BufferOffset == -1)
+        auto& particleSystem = assetManager->m_ParticleSystems[particleSystemInstance.m_ConfigIndex];
+        //if (particleSystem.m_BufferOffset == -1)
+        //{
+        //    particleSystem.m_BufferOffset = AllocateParticles(particleSystem.m_MaxNumParticles);
+        //    DebugParticleRanges();
+        //}
+        if (particleSystemInstance.m_Allocation.Offset == -1)
         {
-            particleSystem.m_BufferOffset = AllocateParticles(particleSystem.m_MaxNumParticles);
+            particleSystemInstance.m_Allocation.Offset = AllocateParticles(particleSystemInstance.m_Allocation.Size);
             DebugParticleRanges();
         }
-
-        if (particleSystem.m_EmitterInfo.m_Flags.m_Unused1)
+        //if (particleSystem.m_EmitterInfo.m_Flags.m_Unused1)
+        if (particleSystemInstance.m_Restart)
         {
-            particleSystem.m_AccumulatedTime = 0.0f;
-            particleSystem.m_NumParticles = 0;
+            //particleSystem.m_AccumulatedTime = 0.0f;
+            //particleSystem.m_NumParticles = 0;
+
+            particleSystemInstance.m_AccumulatedTime = 0.0f;
+            particleSystemInstance.m_NumParticles = 0;
 
             if (particleSystem.m_EmitterInfo.m_Shape == primitives::EmitterShape::POINT)
             {
@@ -54,7 +53,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 std::uniform_real_distribution<float> rangesZ(-absZ, absZ);
                 std::uniform_real_distribution<float> rangesR(-1.0f, 1.0f);
 
-                for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     m_GpuBuffers.Positions[index] = particleSystem.m_EmitterInfo.m_VectorOne;
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Unused2)
@@ -96,7 +96,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
-                for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     float randomAngle = angle(rng);
                     float radialDistribution = radius;
@@ -143,7 +144,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
-                for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
                     {
@@ -192,7 +194,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto u = glm::normalize(glm::cross(normal, a));
                 auto v = glm::normalize(glm::cross(normal, u));
                 glm::vec3 newPoint{ 0 };
-                for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     float randomAngle = halfAngle;
                     float randomHeight = height;
@@ -225,7 +228,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto center = glm::vec3(particleSystem.m_EmitterInfo.m_VectorOne);
                 std::uniform_real_distribution<float> dist01(0.0, 1.0);
                 constexpr float M_PI = 3.1415962f;
-                for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
+                for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     glm::vec3 randomOffset{ 0 };
                     float u = 1.0f;
@@ -256,10 +260,12 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
             }            
-            particleSystem.m_EmitterInfo.m_Flags.m_Unused1 = false;
+            //particleSystem.m_EmitterInfo.m_Flags.m_Unused1 = false;
+            particleSystemInstance.m_Restart = false;
         }
 
-        if (particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled)
+        //if (particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled)
+        if (particleSystemInstance.m_IsEnabled)
         {
             auto& shaderHandle = particleSystem.m_ShaderHandle;
             auto& shader = assetManager->GetAsset<Shader>(shaderHandle);
@@ -286,10 +292,15 @@ void Renderer::ParticleSystemSync(Scene* scene)
             GLuint colorTwoLoc = glGetUniformLocation(platformHandle, "colorTwo");
             GLuint colorThreeLoc = glGetUniformLocation(platformHandle, "colorThree");
 
-            glUniform1f(deltaLoc, particleSystem.m_Ts);
-            glUniform1f(uTimeLoc, particleSystem.m_AccumulatedTime);
-            glUniform1ui(bufferOffsetLoc, particleSystem.m_BufferOffset);
-            glUniform1ui(numPtsLoc, particleSystem.m_NumParticles);
+            //glUniform1f(deltaLoc, particleSystem.m_Ts);
+            //glUniform1f(uTimeLoc, particleSystem.m_AccumulatedTime);
+            //glUniform1ui(bufferOffsetLoc, particleSystem.m_BufferOffset);
+            //glUniform1ui(numPtsLoc, particleSystem.m_NumParticles);
+
+            glUniform1f(deltaLoc, 1.0f/60.0f);
+            glUniform1f(uTimeLoc, particleSystemInstance.m_AccumulatedTime);
+            glUniform1ui(bufferOffsetLoc, particleSystemInstance.m_Allocation.Offset);
+            glUniform1ui(numPtsLoc, particleSystemInstance.m_NumParticles);
             glm::vec3 colorOne = glm::vec3{ 1.0, 0.998, 0.696 };
             glm::vec3 colorTwo = glm::vec3{ 0.955, 0.918, 0.243 };
             glm::vec3 colorThree = glm::vec3{ 0.986, 0.845, 0.370 };
@@ -298,15 +309,23 @@ void Renderer::ParticleSystemSync(Scene* scene)
             glUniform3f(colorTwoLoc, colorTwo.x, colorTwo.y, colorTwo.z);
             glUniform3f(colorThreeLoc, colorThree.x, colorThree.y, colorThree.z);
 
-            glDispatchCompute(particleSystem.m_NumParticles, 1, 1);
+            //glDispatchCompute(particleSystem.m_NumParticles, 1, 1);
+            glDispatchCompute(particleSystemInstance.m_NumParticles, 1, 1);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            particleSystem.m_Ts = 1.0f / 60.0f;
-            particleSystem.m_AccumulatedTime += particleSystem.m_Ts;
+            //particleSystem.m_Ts = 1.0f / 60.0f;
+            //particleSystem.m_AccumulatedTime += particleSystem.m_Ts;
+            particleSystemInstance.m_AccumulatedTime += 1.0f / 60.0f;
 
-            GLuint numPts = particleSystem.m_NumParticles;
-            if (counter >= counterLimit && (numPts + particleSystem.m_ParticleRate <= particleSystem.m_MaxNumParticles))
+            //GLuint numPts = particleSystem.m_NumParticles;
+            //if (counter >= counterLimit && (numPts + particleSystem.m_ParticleRate <= particleSystem.m_MaxNumParticles))
+            //{
+            //    particleSystem.m_NumParticles += particleSystem.m_ParticleRate;
+            //    counter = 0;
+            //}
+            GLuint numPts = particleSystemInstance.m_NumParticles;
+            if (counter >= counterLimit && (numPts + particleSystem.m_ParticleRate <= particleSystemInstance.m_Allocation.Size))
             {
-                particleSystem.m_NumParticles += particleSystem.m_ParticleRate;
+                particleSystemInstance.m_NumParticles += particleSystem.m_ParticleRate;
                 counter = 0;
             }
             counter++;
@@ -323,7 +342,7 @@ uint32_t Renderer::AllocateParticles(uint32_t num_particles)
         if (num_particles <= availableSize)
         {
             currentOffset = rangeIterator->Offset;
-            ParticleRange allocatedRange{ currentOffset, (num_particles)};            
+            primitives::Range allocatedRange{ currentOffset, (num_particles)};            
             m_AllocatedRanges.push_back(allocatedRange);
             rangeIterator->Offset += allocatedRange.Size;
             rangeIterator->Size -= allocatedRange.Size;
@@ -334,7 +353,7 @@ uint32_t Renderer::AllocateParticles(uint32_t num_particles)
     return currentOffset;
 }
 
-bool Renderer::DeallocateParticles(ParticleRange range)
+bool Renderer::DeallocateParticles(primitives::Range range)
 {
     auto rangeIter = std::find(m_AllocatedRanges.begin(), m_AllocatedRanges.end(), range);
     if (rangeIter != m_AllocatedRanges.end())
@@ -370,7 +389,7 @@ void Renderer::MergeFreeRanges()
         }
     }
 
-    auto iter = std::find(m_FreeRanges.begin(), m_FreeRanges.end(), ParticleRange{ 0,0 });
+    auto iter = std::find(m_FreeRanges.begin(), m_FreeRanges.end(), primitives::Range{ 0,0 });
     if (iter != m_FreeRanges.end())
     {
         m_FreeRanges.erase(iter);

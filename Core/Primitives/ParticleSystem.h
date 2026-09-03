@@ -3,6 +3,7 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 #include "UUID.h"
+#include "Range.h"
 
 namespace primitives
 {
@@ -32,6 +33,7 @@ namespace primitives
 		glm::vec4 m_VectorTwo;								//{{dx, dy, dz}, height}
 	};
 
+	/*/
 	struct ParticleSystem
 	{
 		EmitterInfo m_EmitterInfo;
@@ -46,6 +48,28 @@ namespace primitives
 		float m_InitialSpeed;
 
 		AssetHandle m_ShaderHandle;
+		AssetHandle m_TextureHandle;
+	};
+	/**/
+	struct ParticleSystemConfig
+	{
+		EmitterInfo m_EmitterInfo;
+		uint32_t m_ParticleRate;
+		float m_Duration;
+		float m_InitialSpeed;
+		AssetHandle m_ShaderHandle;
+		AssetHandle m_TextureHandle;
+	};
+
+	struct ParticleSystemInstance
+	{
+		bool m_IsEnabled;
+		bool m_Restart;
+		primitives::Range m_Allocation;
+		uint32_t m_ConfigIndex;
+		uint32_t m_NumParticles;
+		float m_AccumulatedTime;
+		float m_Duration;
 	};
 }
 

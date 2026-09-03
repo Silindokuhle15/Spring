@@ -240,6 +240,7 @@ namespace primitives
 		j.at("vector_one").get_to(emitter_info.m_VectorOne);
 		j.at("vector_two").get_to(emitter_info.m_VectorTwo);
 	}
+	/*/
 	void to_json(json& j, const primitives::ParticleSystem& particle_system)
 	{
 		int shape = static_cast<int>(particle_system.m_EmitterInfo.m_Shape);
@@ -254,7 +255,8 @@ namespace primitives
 			{"accumulated_time", particle_system.m_AccumulatedTime},
 			{"duration", particle_system.m_Duration},
 			{"initialSpeed", particle_system.m_InitialSpeed},
-			{"asset_handle", particle_system.m_ShaderHandle}
+			{"shader_handle", particle_system.m_ShaderHandle},
+			{"texture_handle", particle_system.m_TextureHandle}
 		};
 	}
 	void from_json(const json& j, primitives::ParticleSystem & particle_system)
@@ -268,8 +270,10 @@ namespace primitives
 		j.at("accumulated_time").get_to(particle_system.m_AccumulatedTime);
 		j.at("duration").get_to(particle_system.m_Duration);
 		j.at("initialSpeed").get_to(particle_system.m_InitialSpeed);
-		j.at("asset_handle").get_to(particle_system.m_ShaderHandle);
+		j.at("shader_handle").get_to(particle_system.m_ShaderHandle);
+		j.at("texture_handle").get_to(particle_system.m_TextureHandle);
 	}
+	/**/
 }
 
 namespace scripting

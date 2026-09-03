@@ -424,6 +424,7 @@ inline void ComponentPanel<T>::Run()
 			char buffer[256] = "";
 			sprintf(buffer, "Character %d", (int)parent.ParentEntity);
 			ImGui::TextUnformatted(buffer);
+			/*/
 			if (character->HasComponent<primitives::ParticleSystem>())
 			{
 				bool showParticleEditor = false;
@@ -641,6 +642,7 @@ inline void ComponentPanel<T>::Run()
 					ImGui::End();
 				}
 			}
+			/**/
 		}
 
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&

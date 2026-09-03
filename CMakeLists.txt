@@ -113,14 +113,17 @@ set(SHARED_SOURCES
 "Editor/Utility/ObjectLoader.cpp"
 
 "Core/Primitives/Bound.h" 
+"Core/Primitives/Curve.h"
 "Core/Primitives/Mesh.h" 
 "Core/Primitives/Mesh.cpp"
 "Core/Primitives/Grid.h" 
 "Core/Primitives/Grid.cpp"
 "Core/Primitives/ParticleSystem.h" 
 "Core/Primitives/ParticleSystem.cpp"
+"Core/Primitives/Range.h"
 "Core/Primitives/Square.h"
 "Core/Primitives/Square.cpp"
+"Core/Primitives/Vertex.h"
 
 "Core/Rendering/FrameBuffer.h" 
 "Core/Rendering/FrameBuffer.cpp" 
@@ -176,8 +179,8 @@ set(SHARED_SOURCES
 "Core/Audio/WAV.h"
 "Core/Audio/Sound.h"
 
-"Core/Primitives/Vertex.h"
-)
+
+ )
 # Executable-specific files 
 set(EDITOR_SOURCES
 "SpringEditor.cpp" 

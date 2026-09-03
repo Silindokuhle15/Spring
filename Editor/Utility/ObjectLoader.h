@@ -156,6 +156,8 @@ public:
 class MaterialWriter
 {
 public:
+	static void WriteMaterialGroupHeader(std::ofstream& ofs, const MaterialGroupHeader& group_header);
+	static void RewriteMaterialGroupHeader(std::ofstream& ofs, MaterialGroupHeader& group_header, std::streampos& header_start_offset, uint32_t material_count);
 	static int WriteMaterialToFile(const char* file_path, const MTLMaterial& material);
 	static int WriteMaterialToFile(std::ofstream& ofs, const MTLMaterial& material);
 };
@@ -163,6 +165,8 @@ public:
 class MaterialReader
 {
 public:
+	static const MaterialFileHeader ReadMaterialFileHeader(std::ifstream& ifs);
+	static const MaterialGroupHeader ReaderMaterialGroupHeader(std::ifstream& ifs);
 	static MTLMaterial ReadMaterialFromFile(const char* file_path);
 	static MTLMaterial ReadMaterialFromFile(std::ifstream& ifs);
 };
@@ -179,6 +183,21 @@ class MeshReader
 public:
 	static primitives::Mesh ReadMeshFromFile(const char* file_path);
 	static primitives::Mesh ReadMeshFromFile(std::ifstream& ifs);
+};
+
+class PakWriter
+{
+public:
+	static void WritePakHeader(std::ofstream& ofs, PakHeader& header);
+	static void WriteAssetHandle(std::ofstream& ofs, const AssetHandle& asset_handle);
+	static void RewritePakHeader(std::ofstream& ofs, PakHeader& header, std::streampos& header_start_offset, uint32_t item_count);
+};
+
+class PakReader
+{
+public:
+	static const PakHeader ReadPakHeader(std::ifstream& ifs);
+	static const AssetHandle ReadAssetHandle(std::ifstream& ifs);
 };
 
 class SoundWriter
@@ -217,6 +236,7 @@ public:
 	static int WriteShaderProgramToFile(const char* pak_name, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages);
 	static int WriteShaderProgramToFile(std::ofstream& ofs, AssetHandle& asset_handle, uint32_t num_stages, uint32_t* stages);
 	static int WriteShaderProgramHeaderToFile(std::ofstream& ofs, const ShaderFileHeader& shader_file_header);
+	static int ReWriteShaderProgramHeaderToFile(std::ofstream& ofs, ShaderFileHeader& shader_file_header, std::streampos& header_start_offset, uint32_t stage_count, uint32_t stage_mask);
 };
 
 class ShaderReader

@@ -26,6 +26,7 @@ public:
 	std::map<AssetResource, AssetHandle> m_AssetResourceAndHandleMap;
 	std::map<AssetHandle, AssetResource> m_AssetHandleAndResourceMap;
 	std::map<AssetHandle, ShaderResource> m_ShaderResourceMap;
+	std::vector<primitives::ParticleSystemConfig> m_ParticleSystems;
 	AssetManager() :
 		m_AssetResourceAndHandleMap{},
 		m_AssetHandleAndResourceMap{},

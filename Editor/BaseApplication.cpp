@@ -1,4 +1,5 @@
 #include "BaseApplication.h"
+#include <format>
 
 void BaseApplication::DrawMenuBarPanel()
 {
@@ -15,38 +16,40 @@ void BaseApplication::DrawMenuBarPanel()
             }
             if (ImGui::MenuItem("Open", "..."))
             {
-                const char* filter = ".lua";
-                std::string sceneName = GetFileName(filter);
-                if (m_Scene)
-                {
-                    m_Scene.reset();
-                }
-                m_Scene = std::make_shared<Scene>(sceneName);
-                m_Scene->SetAssetManager(&m_AssetManager);
-                m_Scene->LoadSceneFromFile();
-                if (!m_Scene->asset_pack.empty())
-                {
-                    m_AssetManager.Deserialize(m_Scene->asset_pack);
-                }
-				if (!m_Scene->meshPack.empty())
+                const std::string sceneName = GetFileName(FILTER::LUA_FILTER);
+				if (!sceneName.empty())
 				{
-					m_AssetManager.DeserializeMeshPack(m_Scene->meshPack);
+					if (m_Scene)
+					{
+						m_Scene.reset();
+					}
+					m_Scene = std::make_shared<Scene>(sceneName);
+					m_Scene->SetAssetManager(&m_AssetManager);
+					m_Scene->LoadSceneFromFile();
+					if (!m_Scene->asset_pack.empty())
+					{
+						m_AssetManager.Deserialize(m_Scene->asset_pack);
+					}
+					if (!m_Scene->meshPack.empty())
+					{
+						m_AssetManager.DeserializeMeshPack(m_Scene->meshPack);
+					}
+					if (!m_Scene->materialPack.empty())
+					{
+						m_AssetManager.DeserializeMaterialPack(m_Scene->materialPack);
+					}
+					if (!m_Scene->texturePack.empty())
+					{
+						m_AssetManager.DeserializeTexturePack(m_Scene->texturePack);
+					}
+					if (!m_Scene->shaderPack.empty())
+					{
+						m_AssetManager.DeserializeShaderPack(m_Scene->shaderPack);
+					}
+					m_Scene->OnInit();
+					m_Scene->OnCreateSceneObjects();
+					m_pUILayer.LoadScene(m_Scene);
 				}
-				if (!m_Scene->materialPack.empty())
-				{
-					m_AssetManager.DeserializeMaterialPack(m_Scene->materialPack);
-				}
-				if (!m_Scene->texturePack.empty())
-				{
-					m_AssetManager.DeserializeTexturePack(m_Scene->texturePack);
-				}
-				if (!m_Scene->shaderPack.empty())
-				{
-					m_AssetManager.DeserializeShaderPack(m_Scene->shaderPack);
-				}
-                m_Scene->OnInit();
-                m_Scene->OnCreateSceneObjects();
-                m_pUILayer.LoadScene(m_Scene);
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Close", "..."))
@@ -74,40 +77,73 @@ void BaseApplication::DrawMenuBarPanel()
             {
                 if (ImGui::MenuItem("Image (.png)"))
                 {
-                    const char* filter = ".png";
-                    std::string path = GetFileName(filter);
-                    //parent->LoadImageFromFile(path, parent->m_ActiveRenderer->m_pTextureBuffer);
-                    //parent->m_ActiveRenderer->CreateOpenGLTexture(_TextureView & view, _TextureDescription & desc, GL_Texture & tex)
-
+                    const std::string path = GetFileName(FILTER::PNG_FILTER);
+					if (!path.empty())
+					{
+						const auto dirWords = getWords(path, "\\");
+						if (!dirWords.empty())
+						{
+							const auto newPath = combineWords(dirWords, "/");
+							if (!newPath.empty())
+							{
+								AssetResource textureResource{ AssetType::Texture2D, newPath };
+								auto assetHandle = m_AssetManager.GetResourceHandle(textureResource);
+							}
+						}
+					}
                 }
+				if (ImGui::MenuItem("Image (.DDS)"))
+				{
+					const std::string path = GetFileName(FILTER::DDS_FILTER);
+					if (!path.empty())
+					{
+						const auto dirWords = getWords(path, "\\");
+						if (!dirWords.empty())
+						{
+							const auto newPath = combineWords(dirWords, "/");
+							if (!newPath.empty())
+							{
+								AssetResource textureResource{ AssetType::Texture2D, newPath };
+								auto assetHandle = m_AssetManager.GetResourceHandle(textureResource);
+							}
+						}
+					}
+				}
                 if (ImGui::MenuItem("Wavefront (.obj)"))
                 {
-                    const char* filter = ".obj";
-                    std::string obj_path = GetFileName(filter);
-                    AssetResource meshResource{ AssetType::MeshResource, obj_path };
-                    physics::PhysicsState ps{};
-                    ps.orientation = glm::quat(0, 0, 0, 1);
-                    ps.position = glm::vec3(0, 0, -2);
-                    ps.mass = 10;
+                    const std::string path = GetFileName(FILTER::OBJ_FILTER);
+					if (!path.empty())
+					{
+						const auto dirWords = getWords(path, "\\");
+						if (!dirWords.empty())
+						{
+							const auto newPath = combineWords(dirWords, "/");
+							if (!newPath.empty())
+							{
+								AssetResource meshResource{ AssetType::MeshResource, newPath };
+								physics::PhysicsState ps{};
+								ps.orientation = glm::quat(0, 0, 0, 1);
+								ps.position = glm::vec3(0, 0, -2);
+								ps.mass = 10;
 
-                    auto assetHandle = m_AssetManager.GetResourceHandle(meshResource);
-                    auto& mesh = m_AssetManager.GetAsset<primitives::Mesh>(assetHandle);
-                    if (m_Scene)
-                    {
-                        auto character = m_Scene->CreateSceneObject();
-                        character->AddComponent<primitives::MeshInstance>(primitives::MeshInstance{ assetHandle });
-                        character->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{ 0,0 });
-                        character->AddComponent<physics::PhysicsState>(ps);
-                    }
+								auto assetHandle = m_AssetManager.GetResourceHandle(meshResource);
+								auto& mesh = m_AssetManager.GetAsset<primitives::Mesh>(assetHandle);
+								if (m_Scene)
+								{
+									auto character = m_Scene->CreateSceneObject();
+									character->AddComponent<primitives::MeshInstance>(primitives::MeshInstance{ assetHandle });
+									character->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{ 0,0 });
+									character->AddComponent<physics::PhysicsState>(ps);
+								}
+							}
+						}
+					}
                 }
 
                 if (ImGui::MenuItem("MeshPack"))
                 {
-                    const char* filter = ".pak";
-                    std::string path = GetFileName(filter);
+                    const std::string path = GetFileName(FILTER::PAK_FILTER);
                     auto result = m_AssetManager.DeserializeMeshPack(path);
-
-
                 }
                 if (ImGui::MenuItem("MaterialPack"))
                 {
@@ -115,8 +151,7 @@ void BaseApplication::DrawMenuBarPanel()
                 }
                 if (ImGui::MenuItem("TexturePack"))
                 {
-                    const char* filter = ".pak";
-                    std::string path = GetFileName(filter);
+                    const std::string path = GetFileName(FILTER::PAK_FILTER);
 
                 }
                 ImGui::EndMenu();
@@ -233,6 +268,7 @@ void BaseApplication::DrawMenuBarPanel()
         }
         ImGui::End();
     }
+
     if (showAssetManagerWindow)
     {
         ImGui::Begin("Asset Manager");
@@ -242,23 +278,15 @@ void BaseApplication::DrawMenuBarPanel()
                 if (ImGui::BeginTabItem("Shaders"))
                 {
                     auto& shaderMap = m_AssetManager.m_ShaderMap;
-                    static uint32_t selectedShader = 0;
+                    static uint32_t selectedShader = -1;
                     for (auto& p : shaderMap)
                     {
                         auto& handle = p.first;
                         auto& shader = p.second;
                         auto platformHandle = shader.GetHandle();
                         ImGui::PushID(platformHandle);
-                        char hWordBuffer[64] = "";
-						char lWordBuffer[64] = "";
-						sprintf(hWordBuffer, "%llu", handle.m_HWORD);
-						sprintf(lWordBuffer, "%llu", handle.m_LWORD);
-                        if (ImGui::Selectable(hWordBuffer), selectedShader == platformHandle)
+                        if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()), selectedShader == platformHandle)
                         {
-							if (ImGui::Button(lWordBuffer))
-							{
-
-							}
                         }
                         ImGui::PopID();
                     }
@@ -272,16 +300,14 @@ void BaseApplication::DrawMenuBarPanel()
                 if (ImGui::BeginTabItem("Textures"))
                 {
                     auto& textureMap = m_AssetManager.m_TextureMap;
-                    static uint32_t selectedTexture = 0;
+                    static uint32_t selectedTexture = -1;
                     for (auto& t : textureMap)
                     {
                         auto& handle = t.first;
                         auto& texture = t.second;
-                        auto platformHandle = texture.m_Texture;
+                        auto& platformHandle = texture.m_Texture;
                         ImGui::PushID(platformHandle);
-                        char buffer[128] = "";
-                        sprintf(buffer, "%llu%llu", handle.m_HWORD, handle.m_LWORD);
-                        if (ImGui::Selectable(buffer), selectedTexture == platformHandle)
+                        if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()), selectedTexture == platformHandle)
                         {
 
                         }
@@ -292,40 +318,38 @@ void BaseApplication::DrawMenuBarPanel()
                 if (ImGui::BeginTabItem("Meshes"))
                 {
                     auto& meshMap = m_AssetManager.m_MeshMap;
-                    static uint32_t selectedMesh = 0;
+                    static uint32_t selectedMesh = -1;
                     uint32_t index = 0;
                     for (auto& m : meshMap)
                     {
                         auto& handle = m.first;
                         auto& mesh = m.second;
                         ImGui::PushID(index);
-                        char buffer[128] = "";
-                        sprintf(buffer, "%llu%llu", handle.m_HWORD, handle.m_LWORD);
-                        if (ImGui::Selectable(buffer), selectedMesh == index)
+                        if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()), selectedMesh == index)
                         {
 
                         }
                         ImGui::PopID();
+						index++;
                     }
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Scripts"))
                 {
                     auto& scriptMap = m_AssetManager.m_ScriptMap;
-                    static uint32_t selectedScript = 0;
+                    static uint32_t selectedScript = -1;
                     uint32_t index = 0;
                     for (auto& s : scriptMap)
                     {
                         auto& handle = s.first;
                         auto& scriptData = s.second;
                         ImGui::PushID(index);
-                        char buffer[128] = "";
-                        sprintf(buffer, "%llu%llu", handle.m_HWORD, handle.m_LWORD);
-                        if (ImGui::Selectable(buffer), selectedScript == index)
+                        if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()), selectedScript == index)
                         {
 
                         }
                         ImGui::PopID();
+						index++;
                     }
                     ImGui::EndTabItem();
                 }
@@ -350,9 +374,7 @@ void BaseApplication::DrawComponentsPanel()
 		{
 			int i = static_cast<int>(entity);
 			ImGui::PushID(i);
-			char identifier[16] = "";
-			sprintf(identifier, "Character %d", i);
-			if (ImGui::Selectable(identifier, selectedCharacter == i))
+			if (ImGui::Selectable(std::format("Character {}", i).c_str(), selectedCharacter == i))
 			{
 				selectedCharacter = i;
 				showEditCharacterMenu = true;
@@ -362,7 +384,6 @@ void BaseApplication::DrawComponentsPanel()
 			ImGui::PopID();
 		}
 	}
-
 
 	// ---------- Right-click trigger (no popup body here) ----------
 	/*/
@@ -434,6 +455,7 @@ void BaseApplication::DrawComponentsPanel()
 
 	if (showCharacterEditor && selectedCharacter >= 0)
 	{
+		static bool changeMeshInstance = false;
 		auto& activeScene = m_Scene;
 		auto entity = entt::entity((uint32_t)selectedCharacter);
 		auto character = activeScene->GetSceneCharacter(entity);
@@ -465,22 +487,60 @@ void BaseApplication::DrawComponentsPanel()
 
 		if (character->HasComponent<primitives::MeshInstance>())
 		{
-			char buffer[256] = "";
 			auto& meshInstance = character->GetComponent<primitives::MeshInstance>();
+			const auto& handle = meshInstance.m_Handle;
 			ImGui::TextUnformatted("Mesh Instance");
 			ImGui::Separator();
-			sprintf(buffer, "HWORD: %d LWORD %d", (int)meshInstance.m_Handle.m_HWORD, (int)meshInstance.m_Handle.m_LWORD);
-			ImGui::TextUnformatted(buffer);
+			if (ImGui::Button(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()))
+			{
+				ImGui::OpenPopup("##Available Meshes");
+			}
+			if (ImGui::BeginPopup("##Available Meshes"))
+			{
+				const auto& meshMap = m_AssetManager.m_MeshMap;
+				uint32_t index = 0;
+				for (auto& m : meshMap)
+				{
+					const auto& handle = m.first;
+					ImGui::PushID(index);
+					if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()))
+					{
+						meshInstance.m_Handle = handle;
+					}
+					ImGui::PopID();
+					index++;
+				}
+				ImGui::EndPopup();
+			}
 		}
 
 		if (character->HasComponent<scripting::ControlScript>())
 		{
-			char buffer[256] = "";
 			auto& scriptInstance = character->GetComponent<scripting::ControlScript>();
+			const auto& handle = scriptInstance.m_Handle;
 			ImGui::TextUnformatted("Script Instance");
 			ImGui::Separator();
-			sprintf(buffer, "HWORD: %d LWORD %d", (int)scriptInstance.m_Handle.m_HWORD, (int)scriptInstance.m_Handle.m_LWORD);
-			ImGui::TextUnformatted(buffer);
+			if (ImGui::Button(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()))
+			{
+				ImGui::OpenPopup("##Available Scripts");
+			}
+			if (ImGui::BeginPopup("##Available Scripts"))
+			{
+				const auto& scriptMap = m_AssetManager.m_ScriptMap;
+				uint32_t index = 0;
+				for (auto& s : scriptMap)
+				{
+					auto& handle = s.first;
+					ImGui::PushID(index);
+					if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()))
+					{
+						scriptInstance.m_Handle = handle;
+					}
+					ImGui::PopID();
+					index++;
+				}
+				ImGui::EndPopup();
+			}
 		}
 
 		if (character->HasComponent<Character*>())
@@ -490,18 +550,13 @@ void BaseApplication::DrawComponentsPanel()
 
 		if (character->HasComponent<primitives::Parent>())
 		{
-			ImGui::TextUnformatted("Parent");
-			auto& parent = character->GetComponent<primitives::Parent>();
-			char buffer[256] = "";
-			sprintf(buffer, "Character %d", (int)parent.ParentEntity);
-			ImGui::TextUnformatted(buffer);
-			if (character->HasComponent<primitives::ParticleSystem>())
-			{
-				bool showParticleEditor = false;
-				ImGui::TextUnformatted("Particle System");
-				ImGui::Checkbox("Open Editor", &showParticleEditor);
-			}
+			const auto& parent = character->GetComponent<primitives::Parent>();
+			ImGui::Button(std::format("Parent : Character {}", (uint32_t)parent.ParentEntity).c_str());
 		}
+		//if (character->HasComponent<primitives::ParticleSystem>())
+		//{
+		//	ImGui::Button("Particle System");
+		//}
 
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
 			ImGui::IsMouseReleased(ImGuiMouseButton_Right))
@@ -638,15 +693,14 @@ void BaseApplication::DrawParticleSystemPanel()
 		ImGui::Separator();
 
 		// ---------- System list ----------
+		/*/
 		if (selectedCharacter != -1)
 		{
 			auto pSelectedCharacter = m_Scene->GetSceneCharacter(selectedEntity);
 			if (pSelectedCharacter->HasComponent<primitives::ParticleSystem>())
 			{
 				ImGui::PushID(selectedCharacter);
-				char buffer[32] = "";
-				sprintf(buffer, "Particle System %d", selectedCharacter);
-				if (ImGui::Selectable(buffer))
+				if (ImGui::Selectable(std::format("Particle System {}", selectedCharacter).c_str()))
 				{
 					showParticleEditor = true;
 				}
@@ -666,6 +720,7 @@ void BaseApplication::DrawParticleSystemPanel()
 				{
 					if (ImGui::MenuItem("Add Particle System"))
 					{
+						
 						primitives::ParticleSystem particleSystem;
 						particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled = false;
 						particleSystem.m_EmitterInfo.m_Shape = primitives::EmitterShape::POINT;
@@ -683,6 +738,7 @@ void BaseApplication::DrawParticleSystemPanel()
 						AssetResource shaderResource{ AssetType::ComputeShaderResource, combinedShaderPaths };
 						particleSystem.m_ShaderHandle = m_AssetManager.GetResourceHandle(shaderResource);
 						pSelectedCharacter->AddComponent<primitives::ParticleSystem>(particleSystem);
+						
 						showParticleEditor = true;
 
 					}
@@ -690,6 +746,7 @@ void BaseApplication::DrawParticleSystemPanel()
 				}
 			}
 		}
+		/**/
 		ImGui::End();
 	}
 }
@@ -700,6 +757,7 @@ void BaseApplication::DrawParticleSystemEditor()
 	if (showParticleEditor)
 	{
 		auto pSelectedCharacter = m_Scene->GetSceneCharacter(selectedEntity);
+		/*/
 		if (pSelectedCharacter->HasComponent<primitives::ParticleSystem>())
 		{
 			auto& ps = pSelectedCharacter->GetComponent<primitives::ParticleSystem>();
@@ -716,9 +774,33 @@ void BaseApplication::DrawParticleSystemEditor()
 			ImGui::Checkbox("Enabled", &ps.m_EmitterInfo.m_Flags.m_IsEnabled);
 
 			ImGui::Separator();
-			ImGui::TextUnformatted("Compute Handle");
-			ImGui::DragScalar("HWORD", ImGuiDataType_U64, &ps.m_ShaderHandle.m_HWORD);
-			ImGui::DragScalar("LWORD", ImGuiDataType_U64, &ps.m_ShaderHandle.m_LWORD);
+			ImGui::TextUnformatted("Texture Handle");
+			if (ImGui::Button(std::format("{}{}", ps.m_TextureHandle.m_HWORD, ps.m_TextureHandle.m_LWORD).c_str()))
+			{
+
+			}
+			ImGui::SameLine();
+			if(ImGui::Button("Change"))
+			{
+				ImGui::OpenPopup("##Available Textures");
+			}
+			if (ImGui::BeginPopup("##Available Textures"))
+			{
+				const auto& textureMap = m_AssetManager.m_TextureMap;
+				int id = 0;
+				for (const auto& t : textureMap)
+				{
+					const auto& handle = t.first;
+					ImGui::PushID(id);
+					if (ImGui::Selectable(std::format("{}{}", handle.m_HWORD, handle.m_LWORD).c_str()))
+					{
+						ps.m_TextureHandle = handle;
+					}
+					ImGui::PopID();
+					id++;
+				}
+				ImGui::EndPopup();
+			}
 
 			static std::vector<std::string> emitterShapes = { "Point", "Circle",  "Cylinder", "Cone", "Sphere", "Prism" };
 			static int selectedShape = 0;
@@ -736,7 +818,6 @@ void BaseApplication::DrawParticleSystemEditor()
 				{
 					if (ImGui::Selectable(emitterShapes[index].c_str()))
 					{
-						//selectedShape = index;
 						ps.m_EmitterInfo.m_Shape = (primitives::EmitterShape)index;
 
 					}
@@ -874,6 +955,7 @@ void BaseApplication::DrawParticleSystemEditor()
 			float colorOne[] = { 0,0,0, 1 };
 			float colorTwo[] = { 0.45f, 0.55f, 0.45f, 1.0f };
 			float colorThree[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			static bool editSizeOverLifetime = false;
 			static bool editColorOverLifetime = false;
 			ImGui::Separator();
 			ImGui::TextUnformatted("Particle Lifecycle");
@@ -881,9 +963,29 @@ void BaseApplication::DrawParticleSystemEditor()
 			ImGui::InputInt("Particles per second", &particleRate);
 			ImGui::InputFloat("Duration", &ps.m_Duration);
 			ImGui::InputFloat("Initial Speed", &ps.m_InitialSpeed);
-			if (ImGui::Button("Size over lifetime"));
+			if (ImGui::Button("SizeOverLifetime"))
+			{
+				if (editSizeOverLifetime)
+				{
+					editSizeOverLifetime = false;
+				}
+				else if (!editSizeOverLifetime)
+				{
+					editSizeOverLifetime = true;
+				}
+			}
+			if (editSizeOverLifetime)
+			{
+				static float initialSize = 1.0f;
+				static float finalSize = 1.0f;
+				if (ImGui::InputFloat("Initial Size", &initialSize));
+				if (ImGui::InputFloat("Final Size", &finalSize));
+
+				ImGui::PlotLines("Size over lifetime", colorTwo, 3, 0);
+			}
 			if (ImGui::Button("Speed over lifetime"));
 			if (ImGui::Checkbox("Color over lifetime", &editColorOverLifetime));
+
 			if (editColorOverLifetime)
 			{
 				ImGui::ColorEdit4("Color 1", colorOne);
@@ -918,12 +1020,22 @@ void BaseApplication::DrawParticleSystemEditor()
 			}
 			ImGui::End();
 		}
+		/**/
 	}
 }
 
 void BaseApplication::Run()
 {
-
+	primitives::ParticleSystemConfig testConfig{};
+	testConfig.m_EmitterInfo.m_Flags.m_IsEnabled = false;
+	testConfig.m_EmitterInfo.m_Flags.m_Fill = false;
+	testConfig.m_EmitterInfo.m_Shape = primitives::EmitterShape::CONE;
+	testConfig.m_EmitterInfo.m_VectorOne = glm::vec4(0.0f, 0.0f, -1.0f, 15.0f);
+	testConfig.m_EmitterInfo.m_VectorTwo = glm::vec4(0.0f, 0.0f, -1.0f, 2.0f);
+	testConfig.m_ParticleRate = 1;
+	testConfig.m_Duration = 60.0f;
+	testConfig.m_InitialSpeed = 1.0f;
+	
     m_pActiveRenderer = std::make_shared<Renderer>();
     m_pUILayer.BindRenderer(m_pActiveRenderer);
     m_pUILayer.m_pActiveCamera->SetEye(glm::vec3(0, 0, 20));
@@ -934,7 +1046,6 @@ void BaseApplication::Run()
     //scripting::ScriptMgr::expose_scene_camera(m_Scene->GetLuaState(), m_pUILayer.m_pActiveCamera.get(), "camera");
     m_LobbyGraphicsShaderHandle = AssetHandle{ 3531024263087085773, 10156511931093447336 }; //LevelOne
     m_ParticleGraphicsShaderHandle = AssetHandle{ 6016858150360079293, 10861247056247163883 };
-	m_ParticleTextureHandle = AssetHandle{ 8245083312122777658,	11598444192254758931 };
 	m_AssetManager.DeserializeScriptPack("C:/dev/Astron Battles/Assets/LevelOne_asset_SCRP.pak");
     if (m_Scene)
     {
@@ -946,7 +1057,7 @@ void BaseApplication::Run()
         }
 		if (!m_Scene->meshPack.empty())
 		{
-			m_AssetManager.DeserializeMeshPack(m_Scene->meshPack);
+			//m_AssetManager.DeserializeMeshPack(m_Scene->meshPack);
 		}
 		if (!m_Scene->materialPack.empty())
 		{
@@ -954,7 +1065,7 @@ void BaseApplication::Run()
 		}
 		if (!m_Scene->texturePack.empty())
 		{
-			m_AssetManager.DeserializeTexturePack(m_Scene->texturePack);
+			//m_AssetManager.DeserializeTexturePack(m_Scene->texturePack);
 		}
 		if (!m_Scene->shaderPack.empty())
 		{
@@ -983,8 +1094,8 @@ void BaseApplication::Run()
             DrawParticleSystems(m_AssetManager);
         }
 
-        m_pActiveRenderer->OnUpdate(1.0f / 6.0f);
-        m_pUILayer.OnUpdate(1.0f / 6.0f);
+        m_pActiveRenderer->OnUpdate(updateInterval);
+        m_pUILayer.OnUpdate(updateInterval);
 
         m_pActiveRenderer->EndFrame();
         m_pUILayer.EndFrame();
@@ -1021,7 +1132,6 @@ void BaseApplication::OnPlaySound(primitives::PlaySoundRequest& sound_event)
     auto& assetHandle = sound_event.SoundID;
     auto& sound = m_AssetManager.GetSound(assetHandle);
     sound.playing = true;
-    //RenderAudioData(sound);
 }
 
 void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
@@ -1065,17 +1175,17 @@ void BaseApplication::DrawParticleSystems(AssetManager& asset_manager)
     std::vector<ParticleCommand> commandQueue;
     auto view = m_pUILayer.m_pActiveCamera->GetV();
     auto proj = m_pUILayer.m_pActiveCamera->GetP();
-    auto particleView = m_Scene->GetView<primitives::ParticleSystem>();
-    for (auto [entity, particleSystem] : particleView.each())
+    auto particleView = m_Scene->GetView<primitives::ParticleSystemInstance>();
+    for (auto [entity, particleSystemInstance] : particleView.each())
     {
         ParticleCommand cmd;
-        if (particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled)
+        if (particleSystemInstance.m_IsEnabled)
         {
-            cmd.m_BufferOffset = particleSystem.m_BufferOffset;
-            cmd.m_NumParticles = particleSystem.m_NumParticles;
+            cmd.m_BufferOffset = particleSystemInstance.m_Allocation.Offset;
+            cmd.m_NumParticles = particleSystemInstance.m_NumParticles;
             cmd.m_ShaderHandle = m_ParticleGraphicsShaderHandle;
-			cmd.m_TextureHandle = m_ParticleTextureHandle;
-            cmd.m_UniformBuffer.m_FloatMap["bufferOffset"] = static_cast<float>(particleSystem.m_BufferOffset);
+			//cmd.m_TextureHandle = particleSystem.m_TextureHandle;
+            cmd.m_UniformBuffer.m_FloatMap["bufferOffset"] = static_cast<float>(particleSystemInstance.m_Allocation.Offset);
             cmd.m_UniformBuffer.m_Mat4Map["View"] = view;
             cmd.m_UniformBuffer.m_Mat4Map["Proj"] = proj;
             commandQueue.push_back(cmd);

@@ -215,27 +215,14 @@ bool Application::LoadAudioSourcesFromFile(std::ifstream& ifs)
 	{
 		throw std::runtime_error("Failed to open file for reading !!!");
 	}
-	PakHeader pakHeader{};
-	ifs.read(
-		reinterpret_cast<char*>(&pakHeader),
-		sizeof(PakHeader)
-	);
-	assert(pakHeader.magic == magic::PAK_MAGIC);
+	const PakHeader pakHeader = PakReader::ReadPakHeader(ifs);
 	for (auto itemIndex = 0; itemIndex < pakHeader.itemCount; itemIndex++)
 	{
-		AssetHandle assetHandle{ 0,0 };
-		ifs.read(
-			reinterpret_cast<char*>(&assetHandle),
-			sizeof(AssetHandle)
-		);
-		PakHeader itemHeader{};
-		ifs.read(
-			reinterpret_cast<char*>(&itemHeader),
-			sizeof(PakHeader)
-		);
-		assert(itemHeader.magic == magic::PAK_MAGIC);
+		const PakHeader itemHeader = PakReader::ReadPakHeader(ifs);
 		assert(itemHeader.itemCount == 1);
+		const AssetHandle assetHandle = PakReader::ReadAssetHandle(ifs);
 		auto sound = SoundReader::ReadSoundClipFromFile(ifs, soundBlockAllocator);
+		ifs.seekg(itemHeader.offset + itemHeader.size);
 		m_SoundMap[assetHandle] = sound;
 	}
 	return true;

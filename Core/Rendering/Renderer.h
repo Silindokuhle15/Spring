@@ -1,5 +1,6 @@
 #ifndef _RENDERER_H_
 #define _RENDERER_H_
+#include "Range.h"
 #include "Character.h"
 #include "VertexArray.h"
 #include "FrameBuffer.h"
@@ -8,12 +9,6 @@
 #include "RenderCommand.h"
 
 constexpr uint64_t U64_DEF = 14757395258967641292;
-
-struct ParticleRange
-{
-    uint32_t Offset;
-    uint32_t Size;
-};
 
 struct ParticleSystemBuffer
 {
@@ -71,7 +66,7 @@ public:
     void Flush() const;
 
     uint32_t AllocateParticles(uint32_t num_particles);
-    bool DeallocateParticles(ParticleRange range);
+    bool DeallocateParticles(primitives::Range range);
     void MergeFreeRanges();
     void DebugParticleRanges();
     void ParticleSystemSync(Scene* scene);
@@ -87,8 +82,8 @@ private:
     std::map<int, std::vector<RenderCommand>> m_InstanceGroupsMap;
     std::vector<glm::mat4> m_ModelMatrices;
 
-    std::vector<ParticleRange> m_AllocatedRanges;
-    std::vector<ParticleRange> m_FreeRanges;
+    std::vector<primitives::Range> m_AllocatedRanges;
+    std::vector<primitives::Range> m_FreeRanges;
     ParticleSystemBuffer m_GpuBuffers;
 };
 

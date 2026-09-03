@@ -7,16 +7,6 @@
 #include "Event.h"
 #include "ObjectLoader.h"
 
-template<typename T>
-T min(T a, T b)
-{
-	return a <= b ? a : b;
-}
-template<typename T>
-T max(T a, T b)
-{
-	return a >= b ? a : b;
-}
 constexpr uint32_t AudioBufferCapacity = 256;
 constexpr uint32_t AudioBufferCapacity2x = AudioBufferCapacity * 2;
 
@@ -43,7 +33,6 @@ private:
 	IAudioRenderClient* m_AudioRenderClient;
 protected:
 	uint32_t m_AudioBufferFrameCount;
-	uint32_t m_AudioMixMaxFrameCount;
 	WAVEFORMATEX* m_DefaultWAVMixFormat;
 	BlockAllocator<BYTE> soundBlockAllocator;
 	std::map<AssetHandle, Sound> m_SoundMap;

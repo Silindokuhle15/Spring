@@ -1,6 +1,5 @@
 #ifndef _BOUND_H_
 #define _BOUND_H_
-
 namespace primitives
 {
 	struct Bound2D

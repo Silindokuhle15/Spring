@@ -4,16 +4,13 @@
 bool AssetManager::Serialize(const std::string& filename)
 {
     std::ofstream ofs(filename, std::ios::out);
+    if (!ofs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for writing !!!");
+    }
     using json = nlohmann::json;
     json jassetRegistry;
     jassetRegistry["assetResources"] = json::array();
-
-    if (!ofs.is_open())
-    {
-        std::cerr << "Failed to open " << filename << std::endl;
-        return false;
-    }
-
     for (auto& arp : m_AssetResourceAndHandleMap)
     {
         json jasset;
@@ -24,7 +21,6 @@ bool AssetManager::Serialize(const std::string& filename)
     ofs << jassetRegistry.dump(4);
     ofs.close();
     std::cout << filename << " created!!!" << std::endl;
-
     std::string tempPath{ filename.substr(0,filename.find('.'))};
     std::string meshPath = tempPath + "_MESH.pak";
     std::string materialPath = tempPath + "_MTRL.pak";
@@ -32,12 +28,14 @@ bool AssetManager::Serialize(const std::string& filename)
     std::string shaderPath = tempPath + "_SHDR.pak";
     std::string soundPath = tempPath + "_SWND.pak";
     std::string scriptPath = tempPath + "_SCRP.pak";
+    std::string particlePath = tempPath + "_PSCP.pak";
     SerializeMaterialPack(materialPath);
     SerializeMeshPack(meshPath);
     SerializeTexturePack(texturePath);
     SerializeShaderPack(shaderPath);
     SerializeSoundPack(soundPath);
     SerializeScriptPack(scriptPath);
+    SerializeParticleSystemPack(particlePath);
     return true;
 }
 
@@ -183,7 +181,7 @@ bool AssetManager::SerializeTexturePack(const std::string& filename)
             if (textureHandle == assetHandle)
             {
                 auto& filepath = resource.m_Filepath;
-                auto words = getWords(filepath, "+");
+                auto words = stringUtils::getWords(filepath, "+");
                 auto itemCount = words.size();
                 auto extension = words.front().substr(filepath.find('.'));
                 if (extension == ".DDS" || extension == ".dds")
@@ -320,16 +318,37 @@ bool AssetManager::SerializeScriptPack(const std::string& filename)
     return true;
 }
 
+bool AssetManager::SerializeParticleSystemPack(const std::string& filename)
+{
+    std::ofstream ofs(filename);
+    if (!ofs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for reading !!!");
+    }
+    using json = nlohmann::json;
+    json jassetRegistery;
+    jassetRegistery["particleSystemConfigs"] = json::array();
+    for (auto& ps : m_ParticleSystems)
+    {
+        json jasset;
+        jasset["assetHandle"] = AssetHandle(0, 0);
+        jasset["config"] = ps;
+        jassetRegistery["particleSystemConfigs"].push_back(jasset);
+    }
+    ofs << jassetRegistery.dump(4);
+    ofs.close();
+    return true;
+}
+
 bool AssetManager::Deserialize(const std::string& filepath)
 {
-    using json = nlohmann::json;
-    json jassetRegistry;
     std::ifstream ifs(filepath);
     if (!ifs.is_open())
     {
-        std::cerr << "Failed to open" << filepath << std::endl;
-        return false;
+        throw std::runtime_error("Failed to open for reading !!!");
     }
+    using json = nlohmann::json;
+    json jassetRegistry;
     ifs >> jassetRegistry;
     for (auto& jasset : jassetRegistry["assetResources"])
     {
@@ -534,6 +553,25 @@ bool AssetManager::DeserializeScriptPack(const std::string& filepath)
         m_ScriptMap[assetHandle] = scriptData;
     }
     ifs.close();
+    return true;
+}
+
+bool AssetManager::DeserializeParticlePack(const std::string& filepath)
+{
+    std::ifstream ifs(filepath);
+    if (!ifs.is_open())
+    {
+        throw std::runtime_error("Failed to open file for reading !!!");
+    }
+    using json = nlohmann::json;
+    json jassetRegistry;
+    ifs >> jassetRegistry;
+    for (auto& jasset : jassetRegistry["particleSystemConfigs"])
+    {
+        auto assetHandle = jasset["assetHandle"].get<AssetHandle>();
+        auto psConfig = jasset["config"].get<primitives::ParticleSystemConfig>();
+        m_ParticleSystems.push_back(psConfig);
+    }
     return true;
 }
 

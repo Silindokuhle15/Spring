@@ -23,6 +23,14 @@ struct ParticleSystemBuffer
     glm::vec4* Color = nullptr;
 };
 
+struct SplineBuffer
+{
+    uint32_t ControlPointBuffer;
+    uint32_t KnotBuffer;
+    glm::vec4* ControlPoints = nullptr;
+    float* Knots = nullptr;
+};
+
 class Renderer
 {
 public:
@@ -41,6 +49,8 @@ public:
     unsigned int MAX_INSTANCEBATCH_BUFFER_SIZE = 1024;
     unsigned int MAX_MATERIALBATCH_BUFFER_SIZE = 64;
     unsigned int MAX_PARTICLE_BUFFER_SIZE = 16384;
+    unsigned int MAX_CONTROL_POINT_BUFFER_SIZE = 16384;
+    unsigned int MAX_KNOT_BUFFER_SIZE = 32768;
     unsigned int m_VertexBuffer;
     unsigned int m_IndexBuffer;
     unsigned int m_MaterialBuffer;
@@ -85,6 +95,7 @@ private:
     std::vector<primitives::Range> m_AllocatedRanges;
     std::vector<primitives::Range> m_FreeRanges;
     ParticleSystemBuffer m_GpuBuffers;
+    SplineBuffer m_SplineBuffer;
 };
 
 #endif

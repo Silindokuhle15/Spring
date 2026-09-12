@@ -1,29 +1,20 @@
 #ifndef _BVH_H_
 #define _BVH_H_
 #include <cassert>
-#include <algorithm>
 #include <iostream>
 #include <glm/glm.hpp>
 #include "Bound.h"
 #include "Allocator.h"
-
-// UTILITY FUNCTIONS
-
-uint32_t part1by1_16(uint16_t n);
-uint64_t part1by1_32(uint32_t n);
-uint64_t part1by2_32(uint32_t n);
-uint32_t morton_encode_2d16(uint16_t x, uint16_t y);
-uint64_t morton_encode_2d32(uint32_t x, uint32_t y);
-uint64_t morton_encode_3d32(uint32_t x, uint32_t y, uint32_t z);
-uint32_t count_leading_zeros(uint32_t n);
+#include "Morton.h"
+#include "CollisionDescription.h"
 
 struct BVEntry
 {
-	uint32_t ID = 0;
+	entt::entity ID;
 	uint64_t MORTON_CODE = 0xFFFFFFFFFFFFFFFFULL;
 public:
-	BVEntry(uint32_t id, uint64_t morton_code) :
-		ID{ id },
+	BVEntry(const entt::entity& entity, uint64_t morton_code) :
+		ID{entity},
 		MORTON_CODE{ morton_code }
 	{
 
@@ -33,49 +24,6 @@ public:
 		return MORTON_CODE < other.MORTON_CODE;
 	}
 };
-
-/*
-static Bound2D merge(const Bound2D& u, const Bound2D& v)
-{
-	return
-	{
-		std::min(u.xMin, v.xMin),
-		std::min(u.yMin, v.yMin),
-		std::max(u.xMax, v.xMax),
-		std::max(u.yMax, v.yMax),
-	};
-}
-static float unit_product(const Bound2D& u)
-{
-	return static_cast<float>((u.xMax - u.xMin) * (u.yMax - u.yMin ));
-}
-static bool AABBIntersection(const Bound2D& a, const Bound2D& b)
-{
-	bool intersect_x = a.xMax >= b.xMin &&
-		a.xMin <= b.xMin;
-
-	bool intersect_y = a.yMax >= b.yMin &&
-		a.yMin <= b.yMax;
-	return intersect_x && intersect_y;
-}
-static Bound2D intersection(const Bound2D& a, const Bound2D& b)
-{
-	return
-	{
-		std::max(a.xMin, b.xMin),
-		std::max(a.yMin, b.yMin),
-		std::min(a.xMax, b.xMax),
-		std::min(a.yMax, b.yMax)
-	};
-}
-static void print(const Bound2D& bound)
-{
-	std::cout
-		<< "| Bounds: [" << bound.xMin << "," << bound.yMin
-		<< "] - [" << bound.xMax << "," << bound.yMax << "]\n";
-}
-*/
-
 
 template<typename U>
 float unit_product(const U& u);
@@ -89,67 +37,6 @@ U merge(const U& u, const U& v);
 template<typename U>
 U intersection(const U& u, const U& v);
 
-/* 
-static float unit_product(const Bound3D& a)
-{
-	float dx = std::max(0.0f, a.xMax - a.xMin);
-	float dy = std::max(0.0f, a.yMax - a.yMin);
-	float dz = std::max(0.0f, a.zMax - a.zMin);
-	return dx * dy * dz;
-}
-static Bound3D merge(const Bound3D& u, const Bound3D& v)
-{
-	return
-	{
-		std::min(u.xMin, v.xMin),
-		std::min(u.yMin, v.yMin),
-		std::min(u.zMin, v.zMin),
-		std::max(u.xMax, v.xMax),
-		std::max(u.yMax, v.yMax),
-		std::max(u.zMax, v.zMax)
-	};
-}
-
-static bool AABBIntersection(const Bound3D& a, const Bound3D& b)
-{
-	//bool intersect_x = a.xMax >= b.xMin && a.xMin <= b.xMax;
-	//bool intersect_y = a.yMax >= b.yMin && a.yMin <= b.yMax;
-	//bool intersect_z = a.zMax >= b.zMin && a.zMin <= b.zMax;
-	//
-	//return intersect_x && intersect_y && intersect_z;
-
-	return 
-		((a.xMax - b.xMin) >= 0.0f) &
-		(((b.xMax - a.xMin) >= 0.0f)) &
-		((((a.yMax - b.yMin) >= 0.0f))) &
-		(((((b.yMax - a.yMin) >= 0.0f)))) &
-		((((((a.zMax - b.zMin) >= 0.0f))))) &
-		(((((((b.zMax - a.zMin) >= 0.0f))))));
-}
-
-static Bound3D intersection(const Bound3D& a, const Bound3D& b)
-{
-	if (!AABBIntersection(a, b))
-		return { 0,0,0,0,0,0 };
-	return
-	{
-		std::max(a.xMin, b.xMin),
-		std::max(a.yMin, b.yMin),
-		std::max(a.zMin, b.zMin),
-		std::min(a.xMax, b.xMax),
-		std::min(a.yMax, b.yMax),
-		std::min(a.zMax, b.zMax)
-	};
-}
-
-static void print(const Bound3D& bound)
-{
-	std::cout
-		<< "| Bounds: [" << bound.xMin << "," << bound.yMin << "," << bound.zMin
-		<< "] - [" << bound.xMax << "," << bound.yMax << ","  << bound.zMax << "]\n";
-}
-*/
-
 template<typename T>
 class BVNode
 {
@@ -158,8 +45,8 @@ public:
 	T m_Bounds;
 	BVNode* m_Left;
 	BVNode* m_Right;
-	BVNode(uint32_t id, uint64_t morton_code, const T& bounds, BVNode* left, BVNode* right):
-		m_MortonCode{id, morton_code},
+	BVNode(const entt::entity& entity , uint64_t morton_code, const T& bounds, BVNode* left, BVNode* right) :
+		m_MortonCode{entity, morton_code},
 		m_Bounds{bounds},
 		m_Left{left},
 		m_Right{right}
@@ -167,8 +54,8 @@ public:
 	}
 	static void print(const BVNode<T>* node)
 	{
-		std::cout << "Node ID: " << node->m_MortonCode.ID;
-		T::print(node->m_Bounds);
+		//std::cout << "Node ID: " << node->m_MortonCode.m_Entity;
+		//T::print(node->m_Bounds);
 	}
 };
 
@@ -236,7 +123,7 @@ BVNode<U>* create_sub_tree(const std::vector<BVNode<U>>& list, uint64_t start, u
 		const U& lb = left->m_Bounds;
 		const U& rb = right->m_Bounds;
 		U merged = merge<U>(lb, rb);
-		return allocator.allocate<BVNode<U>>(BVNode<U>(static_cast<uint32_t>(-1), -1, merged, left, right));
+		return allocator.allocate<BVNode<U>>(BVNode<U>(entt::null,  -1, merged, left, right));
 	}
 	else if (right && !left)
 	{
@@ -263,59 +150,19 @@ BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 }
 
 template<typename U>
-void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<uint32_t>& total_intersections, std::vector<const BVNode<U>*>& buffer)
+void detect_overlapping_bounds(const BVNode<U>& leaf_node, const BVNode<U>* tree_node, std::vector<physics::CollisionDescription>& total_intersections, std::vector<const BVNode<U>*>& buffer)
 {
-	//if (!tree_node)
-	//	return;
-	//
-	//if (!U::AABBIntersection(leaf_node.m_Bounds, tree_node->m_Bounds))
-	//{
-	//	return;
-	//}
-	//if (!tree_node->m_Left && !tree_node->m_Right)
-	//{
-	//	total_intersections.push_back(tree_node->m_MortonCode.ID);
-	//}
-	//detect_overlapping_bounds(leaf_node, tree_node->m_Left, total_intersections);
-	//detect_overlapping_bounds(leaf_node, tree_node->m_Right, total_intersections);
-
-	//std::vector<const BVNode<U>*> stack;
-	//stack.reserve(65536*2);
-	//stack.push_back(tree_node);
-	//while (!stack.empty())
-	//{
-	//	auto node = stack.back();
-	//	stack.pop_back();
-	//
-	//	if (!U::AABBIntersection(leaf_node.m_Bounds, node->m_Bounds)) continue;
-	//	if (!node->m_Left && !node->m_Right)
-	//	{
-	//		total_intersections.push_back(node->m_MortonCode.ID);
-	//	}
-	//
-	//	if (node-> m_Left)
-	//	{
-	//		stack.push_back(node->m_Left);
-	//	}
-	//	if (node->m_Right)
-	//	{
-	//		stack.push_back(node->m_Right);
-	//	}
-	//}
-
 	buffer.push_back(tree_node);
 	while (!buffer.empty())
 	{
 		auto node = buffer.back();
 		buffer.pop_back();
-	
 		if (!AABBIntersection<U>(leaf_node.m_Bounds, node->m_Bounds)) continue;
-		if (!node->m_Left && !node->m_Right)
+		if ((!node->m_Left) && (!node->m_Right) && (leaf_node.m_MortonCode.ID != node->m_MortonCode.ID))
 		{
-			total_intersections.push_back(node->m_MortonCode.ID);
+			total_intersections.push_back({ leaf_node.m_MortonCode.ID, node->m_MortonCode.ID });
 		}
-	
-		if (node-> m_Left)
+		if (node->m_Left)
 		{
 			buffer.push_back(node->m_Left);
 		}

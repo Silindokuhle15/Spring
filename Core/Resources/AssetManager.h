@@ -49,12 +49,14 @@ public:
 	bool SerializeShaderPack(const std::string& filename);
 	bool SerializeSoundPack(const std::string& filename);
 	bool SerializeScriptPack(const std::string& filename);
+	bool SerializeParticleSystemPack(const std::string& filename);
 	bool Deserialize(const std::string& filepath);
 	bool DeserializeMaterialPack(const std::string filepath);
 	bool DeserializeMeshPack(const std::string& filepath);
 	bool DeserializeTexturePack(const std::string& filepath);
 	bool DeserializeShaderPack(const std::string& filepath);
 	bool DeserializeScriptPack(const std::string& filepath);
+	bool DeserializeParticlePack(const std::string& filepath);
 	
 	void CreateOpenGLTexture(TextureBase<GL_Texture>& tex_base);
 	TextureBase<GL_Texture> CreateOpenGLCubeMap(const std::vector<std::string>& image_file_paths);
@@ -152,7 +154,7 @@ public:
 			if (resource.m_Type == AssetType::CubeMap)
 			{
 				assetHandle = CreateAssetHandleFromPath(resource.m_Filepath.c_str());
-				auto imageFilePaths = getWords(resource.m_Filepath, "+");
+				auto imageFilePaths = stringUtils::getWords(resource.m_Filepath, "+");
 				auto map = CreateOpenGLCubeMap(imageFilePaths);
 				m_TextureMap[assetHandle] = map;
 				m_AssetResourceAndHandleMap[resource] = assetHandle;

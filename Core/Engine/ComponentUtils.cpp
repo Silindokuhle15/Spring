@@ -213,7 +213,7 @@ namespace primitives
 			{"is_enabled", emitter_flags.m_IsEnabled},
 			{"fill", emitter_flags.m_Fill},
 			{"unused1", emitter_flags.m_Unused1},
-			{"unused2", emitter_flags.m_Unused2}
+			{"unused2", emitter_flags.m_RandomOrientation}
 		};
 	}
 	void from_json(const json& j, primitives::EmitterFlags& emitter_flags)
@@ -221,7 +221,7 @@ namespace primitives
 		j.at("is_enabled").get_to(emitter_flags.m_IsEnabled);
 		j.at("fill").get_to(emitter_flags.m_Fill);
 		j.at("unused1").get_to(emitter_flags.m_Unused1);
-		j.at("unused2").get_to(emitter_flags.m_Unused2);
+		j.at("unused2").get_to(emitter_flags.m_RandomOrientation);
 	}
 	void to_json(json& j, const primitives::EmitterInfo& emitter_info)
 	{
@@ -239,6 +239,30 @@ namespace primitives
 		j.at("emitter_flags").get_to(emitter_info.m_Flags);
 		j.at("vector_one").get_to(emitter_info.m_VectorOne);
 		j.at("vector_two").get_to(emitter_info.m_VectorTwo);
+	}
+	void to_json(json& j, const primitives::ParticleSystemConfig& particle_system_config)
+	{
+		int shape = static_cast<int>(particle_system_config.m_EmitterInfo.m_Shape);
+		j = json
+		{
+			{"emitter_info", particle_system_config.m_EmitterInfo},
+			{"particle_rate", particle_system_config.m_ParticleRate},
+			{"max_particles", particle_system_config.m_MaxNumParticles},
+			{"duration", particle_system_config.m_Duration},
+			{"initial_speed", particle_system_config.m_InitialSpeed},
+			{"shader_handle", particle_system_config.m_ShaderHandle},
+			{"texture_handle", particle_system_config.m_TextureHandle}
+		};
+	}
+	void from_json(const json& j, primitives::ParticleSystemConfig& particle_system_config)
+	{
+		j.at("emitter_info").get_to(particle_system_config.m_EmitterInfo);
+		j.at("particle_rate").get_to(particle_system_config.m_ParticleRate);
+		j.at("max_particles").get_to(particle_system_config.m_MaxNumParticles);
+		j.at("duration").get_to(particle_system_config.m_Duration);
+		j.at("initial_speed").get_to(particle_system_config.m_InitialSpeed);
+		j.at("shader_handle").get_to(particle_system_config.m_ShaderHandle);
+		j.at("texture_handle").get_to(particle_system_config.m_TextureHandle);
 	}
 	/*/
 	void to_json(json& j, const primitives::ParticleSystem& particle_system)

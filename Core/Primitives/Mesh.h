@@ -15,12 +15,12 @@ namespace primitives
         }
         Mesh(
             const std::vector<Vertex>& vertices,
-            const std::vector<uint64_t>& vertex_indices
+            const std::vector<uint32_t>& vertex_indices
             //const std::vector<Material>& materials
         );
 
         std::vector<Vertex> m_V;
-        std::vector<uint64_t> m_VertexIndices;
+        std::vector<uint32_t> m_VertexIndices;
         std::vector<Material> m_Materials;
         AssetHandle m_MaterialGroupHandle;
         std::vector<Mesh> m_SubMeshes;
@@ -41,6 +41,7 @@ namespace primitives
         {
         }
     };
+
     struct DestructComponent
     {
         uint64_t HQWORD;
@@ -75,4 +76,5 @@ namespace primitives
     };
 
     Bound3D FindMinMax(const Mesh& mesh);
+    Mesh GenerateArrow(const glm::vec3 axis = glm::vec3(0,0,1), const std::size_t num_segments = 16, float shaft_start = 0.0f, float shaft_end = 1.0f, float shaft_radius = 0.025f, float head_radius = 0.1f, float tip_y = 1.5f);
 }

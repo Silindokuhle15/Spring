@@ -12,7 +12,7 @@ namespace primitives
                 { {+size, +size, 0.0f},{1.0f, 1.0f}, 2, {0.0f, 0.0f, 1.0f} },
                 { {-size, -size, 0.0f},{0.0f, 0.0f}, 0, {0.0f, 0.0f, 1.0f} }
             },
-            std::vector<uint64_t>{ 2, 3, 0, 1, 2, 0 }
+            std::vector<uint32_t>{ 2, 3, 0, 1, 2, 0 }
         }
     {
 

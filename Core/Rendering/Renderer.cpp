@@ -24,22 +24,13 @@ void Renderer::ParticleSystemSync(Scene* scene)
     for (auto [entity, particleSystemInstance] : view.each())
     {
         auto& particleSystem = assetManager->m_ParticleSystems[particleSystemInstance.m_ConfigIndex];
-        //if (particleSystem.m_BufferOffset == -1)
-        //{
-        //    particleSystem.m_BufferOffset = AllocateParticles(particleSystem.m_MaxNumParticles);
-        //    DebugParticleRanges();
-        //}
         if (particleSystemInstance.m_Allocation.Offset == -1)
         {
-            particleSystemInstance.m_Allocation.Offset = AllocateParticles(particleSystemInstance.m_Allocation.Size);
+            particleSystemInstance.m_Allocation.Offset = AllocateParticles(particleSystem.m_MaxNumParticles);
             DebugParticleRanges();
         }
-        //if (particleSystem.m_EmitterInfo.m_Flags.m_Unused1)
         if (particleSystemInstance.m_Restart)
         {
-            //particleSystem.m_AccumulatedTime = 0.0f;
-            //particleSystem.m_NumParticles = 0;
-
             particleSystemInstance.m_AccumulatedTime = 0.0f;
             particleSystemInstance.m_NumParticles = 0;
 
@@ -53,11 +44,10 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 std::uniform_real_distribution<float> rangesZ(-absZ, absZ);
                 std::uniform_real_distribution<float> rangesR(-1.0f, 1.0f);
 
-                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     m_GpuBuffers.Positions[index] = particleSystem.m_EmitterInfo.m_VectorOne;
-                    if (particleSystem.m_EmitterInfo.m_Flags.m_Unused2)
+                    if (particleSystem.m_EmitterInfo.m_Flags.m_RandomOrientation)
                     {
                         float x = rangesR(rng);
                         float y = rangesR(rng);
@@ -96,7 +86,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
-                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     float randomAngle = angle(rng);
@@ -144,7 +133,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 }
                 auto u = glm::cross(normal, a);
                 auto v = glm::cross(normal, u);
-                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     if (particleSystem.m_EmitterInfo.m_Flags.m_Fill)
@@ -194,7 +182,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto u = glm::normalize(glm::cross(normal, a));
                 auto v = glm::normalize(glm::cross(normal, u));
                 glm::vec3 newPoint{ 0 };
-                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     float randomAngle = halfAngle;
@@ -228,7 +215,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
                 auto center = glm::vec3(particleSystem.m_EmitterInfo.m_VectorOne);
                 std::uniform_real_distribution<float> dist01(0.0, 1.0);
                 constexpr float M_PI = 3.1415962f;
-                //for (auto index = particleSystem.m_BufferOffset; index < (particleSystem.m_BufferOffset + particleSystem.m_MaxNumParticles); index++)
                 for (auto index = particleSystemInstance.m_Allocation.Offset; index < (particleSystemInstance.m_Allocation.Offset + particleSystemInstance.m_Allocation.Size); index++)
                 {
                     glm::vec3 randomOffset{ 0 };
@@ -260,11 +246,8 @@ void Renderer::ParticleSystemSync(Scene* scene)
                     m_GpuBuffers.Color[index] = glm::vec4(0.0f);
                 }
             }            
-            //particleSystem.m_EmitterInfo.m_Flags.m_Unused1 = false;
             particleSystemInstance.m_Restart = false;
         }
-
-        //if (particleSystem.m_EmitterInfo.m_Flags.m_IsEnabled)
         if (particleSystemInstance.m_IsEnabled)
         {
             auto& shaderHandle = particleSystem.m_ShaderHandle;
@@ -292,11 +275,6 @@ void Renderer::ParticleSystemSync(Scene* scene)
             GLuint colorTwoLoc = glGetUniformLocation(platformHandle, "colorTwo");
             GLuint colorThreeLoc = glGetUniformLocation(platformHandle, "colorThree");
 
-            //glUniform1f(deltaLoc, particleSystem.m_Ts);
-            //glUniform1f(uTimeLoc, particleSystem.m_AccumulatedTime);
-            //glUniform1ui(bufferOffsetLoc, particleSystem.m_BufferOffset);
-            //glUniform1ui(numPtsLoc, particleSystem.m_NumParticles);
-
             glUniform1f(deltaLoc, 1.0f/60.0f);
             glUniform1f(uTimeLoc, particleSystemInstance.m_AccumulatedTime);
             glUniform1ui(bufferOffsetLoc, particleSystemInstance.m_Allocation.Offset);
@@ -309,19 +287,9 @@ void Renderer::ParticleSystemSync(Scene* scene)
             glUniform3f(colorTwoLoc, colorTwo.x, colorTwo.y, colorTwo.z);
             glUniform3f(colorThreeLoc, colorThree.x, colorThree.y, colorThree.z);
 
-            //glDispatchCompute(particleSystem.m_NumParticles, 1, 1);
             glDispatchCompute(particleSystemInstance.m_NumParticles, 1, 1);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            //particleSystem.m_Ts = 1.0f / 60.0f;
-            //particleSystem.m_AccumulatedTime += particleSystem.m_Ts;
             particleSystemInstance.m_AccumulatedTime += 1.0f / 60.0f;
-
-            //GLuint numPts = particleSystem.m_NumParticles;
-            //if (counter >= counterLimit && (numPts + particleSystem.m_ParticleRate <= particleSystem.m_MaxNumParticles))
-            //{
-            //    particleSystem.m_NumParticles += particleSystem.m_ParticleRate;
-            //    counter = 0;
-            //}
             GLuint numPts = particleSystemInstance.m_NumParticles;
             if (counter >= counterLimit && (numPts + particleSystem.m_ParticleRate <= particleSystemInstance.m_Allocation.Size))
             {
@@ -430,44 +398,68 @@ Renderer::Renderer() :
     m_AllocatedRanges{},
     m_FreeRanges{ {0, 16384} }
 {
-    unsigned int vertex_buffer_size = sizeof(primitives::Vertex) * MAX_CHARACTER_BUFFER_SIZE;
-    unsigned int index_buffer_size = sizeof(unsigned int) * MAX_CHARACTER_BUFFER_SIZE;
-    unsigned int material_buffer_size = sizeof(MTLMaterial) * MAX_MATERIALBATCH_BUFFER_SIZE;
-    unsigned int modelMatrix_buffer_size = sizeof(glm::mat4) * MAX_INSTANCEBATCH_BUFFER_SIZE;
-    unsigned int maxBufferSize = sizeof(glm::vec4) * MAX_PARTICLE_BUFFER_SIZE;
-
+    GLsizeiptr vertex_buffer_size = sizeof(primitives::Vertex) * MAX_CHARACTER_BUFFER_SIZE;
+    GLsizeiptr index_buffer_size = sizeof(unsigned int) * MAX_CHARACTER_BUFFER_SIZE;
+    GLsizeiptr material_buffer_size = sizeof(MTLMaterial) * MAX_MATERIALBATCH_BUFFER_SIZE;
+    GLsizeiptr modelMatrix_buffer_size = sizeof(glm::mat4) * MAX_INSTANCEBATCH_BUFFER_SIZE;
+    GLsizeiptr maxParticleBufferSize = sizeof(glm::vec4) * MAX_PARTICLE_BUFFER_SIZE;
+    GLsizeiptr maxControlPointBufferSize = sizeof(glm::vec4) * MAX_CONTROL_POINT_BUFFER_SIZE;
+    GLsizeiptr maxKnotBufferSize = sizeof(float) * MAX_KNOT_BUFFER_SIZE;
+    std::cout << "OpenGL Render : Init\n";
+    std::cout << "\nGeometry***\n";
     glCreateBuffers(1, &m_VertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_VertexBuffer);
     glNamedBufferData(m_VertexBuffer, vertex_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
+    std::cout << "\tglCreate : Vertex Buffer\n";
     glCreateBuffers(1, &m_IndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IndexBuffer);
     glNamedBufferData(m_IndexBuffer, index_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
+    std::cout << "\tglCreate : Index Buffer\n";
     glCreateBuffers(1, &m_MaterialBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_MaterialBuffer);
     glNamedBufferData(m_MaterialBuffer, material_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
+    std::cout << "\tglCreate : SSBO - Material Buffer\n";
     glCreateBuffers(1, &m_ModelMatrixInstanceBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_ModelMatrixInstanceBuffer);
     glNamedBufferData(m_ModelMatrixInstanceBuffer, modelMatrix_buffer_size, nullptr, GL_DYNAMIC_DRAW);
-
+    std::cout << "\tglCreate : SSBO - Model Matrix Buffer\n";
     // PARTICLE BUFFERS
+    std::cout << "\nParticles***\n";
     glCreateBuffers(1, &m_GpuBuffers.PositionBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.PositionBuffer);
-    glNamedBufferData(m_GpuBuffers.PositionBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
+    glNamedBufferData(m_GpuBuffers.PositionBuffer, maxParticleBufferSize, nullptr, GL_DYNAMIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Position Buffer\n";
     glCreateBuffers(1, &m_GpuBuffers.VelocityBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.VelocityBuffer);
-    glNamedBufferData(m_GpuBuffers.VelocityBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
+    glNamedBufferData(m_GpuBuffers.VelocityBuffer, maxParticleBufferSize, nullptr, GL_DYNAMIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Velocity Buffer\n";
     glCreateBuffers(1, &m_GpuBuffers.LifetimeAndSizeBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.LifetimeAndSizeBuffer);
-    glNamedBufferData(m_GpuBuffers.LifetimeAndSizeBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
-
+    glNamedBufferData(m_GpuBuffers.LifetimeAndSizeBuffer, maxParticleBufferSize, nullptr, GL_DYNAMIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Lifecycle Buffer\n";
     glCreateBuffers(1, &m_GpuBuffers.ColorBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_GpuBuffers.ColorBuffer);
-    glNamedBufferData(m_GpuBuffers.ColorBuffer, maxBufferSize, nullptr, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_GpuBuffers.ColorBuffer, maxParticleBufferSize, nullptr, GL_DYNAMIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Color Buffer\n";
+    // SPLINE BUFFERS
+    std::cout << "\nSplines***\n";
+    glCreateBuffers(1, &m_SplineBuffer.ControlPointBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_SplineBuffer.ControlPointBuffer);
+    glNamedBufferData(m_SplineBuffer.ControlPointBuffer, maxControlPointBufferSize, nullptr, GL_STATIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Control Point Buffer\n";
+    glCreateBuffers(1, &m_SplineBuffer.KnotBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_SplineBuffer.KnotBuffer);
+    glNamedBufferData(m_SplineBuffer.KnotBuffer, maxKnotBufferSize, nullptr, GL_STATIC_DRAW);
+    std::cout << "\tglCreate : SSBO - Knot Buffer\n";
+
+    GLint64 maxSSBOBlockSize = 0;
+    glGetInteger64v(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &maxSSBOBlockSize);
+    GLint maxSSBOBindings = 0;
+    glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
+    std::cout << "\nSpec***\n"
+        << "\nmax shader block size \t\t:" << maxSSBOBlockSize
+        << "\nmax shader buffer binding \t:" << maxSSBOBindings
+        << "\n";
 
     BufferLayout layout{
         {ShaderDataType::Float3, "Position"},
@@ -477,20 +469,44 @@ Renderer::Renderer() :
     };
     m_VAO.Bind();
     m_VAO.SetBufferLayout(layout);
+    m_GpuBuffers.Positions = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.PositionBuffer, 0, maxParticleBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.Velocities = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.VelocityBuffer, 0, maxParticleBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.LifetimeAndSize = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.LifetimeAndSizeBuffer, 0, maxParticleBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_GpuBuffers.Color = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.ColorBuffer, 0, maxParticleBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
-    GLuint numPts = MAX_PARTICLE_BUFFER_SIZE;
-    m_GpuBuffers.Positions = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.PositionBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.Velocities = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.VelocityBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.LifetimeAndSize = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.LifetimeAndSizeBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    m_GpuBuffers.Color = (glm::vec4*)glMapNamedBufferRange(m_GpuBuffers.ColorBuffer, 0, sizeof(glm::vec4) * numPts, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_SplineBuffer.ControlPoints = (glm::vec4*)glMapNamedBufferRange(m_SplineBuffer.ControlPointBuffer, 0, maxControlPointBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    m_SplineBuffer.Knots = (float*)glMapNamedBufferRange(m_SplineBuffer.KnotBuffer, 0, maxKnotBufferSize, GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 }
 
 Renderer::~Renderer()
 {
+    std::cout << "OpenGL Render : Shutdown\n";
     glUnmapNamedBuffer(m_GpuBuffers.PositionBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.VelocityBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.LifetimeAndSizeBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.ColorBuffer);
+    glDeleteBuffers(1, &m_VertexBuffer);
+    std::cout << "glDelete : Vertex Buffer\n";
+    glDeleteBuffers(1, &m_IndexBuffer);
+    std::cout << "glDelete : Index Buffer\n";
+    glDeleteBuffers(1, &m_MaterialBuffer);
+    std::cout << "glDelete : SSBO - Material Buffer\n";
+    glDeleteBuffers(1, &m_ModelMatrixInstanceBuffer);
+    std::cout << "glDelete : SSBO - Model Buffer\n";
+    std::cout << "Particles ***\n";
+    glDeleteBuffers(1, &m_GpuBuffers.PositionBuffer);
+    std::cout << "glDelete : SSBO - Position Buffer\n";
+    glDeleteBuffers(1, &m_GpuBuffers.VelocityBuffer);
+    std::cout << "glDelete : SSBO - Velocity Buffer\n";
+    glDeleteBuffers(1, &m_GpuBuffers.LifetimeAndSizeBuffer);
+    std::cout << "glDelete : SSBO - Lifecycle Buffer\n";
+    glDeleteBuffers(1, &m_GpuBuffers.ColorBuffer);
+    std::cout << "glDelete : SSBO - Color Buffer\n";
+    std::cout << "Splines ***\n";
+    glDeleteBuffers(1, &m_SplineBuffer.ControlPointBuffer);
+    std::cout << "glDelete : SSBO - Control Point Buffer\n";
+    glDeleteBuffers(1, &m_SplineBuffer.KnotBuffer);
+    std::cout << "glDelete : SSBO - Knot Buffer\n";
 }
 
 void Renderer::UploadMaterialData(const RenderCommand& cmd, AssetManager& asset_manager) const

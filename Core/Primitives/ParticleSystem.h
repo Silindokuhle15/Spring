@@ -22,7 +22,7 @@ namespace primitives
 		bool m_IsEnabled;
 		bool m_Fill;
 		bool m_Unused1;
-		bool m_Unused2;
+		bool m_RandomOrientation;
 	};
 
 	struct EmitterInfo
@@ -55,6 +55,7 @@ namespace primitives
 	{
 		EmitterInfo m_EmitterInfo;
 		uint32_t m_ParticleRate;
+		uint32_t m_MaxNumParticles;
 		float m_Duration;
 		float m_InitialSpeed;
 		AssetHandle m_ShaderHandle;

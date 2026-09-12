@@ -57,6 +57,7 @@ public:
     bool characterRemoveComponent = false;
     std::string createNewCharacterMeshPath = "";
     //-------- PARTICLE SYSTEM -------//
+    bool showAddParticleInstanceWindow = false;
     int selectedParticleSystem = -1;
     bool showParticleEditor = false;
     bool randomOrientation = false;
@@ -114,5 +115,6 @@ private:
     char* meshPackBuffer;
     char* materialPackBuffer;
     char* texturePackBuffer;
+    char* newParticleConfigName;
     bool showAssetManagerWindow = false;
 };

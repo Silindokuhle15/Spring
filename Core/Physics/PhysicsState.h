@@ -1,10 +1,7 @@
 #ifndef _PHYSICS_STATE_H_
 #define _PHYSICS_STATE_H_
-#include "UUID.h"
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
-#include <iostream>
-
 namespace physics
 {
 	class PhysicsState
@@ -22,15 +19,5 @@ namespace physics
 		glm::vec3 inertia;
 		float unused_3;
 	};
-
-	class CollisionPairDescription
-	{
-	public:
-		AssetHandle m_First;
-		AssetHandle m_Second;
-
-		CollisionPairDescription(const AssetHandle& first, const AssetHandle& second);
-	};
 }
-
 #endif

@@ -78,6 +78,8 @@ set(SHARED_SOURCES
 "Core/Engine/ComponentUtils.cpp"
 "Core/Engine/Layer.h"
 "Core/Engine/Layer.cpp"
+"Core/Engine/Morton.h"
+"Core/Engine/Morton.cpp"
 "Core/Engine/Win32Window.h"
 "Core/Engine/Win32Window.cpp"
 
@@ -104,6 +106,7 @@ set(SHARED_SOURCES
 
 "Core/Physics/Collider.h"
 "Core/Physics/Collider.cpp"
+"Core/Physics/CollisionDescription.h" 
 "Core/Physics/Ray.h"
 "Core/Physics/Ray.cpp" 
 "Core/Physics/PhysicsState.h" 
@@ -179,8 +182,7 @@ set(SHARED_SOURCES
 "Core/Audio/WAV.h"
 "Core/Audio/Sound.h"
 
-
- )
+)
 # Executable-specific files 
 set(EDITOR_SOURCES
 "SpringEditor.cpp" 

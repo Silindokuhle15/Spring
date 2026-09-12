@@ -23,9 +23,9 @@ void ObjectLoader::ExtractDump(
 	std::vector<std::vector<unsigned int>>& normal_indices 
 ) 
 {
-	auto string_words = getWords(dump_line.substr(2), " ");
+	auto string_words = stringUtils::getWords(dump_line.substr(2), " ");
 	for (const auto& word : string_words) {
-		auto parts = getWords(word, "/");
+		auto parts = stringUtils::getWords(word, "/");
 		if (parts.size() >= 1 && !parts[0].empty())
 			//m_VertexIndices[object_index].push_back(std::stoul(parts[0]) - 1);
 			vertex_indices[object_index].push_back(std::stoul(parts[0]) - 1);
@@ -74,11 +74,11 @@ primitives::Mesh OBJObjectLoader::LoadObjectFromFile(const char* file_path, bool
 	int64_t object_index = -1;
 	size_t material_index = 0;
 	std::unordered_map<std::string, size_t> materialLookup;
-	std::string objDir = GetDirectoryFromPath(file_path);
+	std::string objDir = stringUtils::GetDirectoryFromPath(file_path);
 
 	AssetHandle materialGroupHandle = CreateAssetHandleFromPath(file_path);
 	while (std::getline(in, line)) {
-		auto words = getWords(line, " ");
+		auto words = stringUtils::getWords(line, " ");
 		if (words.empty()) continue;
 		const std::string& type = words[0];
 		char* endptr;
@@ -231,7 +231,7 @@ int OBJObjectLoader::LoadMaterialFromFile(const char* file_path, std::vector<std
 	bool firstMaterial = true;
 	
 	while (std::getline(in, line)) {
-		auto words = getWords(line, " ");
+		auto words = stringUtils::getWords(line, " ");
 		if (words.empty()) continue;
 
 		const std::string& type = words[0];

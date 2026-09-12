@@ -42,8 +42,7 @@ public:
 	std::vector<Camera> m_Cameras;
 
 	std::vector<BVNode<primitives::Bound3D>> m_BVEntries;
-	std::vector<uint32_t> m_Collisions;
-	std::vector<physics::CollisionPairDescription> m_CollisionPairs;
+	std::vector<physics::CollisionDescription> m_CollisionPairs;
 
 	virtual void OnCreateSceneObjects();
 	virtual void AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound);
@@ -55,6 +54,7 @@ public:
 
 	lua_State* GetLuaState() const { return m_pLuaState; }
 
+	bool IsValidCharacter(entt::entity& id);
 	Character* CreateSceneObject(uint32_t hint = 0);
 	Character* GetSceneCharacter(entt::entity& id);
 	void DestroySceneObject(entt::entity id);

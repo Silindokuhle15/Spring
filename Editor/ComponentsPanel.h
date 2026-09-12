@@ -261,7 +261,7 @@ inline void ComponentPanel<T>::Run()
 	{
 		auto& activeScene = m_ActiveScene;
 		auto assetManager = m_ActiveScene->GetAssetManager();
-		auto title = GetFilenameWithoutExtension(activeScene->GetTitle());
+		auto title = stringUtils::GetFilenameWithoutExtension(activeScene->GetTitle());
 		title += "_asset.pak";
 		assetManager->Serialize(title);
 	}

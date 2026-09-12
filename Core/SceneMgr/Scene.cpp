@@ -18,7 +18,7 @@ Scene::Scene(const std::string& path)
 
 bool Scene::Serialize()
 {
-	auto title = GetFilenameWithoutExtension(m_Title);
+	auto title = stringUtils::GetFilenameWithoutExtension(m_Title);
 	title += "_scene.pak";
 	std::ofstream ofs(title, std::ios::out);
 	if (!ofs.is_open())
@@ -39,19 +39,17 @@ bool Scene::Serialize()
 		jCharacter["mesh"] = meshInstance.m_Handle;
 		jCharacter["script"] = controlScript;
 		jCharacter["physics"] = physicsState;
-
 		jScene["characters"].push_back(jCharacter);
 	}
-	/*/
-	auto parentView = GetView<primitives::Parent, primitives::ParticleSystem, std::string>();
-	for (auto [entity, parent, particleSystem, tag] : parentView.each())
+	/**/
+	auto parentView = GetView<primitives::Parent, primitives::ParticleSystemInstance, std::string>();
+	for (auto [entity, parent, particleSystemInstance, tag] : parentView.each())
 	{
 		json jCharacter;
 		jCharacter["id"] = (int)entity;
 		jCharacter["tag"] = tag;
 		jCharacter["parent"] = (int)parent.ParentEntity;
-		jCharacter["particle_system"] = particleSystem;
-
+		//jCharacter["particle_system"] = particleSystem;
 		jScene["children"].push_back(jCharacter);
 	}
 	/**/
@@ -93,7 +91,7 @@ bool Scene::Deserialize()
 		auto id = jCharacter["id"].get<int>();
 		auto tag = jCharacter["tag"].get<std::string>();
 		auto parent = jCharacter["parent"].get<int>();
-		//auto particleSystem = jCharacter["particle_system"].get<primitives::ParticleSystem>();
+		//auto particleInstance = jCharacter["particle_system"].get<primitives::ParticleSystemInstance>();
 
 		auto child = CreateSceneObject((uint32_t)id);
 		child->AddComponent<std::string>(tag);
@@ -102,6 +100,11 @@ bool Scene::Deserialize()
 	}
 	ifs.close();
 	return true;
+}
+
+bool Scene::IsValidCharacter(entt::entity& id)
+{
+	return m_Registry.valid(id);
 }
 
 Character* Scene::CreateSceneObject(uint32_t hint)
@@ -217,7 +220,7 @@ void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsSt
 	auto x = static_cast<uint32_t>(glm::floor((worldMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
 
 	auto morton_code = morton_encode_3d32(x, y, z);
-	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint32_t>(entity), morton_code, worldBound, nullptr, nullptr});
+	m_BVEntries.push_back(BVNode<primitives::Bound3D>{entity, morton_code, worldBound, nullptr, nullptr});
 
 	/*/
 	auto localMin =  orientation * ( glm::vec3(bound.xMin, bound.yMin, bound.zMin));
@@ -285,31 +288,12 @@ void Scene::OnUpdate(float ts)
 		physics::PhysicsState ps = physicsState;
 		AddBVBoundEntry(entity, ps, localBound);
 	}
-	/**/
 	m_NodeBuffer.reserve(131072);
 	m_BVHTreeRoot = create_tree<primitives::Bound3D>(m_BVEntries);
 	for (auto& bound : m_BVEntries)
 	{
-		m_Collisions.clear();
-		m_Collisions.reserve(m_BVEntries.size());
-		detect_overlapping_bounds<primitives::Bound3D>(bound, m_BVHTreeRoot, m_Collisions, m_NodeBuffer);
-	
-		if (m_Collisions.size() == 2)
-		{
-			// Fix this later, the collision size should be allowed to be greater than 2
-			uint32_t first = m_Collisions[0];
-			uint32_t second = m_Collisions[1];
-			if (first == second) continue;
-			if (m_Registry.valid(static_cast<entt::entity>(first)) && (m_Registry.valid(static_cast<entt::entity>(second))))
-			{
-				AssetHandle a{ 0, first };
-				AssetHandle b{ 0, second };
-				physics::CollisionPairDescription collisionDesc{ a, b };
-				m_CollisionPairs.push_back(collisionDesc);
-			}
-		}
+		detect_overlapping_bounds<primitives::Bound3D>(bound, m_BVHTreeRoot, m_CollisionPairs, m_NodeBuffer);
 	}
-	/**/
 	m_AccumulatedTime += m_Ts;
 }
 

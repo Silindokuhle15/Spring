@@ -182,7 +182,7 @@ set(SHARED_SOURCES
 "Core/Audio/WAV.h"
 "Core/Audio/Sound.h"
 
-)
+ "Core/Physics/PhysicsSystem.h" "Core/Physics/PhysicsSystem.cpp" "Core/Scripting/ScriptSystem.h" "Core/Scripting/ScriptSystem.cpp")
 # Executable-specific files 
 set(EDITOR_SOURCES
 "SpringEditor.cpp" 

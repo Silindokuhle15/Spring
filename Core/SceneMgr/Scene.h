@@ -3,9 +3,8 @@
 #include <entt.hpp>
 #include "LightAndShadow/PointLight.h"
 #include "Camera.h"
-#include "BVH.h"
-#include "BoundingVolume.h"
-#include "ScriptMgr.h"
+#include "PhysicsSystem.h"
+#include "ScriptSystem.h"
 #include "AssetManager.h"
 #include "SceneState.h"
 #include "ParticleSystem.h"
@@ -40,19 +39,15 @@ public:
 	std::vector<std::string> m_TempNames;
 	std::vector<PointLight> m_Lights;
 	std::vector<Camera> m_Cameras;
-
-	std::vector<BVNode<primitives::Bound3D>> m_BVEntries;
-	std::vector<physics::CollisionDescription> m_CollisionPairs;
+	physics::PhysicsSystem m_PhysicsSystem;
+	scripting::ScriptSystem m_ScriptSystem;
 
 	virtual void OnCreateSceneObjects();
-	virtual void AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound);
 	virtual void OnInit();
 	virtual void OnUpdate(float ts);
 	virtual int LoadSceneFromFile();
 
 	const std::string GetTitle() const { return m_Title; }
-
-	lua_State* GetLuaState() const { return m_pLuaState; }
 
 	bool IsValidCharacter(entt::entity& id);
 	Character* CreateSceneObject(uint32_t hint = 0);
@@ -65,8 +60,6 @@ public:
 	AssetManager* GetAssetManager() const { return m_AssetManager; }
 	void SetAssetManager(AssetManager* pAsset_manager) { m_AssetManager = pAsset_manager; }
 
-	const BVNode<primitives::Bound3D>* GetBVHRoot() const { return m_BVHTreeRoot; }
-
 	Scene(const std::string& path = "");
 
 	virtual bool Serialize();
@@ -74,14 +67,10 @@ public:
 
 protected:
 	entt::registry m_Registry;
-	lua_State* m_pLuaState = nullptr;
 	AssetManager* m_AssetManager;
-	BVNode<primitives::Bound3D>* m_BVHTreeRoot;
 	ArenaAllocator<Character> m_CharacterAllocator;
 	std::map<entt::entity, Character*> m_EntityCharacterMap;
-private:
-	std::vector<const BVNode<primitives::Bound3D>*> m_NodeBuffer;
-	float m_CollisionVolumeSize;
+
 };
 
 #endif

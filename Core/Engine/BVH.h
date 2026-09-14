@@ -141,6 +141,10 @@ BVNode<U>* create_tree(std::vector<BVNode<U>>& list)
 {
 	static ArenaAllocator<BVNode<U>> allocator(65536*2);
 	allocator.reset();
+	if (list.empty())
+	{
+		return nullptr;
+	}
 	std::sort(
 		list.begin(), list.end(),
 		[&](const BVNode<U>& u, const BVNode<U>& v) { 

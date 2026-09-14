@@ -6,14 +6,8 @@ Scene::Scene(const std::string& path)
 	m_Ts{0.0f},
 	m_AccumulatedTime{0.0f},
 	m_Title{ path },
-	m_pLuaState{ nullptr },
-	m_AssetManager{nullptr},
-	m_BVHTreeRoot{nullptr},
-	m_NodeBuffer{},
-	m_CollisionVolumeSize{1024.0f}
+	m_AssetManager{nullptr}
 {
-	m_pLuaState = luaL_newstate();
-	luaL_openlibs(m_pLuaState);
 }
 
 bool Scene::Serialize()
@@ -81,8 +75,7 @@ bool Scene::Deserialize()
 		ch->AddComponent<physics::PhysicsState>(physics::PhysicsState{ physicsState });
 		scripting::ControlScript script{ scriptResource.m_Handle, scriptResource.m_Data };
 		ch->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{});
-		scripting::ScriptMgr::InitScript(m_pLuaState, ch, script);
-		//scripting::ScriptMgr::CallOnInit(m_pLuaState, ch->GetCharacterID(), script);
+		m_ScriptSystem.InitScript(ch, script);
 		ch->AddComponent<scripting::ControlScript>(script);
 	}
 
@@ -137,7 +130,6 @@ Character* Scene::GetSceneCharacter(entt::entity& id)
 
 void Scene::OnCreateSceneObjects()
 {
-	auto lua_state = GetLuaState();
 	/*
 	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
 	{
@@ -186,114 +178,16 @@ void Scene::OnCreateSceneObjects()
 	Deserialize();
 }
 
-void Scene::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound)
-{
-	uint32_t bits = 21;
-	auto& pos = physics_state.position;
-	auto& orientation = physics_state.orientation;
-
-	glm::vec3 localMin(bound.xMin, bound.yMin, bound.zMin);
-	glm::vec3 localMax(bound.xMax, bound.yMax, bound.zMax);
-	glm::vec3 center = (localMin + localMax) * 0.5f;
-	glm::vec3 halfExtents = (localMax - localMin) * 0.5f;
-	glm::vec3 worldCenter = pos + orientation * center;
-	glm::mat3 R = glm::mat3_cast(orientation);
-	glm::mat3 absR;
-	for (int i = 0; i < 3; i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			absR[i][j] = glm::abs(R[i][j]);
-		}
-	}
-	glm::vec3 worldHalfExtents = absR * halfExtents;
-	glm::vec3 worldMin = worldCenter - worldHalfExtents;
-	glm::vec3 worldMax = worldCenter + worldHalfExtents;
-	primitives::Bound3D worldBound
-	{
-		worldMin.x, worldMin.y, worldMin.z,
-		worldMax.x, worldMax.y, worldMax.z,
-	};
-
-	auto y = static_cast<uint32_t>(glm::floor((worldMax.x - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto z = static_cast<uint32_t>(glm::floor((worldMax.y - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto x = static_cast<uint32_t>(glm::floor((worldMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-
-	auto morton_code = morton_encode_3d32(x, y, z);
-	m_BVEntries.push_back(BVNode<primitives::Bound3D>{entity, morton_code, worldBound, nullptr, nullptr});
-
-	/*/
-	auto localMin =  orientation * ( glm::vec3(bound.xMin, bound.yMin, bound.zMin));
-	auto localMax =  orientation * ( glm::vec3(bound.xMax, bound.yMax, bound.zMax));
-
-	float xMin = localMin.x < localMax.x ? localMin.x : localMax.x;
-	float yMin = localMin.y < localMax.y ? localMin.y : localMax.y;
-	float zMin = localMin.z < localMax.z ? localMin.z : localMax.z;
-
-	float xMax = localMin.x > localMax.x ? localMin.x : localMax.x;
-	float yMax = localMin.y > localMax.y ? localMin.y : localMax.y;
-	float zMax = localMin.z > localMax.z ? localMin.z : localMax.z;
-
-	float absoluteMin = xMin < yMin ? xMin : yMin;
-	absoluteMin = absoluteMin < zMin ? absoluteMin : zMin;
-	float absoluteMax = xMax > yMax ? xMax : yMax;
-	absoluteMax = absoluteMax > zMax ? absoluteMax : zMax;
-
-	auto globalMin = pos + glm::vec3(absoluteMin);
-	auto globalMax = pos + glm::vec3(absoluteMax);
-
-	primitives::Bound3D worldBound
-	{
-		globalMin.x, globalMin.y, globalMin.z, 
-		globalMax.x, globalMax.y, globalMax.z,
-	};
-
-	auto y = static_cast<uint32_t>(glm::floor((globalMax.x - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto z = static_cast<uint32_t>(glm::floor((globalMax.y - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-	auto x = static_cast<uint32_t>(glm::floor((globalMax.z - m_CollisionVolumeSize) / (2.0f * m_CollisionVolumeSize) * glm::pow(2, bits)));
-
-	auto morton_code = morton_encode_3d32(x, y, z);
-	m_BVEntries.push_back(BVNode<primitives::Bound3D>{static_cast<uint32_t>(entity), morton_code, worldBound, nullptr, nullptr});
-	/**/
-}
-
 void Scene::OnInit()
 {
-	scripting::ScriptMgr::register_input(m_pLuaState);
-	scripting::ScriptMgr::register_scene(m_pLuaState);
-	scripting::ScriptMgr::register_scene_camera(m_pLuaState);
-	scripting::ScriptMgr::register_character(m_pLuaState);
-	scripting::ScriptMgr::register_vector3(m_pLuaState);
-	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
-	scripting::ScriptMgr::expose_scene(m_pLuaState, this, "Scene");
+	m_ScriptSystem.ExposeScene(this, "Scene");
 }
 
 void Scene::OnUpdate(float ts)
 {
 	m_Ts = ts;
-	m_BVEntries.clear();
-	m_CollisionPairs.clear();
-	m_NodeBuffer.clear();
-
-	auto scriptView = m_Registry.view<scripting::ControlScript>();
-	for (auto [entity, script] : scriptView.each())
-	{
-		scripting::ScriptMgr::CallOnUpdate(m_pLuaState, script, m_Ts);
-	}
-
-	auto boundView = m_Registry.view<physics::PhysicsState, primitives::Bound3D>();
-	for (auto [entity, physicsState, localBound] : boundView.each())
-	{
-		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * m_Ts;
-		physics::PhysicsState ps = physicsState;
-		AddBVBoundEntry(entity, ps, localBound);
-	}
-	m_NodeBuffer.reserve(131072);
-	m_BVHTreeRoot = create_tree<primitives::Bound3D>(m_BVEntries);
-	for (auto& bound : m_BVEntries)
-	{
-		detect_overlapping_bounds<primitives::Bound3D>(bound, m_BVHTreeRoot, m_CollisionPairs, m_NodeBuffer);
-	}
+	m_ScriptSystem.Update(*this, m_Ts);
+	m_PhysicsSystem.Update(*this, m_Ts);
 	m_AccumulatedTime += m_Ts;
 }
 

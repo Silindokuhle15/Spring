@@ -80,18 +80,6 @@ namespace scripting
 		static int lua_Character_GetLocalForward(lua_State* L);
 		static int lua_Character_GetLocalRight(lua_State* L);
 
-		// --------------------Vector3--------------------
-		static LuaVec3* lua_checkVector3(lua_State* L, int index);
-		static void register_vector3(lua_State* L);
-		static int lua_Vector3_constructor(lua_State* L);
-		static int push_vec3(lua_State* L, float* v);
-		static int push_glmvec3(lua_State* L, glm::vec3* v);
-		static int push_vec3_ref(lua_State* L, glm::vec3* vec);
-		static int push_quat_ref(lua_State* L, glm::quat* vec);
-		static int lua_vec3_add(lua_State* L);
-		static int lua_vec3_index(lua_State* L);
-		static int lua_vec3_newindex(lua_State* L);
-
 		// ------------------PhysicsState-----------------
 		static physics::PhysicsState* lua_checkPhysicsState(lua_State* L, int index);
 		static void register_physicsstate(lua_State* L);

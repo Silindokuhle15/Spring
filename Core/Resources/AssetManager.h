@@ -107,6 +107,7 @@ public:
 			}
 			if (resource.m_Type == AssetType::MeshResource)
 			{
+				// TO DO: Clearly define the relationship between mesh handles and materialGroup handles
 				auto& path = resource.m_Filepath;
 				auto extension = path.substr(path.find('.'));
 				if (extension == ".obj")

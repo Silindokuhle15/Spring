@@ -9,13 +9,17 @@ scripting::ScriptSystem::ScriptSystem()
 	scripting::ScriptMgr::register_scene(m_pLuaState);
 	scripting::ScriptMgr::register_scene_camera(m_pLuaState);
 	scripting::ScriptMgr::register_character(m_pLuaState);
-	scripting::ScriptMgr::register_vector3(m_pLuaState);
+	//scripting::ScriptMgr::register_vector3(m_pLuaState);
 	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
 }
 
 scripting::ScriptSystem::~ScriptSystem()
 {
-	m_pLuaState = nullptr;
+	if (m_pLuaState)
+	{
+		lua_close(m_pLuaState);
+		m_pLuaState = nullptr;
+	}
 }
 
 void scripting::ScriptSystem::Update(Scene& scene, float time_step)

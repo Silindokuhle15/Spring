@@ -29,10 +29,10 @@ enum class _TextureTarget
 class _TextureView
 {
 public:
-	uint64_t m_Width;
-	uint64_t m_Height;
-	uint64_t m_NumMipMaps;
-	uint64_t m_MipMapLevel;
+	uint32_t m_Width;
+	uint32_t m_Height;
+	uint32_t m_NumMipMaps;
+	uint32_t m_MipMapLevel;
 	//std::vector<unsigned char*> m_TextureData;
 	std::vector<float*> m_TextureData;
 };

@@ -485,6 +485,8 @@ Renderer::~Renderer()
     glUnmapNamedBuffer(m_GpuBuffers.VelocityBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.LifetimeAndSizeBuffer);
     glUnmapNamedBuffer(m_GpuBuffers.ColorBuffer);
+    glUnmapNamedBuffer(m_SplineBuffer.ControlPointBuffer);
+    glUnmapNamedBuffer(m_SplineBuffer.KnotBuffer);
     glDeleteBuffers(1, &m_VertexBuffer);
     std::cout << "glDelete : Vertex Buffer\n";
     glDeleteBuffers(1, &m_IndexBuffer);

@@ -208,7 +208,8 @@ int Scene::LoadSceneFromFile()
 			"texturePack",
 			"shaderPack",
 			"soundPack",
-			"scriptPack"
+			"scriptPack",
+			"particlePack"
 		}
 	);
 	m_LuaEngine.Run();
@@ -327,6 +328,12 @@ int Scene::LoadSceneFromFile()
 				{
 					str = lua_tostring(pLuaState, -1);
 					scriptPack = str;
+					lua_pop(pLuaState, 1);
+				}
+				if (var == "particlePack")
+				{
+					str = lua_tostring(pLuaState, -1);
+					particlePack = str;
 					lua_pop(pLuaState, 1);
 				}
 				break;

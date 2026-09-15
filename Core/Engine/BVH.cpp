@@ -66,7 +66,7 @@ template<>
 bool AABBIntersection(const primitives::Bound2D& a, const primitives::Bound2D& b)
 {
 	bool intersect_x = a.xMax >= b.xMin &&
-		a.xMin <= b.xMin;
+		a.xMin <= b.xMax;
 
 	bool intersect_y = a.yMax >= b.yMin &&
 		a.yMin <= b.yMax;

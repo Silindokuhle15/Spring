@@ -173,7 +173,7 @@ void BaseApplication::DrawMenuBarPanel()
 
             ImGui::EndMenu();
         }
-
+		/*/
         if (ImGui::BeginMenu("Edit"))
         {
             if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
@@ -194,7 +194,7 @@ void BaseApplication::DrawMenuBarPanel()
         {
             ImGui::EndMenu();
         }
-
+		/**/
         if (ImGui::BeginMenu("Asset Manager"))
         {
             showAssetManagerWindow = true;
@@ -616,7 +616,7 @@ void BaseApplication::DrawComponentsPanel()
 							ps.velocity = glm::vec3(velocity[0], velocity[1], velocity[2]);
 							ps.restitution = restitution;
 							ps.linear_acceleration = glm::vec3(linear_acceleration[0], linear_acceleration[1], linear_acceleration[2]);
-							ps.angular_acceleration = glm::vec3(angular_acceleration[0], angular_acceleration[1], linear_acceleration[2]);
+							ps.angular_acceleration = glm::vec3(angular_acceleration[0], angular_acceleration[1], angular_acceleration[2]);
 							ps.inertia = glm::vec3(inertia[0], inertia[1], inertia[2]);
 							character->AddComponent<physics::PhysicsState>(ps);
 						}
@@ -789,8 +789,6 @@ void BaseApplication::DrawParticleSystemEditor()
 		float w2 = ps.m_EmitterInfo.m_VectorTwo.w;
 
 		ImGui::Begin("Particle System Editor", &showParticleEditor);
-		//ImGui::Checkbox("Enabled", &ps.m_EmitterInfo.m_Flags.m_IsEnabled);
-		//ImGui::Separator();
 		ImGui::TextUnformatted("Texture Handle");
 		if (ImGui::Button(std::format("{}{}", ps.m_TextureHandle.m_HWORD, ps.m_TextureHandle.m_LWORD).c_str())) 
 		{
@@ -1028,11 +1026,8 @@ void BaseApplication::Run()
     m_pUILayer.m_pActiveCamera->SetOrientation(glm::quat(1, 0, 0, 0));
     m_pUILayer.m_pActiveCamera->OnInit();
 
-    //scripting::ScriptMgr::expose_scene_camera(m_Scene->GetLuaState(), m_pUILayer.m_pActiveCamera.get(), "camera");
     m_LobbyGraphicsShaderHandle = AssetHandle{ 3531024263087085773, 10156511931093447336 }; //LevelOne
     m_ParticleGraphicsShaderHandle = AssetHandle{ 6016858150360079293, 10861247056247163883 };
-	m_AssetManager.DeserializeScriptPack("C:/dev/Astron Battles/Assets/LevelOne_asset_SCRP.pak");
-	m_AssetManager.DeserializeParticlePack("C:/dev/Astron Battles/Assets/LevelOne_asset_PSCP.pak");
     if (m_Scene)
     {
         m_Scene->SetAssetManager(&m_AssetManager);
@@ -1056,6 +1051,14 @@ void BaseApplication::Run()
 		if (!m_Scene->shaderPack.empty())
 		{
 			//m_AssetManager.DeserializeShaderPack(m_Scene->shaderPack);
+		}
+		if (!m_Scene->scriptPack.empty())
+		{
+			//m_AssetManager.DeserializeScriptPack(m_Scene->scriptPack);
+		}
+		if (!m_Scene->particlePack.empty())
+		{
+			m_AssetManager.DeserializeParticlePack(m_Scene->particlePack);
 		}
         m_Scene->OnInit();
         m_Scene->OnCreateSceneObjects();
@@ -1097,6 +1100,7 @@ void BaseApplication::OnUpdate()
     if(m_Scene)
     {
         m_pActiveRenderer->ParticleSystemSync(m_Scene.get());
+		//m_Scene->OnUpdate(updateInterval);
     }
 }
 
@@ -1152,7 +1156,6 @@ void BaseApplication::DrawSceneCharacters(AssetManager& asset_manager)
         cmd.m_UniformBuffer.m_Mat4Map["Projection"] = m_pUILayer.m_pActiveCamera->GetP();
         commandQueue.push_back(cmd);
     }
-
     m_pActiveRenderer->DrawBuffer(commandQueue, geometryBuffer, asset_manager);
 }
 
@@ -1186,8 +1189,7 @@ BaseApplication::BaseApplication(uint32_t width, uint32_t height, const char* ti
     :
     m_AppWindow{width, height, title},
     m_ExitWindow{false},
-    //m_Scene{},
-    m_Scene{std::make_shared<Scene>("C:/dev/Astron Battles/Assets/Scripts/LevelOne.lua")},
+    m_Scene{},
     m_pUILayer{std::shared_ptr<Win32Window>(&m_AppWindow)},
     m_AssetManager{}
 {
@@ -1213,4 +1215,5 @@ BaseApplication::~BaseApplication()
     delete[] meshPackBuffer;
     delete[] materialPackBuffer;
     delete[] texturePackBuffer;
+	delete[] newParticleConfigName;
 }

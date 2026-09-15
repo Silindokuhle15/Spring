@@ -125,19 +125,11 @@ namespace scripting {
 
     void ScriptMgr::register_input(lua_State* L)
     {
-        //luaL_newmetatable(L, MT::INPUT_MT);
-        //lua_pushvalue(L, -1);
-        //lua_setfield(L, -2, "__index");
-
         lua_pushcfunction(L, PrintStack);
-        //lua_setfield(L, -2, "PrintStack");
         lua_setglobal(L, "PrintStack");
 
         lua_pushcfunction(L, IsKeyDown);
-        //lua_setfield(L, -2, "IsKeyDown");
         lua_setglobal(L, "IsKeyDown");
-
-        //lua_pop(L, 1);
     }
 
     // --------------------- Scene ---------------------
@@ -339,7 +331,7 @@ namespace scripting {
 
         luaL_getmetatable(L, MT::RENDERCOMPONENT_MT);
         lua_setmetatable(L, -2);
-        return 0;
+        return 1;
     }
 
     int ScriptMgr::lua_Character_AddPhysicsState(lua_State* L) {
@@ -496,121 +488,7 @@ namespace scripting {
         lua_setfield(L, -2, "__index");
         lua_pop(L, 1);
     }
-
-    int ScriptMgr::push_vec3(lua_State* L, float* v)
-    {
-        return 0;
-    }
-
-    // --------------------------vec3--------------------------
-
-    int ScriptMgr::push_glmvec3(lua_State* L, glm::vec3* v) {
-        auto** userdata = static_cast<LuaVec3**>(lua_newuserdata(L, sizeof(LuaVec3*)));
-        *userdata = new LuaVec3{ v };
-        luaL_getmetatable(L, "Vector3");
-        lua_setmetatable(L, -2);
-        return 1;
-    }
-
-    LuaVec3* ScriptMgr::lua_checkVector3(lua_State* L, int index) {
-        return *static_cast<LuaVec3**>(luaL_checkudata(L, index, "Vector3"));
-    }
-
-    int ScriptMgr::lua_vec3_add(lua_State* L) {
-        auto a = lua_checkVector3(L, 1)->vec;
-        auto b = lua_checkVector3(L, 2)->vec;
-
-        auto* result = new glm::vec3(*a + *b);
-        auto** userdata = static_cast<glm::vec3**>(lua_newuserdata(L, sizeof(glm::vec3*)));
-        *userdata = result;
-
-        luaL_getmetatable(L, "Vector3");
-        lua_setmetatable(L, -2);
-        return 1;
-    }
-
-    int ScriptMgr::lua_vec3_index(lua_State* L) {
-        glm::vec3* v = lua_checkVector3(L, 1)->vec;
-        const char* key = luaL_checkstring(L, 2);
-
-        if (strcmp(key, "x") == 0) lua_pushnumber(L, v->x);
-        else if (strcmp(key, "y") == 0) lua_pushnumber(L, v->y);
-        else if (strcmp(key, "z") == 0) lua_pushnumber(L, v->z);
-        else lua_pushnil(L);
-        return 1;
-    }
-
-    int ScriptMgr::lua_vec3_newindex(lua_State* L) {
-        glm::vec3* v = lua_checkVector3(L, 1)->vec;
-        const char* key = luaL_checkstring(L, 2);
-        float val = static_cast<float>(luaL_checknumber(L, 3));
-
-        if (strcmp(key, "x") == 0) v->x = val;
-        else if (strcmp(key, "y") == 0) v->y = val;
-        else if (strcmp(key, "z") == 0) v->z = val;
-
-        return 0;
-    }
-
-    int ScriptMgr::lua_Vector3_constructor(lua_State* L)
-    {
-        int nargs = lua_gettop(L);  // Number of args passed
-
-        float x = (nargs >= 1) ? static_cast<float>(luaL_checknumber(L, 1)) : 0.0f;
-        float y = (nargs >= 2) ? static_cast<float>(luaL_checknumber(L, 2)) : 0.0f;
-        float z = (nargs >= 3) ? static_cast<float>(luaL_checknumber(L, 3)) : 0.0f;
-
-        auto* vec = new glm::vec3(x, y, z);
-        auto** userdata = static_cast<glm::vec3**>(lua_newuserdata(L, sizeof(glm::vec3*)));
-        *userdata = vec;
-
-        luaL_getmetatable(L, "Vector3");
-        lua_setmetatable(L, -2);
-        return 1;
-    }
-
-    int ScriptMgr::push_vec3_ref(lua_State* L, glm::vec3* vec)
-    {
-        auto** userdata = static_cast<glm::vec3**>(lua_newuserdata(L, sizeof(glm::vec3*)));
-        *userdata = vec;
-
-        luaL_getmetatable(L, "Vector3");
-        lua_setmetatable(L, -2);
-
-        return 1;
-    }
-
-    int ScriptMgr::push_quat_ref(lua_State* L, glm::quat* vec)
-    {
-        auto** userdata = static_cast<glm::quat**>(lua_newuserdata(L, sizeof(glm::quat*)));
-        *userdata = vec;
-
-        luaL_getmetatable(L, "Quaternion");
-        lua_setmetatable(L, -2);
-
-        return 1;
-    }
-
-    void ScriptMgr::register_vector3(lua_State* L)
-    {
-        luaL_newmetatable(L, "Vector3");
-
-        lua_pushcfunction(L, lua_vec3_index);
-        lua_setfield(L, -2, "__index");
-
-        lua_pushcfunction(L, lua_vec3_newindex);
-        lua_setfield(L, -2, "__newindex");
-
-        lua_pushcfunction(L, lua_vec3_add);
-        lua_setfield(L, -2, "__add");
-
-        lua_pop(L, 1);
-        lua_pushcfunction(L, lua_Vector3_constructor);
-        lua_setglobal(L, "Vector3");
-    }
-
     // --------------------- PhysicsState ---------------------
-
     physics::PhysicsState* ScriptMgr::lua_checkPhysicsState(lua_State* L, int index) {
         return *static_cast<physics::PhysicsState**>(luaL_checkudata(L, index, MT::PHYSICSSTATE_MT));
     }

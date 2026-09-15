@@ -204,7 +204,7 @@ bool AssetManager::SerializeTexturePack(const std::string& filename)
     }
     PakWriter::RewritePakHeader(ofs, header, startOffset, itemCount);
     ofs.close();
-    return false;
+    return true;
 }
 
 bool AssetManager::SerializeShaderPack(const std::string& filename)
@@ -477,7 +477,7 @@ bool AssetManager::DeserializeTexturePack(const std::string& filepath)
         }
     }
     ifs.close();
-    return false;
+    return true;
 }
 
 bool AssetManager::DeserializeShaderPack(const std::string& filepath)
@@ -689,6 +689,7 @@ TextureBase<GL_Texture> AssetManager::CreateOpenGLCubeMap(const std::vector<std:
         size_t behindBufferSize = 0;
         auto behindBuffer = LoadDDSIntoMemory(ifsBehind, behindBufferSize);
 
+        // TO DO: Perform checks for invalid buffers before proceeding this point !!!
         map.m_Height = static_cast<uint64_t>(rightDDSHeader.dwHeight);
         map.m_Width = static_cast<uint64_t>(rightDDSHeader.dwWidth);
         map.m_TextureFormat = _TextureFormat::RGBA_BPTC_UNORM;
@@ -731,8 +732,8 @@ TextureBase<GL_Texture> AssetManager::CreateOpenGLCubeMap(const std::vector<std:
         stbi_uc* front = stbi_load(image_file_paths[4].c_str(), &width, &height, &channels, desired_channels);
         stbi_uc* behind = stbi_load(image_file_paths[5].c_str(), &width, &height, &channels, desired_channels);
 
-        map.m_Height = static_cast<uint64_t>(width);
-        map.m_Width = static_cast<uint64_t>(height);
+        map.m_Width = static_cast<uint32_t>(width);
+        map.m_Height = static_cast<uint32_t>(height);
 
         switch (channels)
         {
@@ -771,7 +772,7 @@ AssetHandle AssetManager::CreateOpenGLFrameBuffer(TextureBase<GL_Texture>& tex_b
     glBindFramebuffer(GL_FRAMEBUFFER, platformHandle);
     CreateOpenGLTexture(tex_base);
     glNamedFramebufferTexture(platformHandle, GL_COLOR_ATTACHMENT0, tex_base.m_Texture, 0);
-    std::string frameBufferString = "OpenGL_FrameBuffer" + platformHandle + tex_base.m_Texture;
+    std::string frameBufferString = std::format("OpenGL_FrameBuffer:{}-{}" ,platformHandle ,tex_base.m_Texture);
     AssetHandle assetHandle = CreateAssetHandleFromPath(frameBufferString.c_str());
     m_TextureMap[assetHandle] = tex_base;
     m_FrameBufferMap[assetHandle] = platformHandle;

@@ -31,6 +31,7 @@ public:
 	std::string shaderPack;
 	std::string soundPack;
 	std::string scriptPack;
+	std::string particlePack;
 
 	std::vector<std::string> shader_paths;
 	std::vector<std::string> static_mesh_paths;
@@ -70,7 +71,6 @@ protected:
 	AssetManager* m_AssetManager;
 	ArenaAllocator<Character> m_CharacterAllocator;
 	std::map<entt::entity, Character*> m_EntityCharacterMap;
-
 };
 
 #endif

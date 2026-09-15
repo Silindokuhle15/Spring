@@ -42,9 +42,11 @@ void physics::PhysicsSystem::Update(Scene& scene, float time_step)
 {
 	m_BVEntries.clear();
 	m_NodeBuffer.clear();
+	m_CollisionPairs.clear();
 	auto physicsStateView = scene.GetView<physics::PhysicsState>();
 	for (auto [entity, physicsState] : physicsStateView.each())
 	{
+		//TO DO: Implement proper physics simulation, this is only a hack to have objects move forward in there local space
 		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * time_step;
 	}
 

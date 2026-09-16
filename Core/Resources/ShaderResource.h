@@ -25,5 +25,6 @@ public:
 	ShaderResource(const std::vector<ShaderInfo> shader_infos);
 	ShaderResource& operator= (const ShaderResource& other) = default;
 	const std::vector<ShaderInfo>& GetShaderInfo() const;
+	const std::vector<ShaderType> GetShaderTypes() const;
 	const std::vector<std::string>& GetShaderSources() const;
 };

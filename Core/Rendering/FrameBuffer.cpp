@@ -8,7 +8,10 @@ FrameBuffer::FrameBuffer():
 
 FrameBuffer::~FrameBuffer()
 {
-	glDeleteFramebuffers(1, &m_Handle);
+	if (m_Handle)
+	{
+		glDeleteFramebuffers(1, &m_Handle);
+	}
 }
 void FrameBuffer::Bind() const
 {

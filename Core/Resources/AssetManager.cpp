@@ -522,8 +522,7 @@ bool AssetManager::DeserializeShaderPack(const std::string& filepath)
         }
         if (programHeader.itemCount > 0)
         {
-            Shader shader{ types, sources };
-            m_ShaderMap[assetHandle] = shader;
+            m_ShaderMap[assetHandle] = Shader{types, sources };
         }
     }
     ifs.close();

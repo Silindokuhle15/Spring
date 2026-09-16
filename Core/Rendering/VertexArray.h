@@ -8,6 +8,8 @@ class VertexArray
 public:
 	VertexArray();
 	~VertexArray();
+	VertexArray(const VertexArray& other) = delete;
+	VertexArray& operator=(const VertexArray& other) = delete;
 	operator GLuint() const { return m_VAO; }
 	void SetBufferLayout(const BufferLayout& buffer_layout) const;
 	void Bind();

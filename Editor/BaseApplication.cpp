@@ -29,7 +29,7 @@ void BaseApplication::DrawMenuBarPanel()
 					m_Scene->LoadSceneFromFile();
 					if (!m_Scene->asset_pack.empty())
 					{
-						m_AssetManager.Deserialize(m_Scene->asset_pack);
+						//m_AssetManager.Deserialize(m_Scene->asset_pack);
 					}
 					if (!m_Scene->meshPack.empty())
 					{
@@ -46,6 +46,14 @@ void BaseApplication::DrawMenuBarPanel()
 					if (!m_Scene->shaderPack.empty())
 					{
 						m_AssetManager.DeserializeShaderPack(m_Scene->shaderPack);
+					}
+					if (!m_Scene->scriptPack.empty())
+					{
+						m_AssetManager.DeserializeScriptPack(m_Scene->scriptPack);
+					}
+					if (!m_Scene->particlePack.empty())
+					{
+						m_AssetManager.DeserializeParticlePack(m_Scene->particlePack);
 					}
 					m_Scene->OnInit();
 					m_Scene->OnCreateSceneObjects();

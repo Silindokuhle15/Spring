@@ -1,66 +1,64 @@
 #include "Shader.h"
-#include <cassert>
+#include <stdexcept>
 
-Shader::Shader():
-    m_Handle{0}
+Shader::Shader(const std::vector<ShaderType>& types, const std::vector<std::string>& sources):
+    m_Handle{ Shader::InvalidProgram }
 {
+    if (types.size() != sources.size())
+    {
+        throw std::runtime_error("Shader: resource mismatch\n");
+    }
+    if (types.empty())
+    {
+        throw std::runtime_error("Shader: resource contains no stages\n");
+    }
+    GLuint program = glCreateProgram();
+    try
+    {
+        for (std::size_t index = 0; index < types.size(); index++)
+        {
+            const auto& shaderType = types[index];
+            const auto& shaderSource = sources[index];
+            auto shader = Shader::CompileShaderSource(shaderType, shaderSource);
+            glAttachShader(program, shader);
+            glDeleteShader(shader);
+        }
+        Shader::LinkShaderProgram(program);
+    }
+    catch (...)
+    {
+        glDeleteProgram(program);
+        throw;
+    }
+    m_Handle = program;
 }
 
-Shader::Shader(const std::vector<ShaderType>& types, const std::vector<std::string>& sources)
+Shader::~Shader()
 {
-    assert(types.size() == sources.size());
-    m_Handle = glCreateProgram();
-    for (auto index = 0; index < types.size(); index++)
+    if (m_Handle != Shader::InvalidProgram)
     {
-        GLenum glShaderType{ 0 };
-        switch (types[index])
-        {
-        case ShaderType::COMPUTE:
-            glShaderType = GL_COMPUTE_SHADER;
-            break;
-        case ShaderType::VERTEX:
-            glShaderType = GL_VERTEX_SHADER;
-            break;
-        case ShaderType::PIXEL:
-            glShaderType = GL_FRAGMENT_SHADER;
-            break;
-        }
-        auto shader = glCreateShader(glShaderType);
-        auto shader_source = sources[index].c_str();
-        glShaderSource(shader, 1, &shader_source, NULL);
-        glCompileShader(shader);
-        glAttachShader(m_Handle, shader);
+        glDeleteProgram(m_Handle);
     }
-    glLinkProgram(m_Handle);
 }
 
-Shader::Shader(const ShaderResource& shader_resource)
+Shader::Shader(Shader&& other) noexcept :
+    m_Handle{ other.m_Handle }
 {
-    m_Handle = glCreateProgram();
-    for (size_t k = 0; k < shader_resource.GetShaderInfo().size(); k++)
-    {
-        auto shader_type = shader_resource.GetShaderInfo()[k].shaderType;
-        GLenum glShaderType{ 0 };
-        switch (shader_type)
-        {
-            case ShaderType::COMPUTE:
-                glShaderType = GL_COMPUTE_SHADER;
-                break;
-            case ShaderType::VERTEX:
-                glShaderType = GL_VERTEX_SHADER;
-                break;
-            case ShaderType::PIXEL:
-                glShaderType = GL_FRAGMENT_SHADER;
-                break;
-        }
-        auto shader = glCreateShader(glShaderType);
-        auto shader_source = shader_resource.GetShaderSources()[k].c_str();
-        glShaderSource(shader, 1, &shader_source, NULL);
-        glCompileShader(shader);
+    other.m_Handle = Shader::InvalidProgram;
+}
 
-        glAttachShader(m_Handle, shader);
+Shader& Shader::operator=(Shader&& other) noexcept
+{
+    if (this != &other)
+    {
+        if (m_Handle != Shader::InvalidProgram)
+        {
+            glDeleteProgram(m_Handle);
+        }
+        m_Handle = other.m_Handle;
+        other.m_Handle = Shader::InvalidProgram;
     }
-    glLinkProgram(m_Handle);
+    return *this;
 }
 
 uint32_t Shader::GetHandle() const
@@ -70,11 +68,60 @@ uint32_t Shader::GetHandle() const
 
 void Shader::Bind() const
 {
+    if (m_Handle == Shader::InvalidProgram)
+    {
+        throw std::runtime_error("Shader: Cannot Bind Invalid Program\n");
+    }
     glUseProgram(m_Handle);
 }
 
-Shader Shader::CreateShader(const ShaderResource& resource)
+GLenum Shader::ToGLShaderType(const ShaderType& type)
 {
-    return Shader(resource);
+    switch (type)
+    {
+    case ShaderType::COMPUTE:
+        return GL_COMPUTE_SHADER;
+    case ShaderType::VERTEX:
+        return GL_VERTEX_SHADER;
+    case ShaderType::PIXEL:
+        return GL_FRAGMENT_SHADER;
+    }
+    throw std::runtime_error("Unsupported Shader Type\n");
+}
+
+GLuint Shader::CompileShaderSource(const ShaderType& shader_type, const std::string& source)
+{
+    GLenum glShaderType = Shader::ToGLShaderType(shader_type);
+    GLuint shader = glCreateShader(glShaderType);
+    const auto shaderSource = source.c_str();
+    glShaderSource(shader, 1, &shaderSource, nullptr);
+    glCompileShader(shader);
+    GLint success{ 0 };
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        GLint logLength{ 0 };
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        std::string log(logLength, '\0');
+        glGetShaderInfoLog(shader, logLength, nullptr, log.data());
+        glDeleteShader(shader);
+        throw std::runtime_error("Shader:CompileShaderSource Failed\n" + log);
+    }
+    return shader;
+}
+
+void Shader::LinkShaderProgram(GLuint& program_handle)
+{
+    glLinkProgram(program_handle);
+    GLint success{ 0 };
+    glGetProgramiv(program_handle, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        GLint logLength{ 0 };
+        glGetProgramiv(program_handle, GL_INFO_LOG_LENGTH, &logLength);
+        std::string log(logLength, '\0');
+        glGetProgramInfoLog(program_handle, logLength, nullptr, log.data());
+        throw std::runtime_error("Shader:LinkShaderProgram Failed\n" + log);
+    }
 }
 

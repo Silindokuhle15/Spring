@@ -8,6 +8,8 @@ private:
 public:
 	FrameBuffer();
 	~FrameBuffer();
+	FrameBuffer(const FrameBuffer& other) = delete;
+	FrameBuffer& operator=(const FrameBuffer& other ) = delete;
 	void Bind() const;
 	void SetTexture(GLenum attachement, GLuint handle, GLint level) const;
 };

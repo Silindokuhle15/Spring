@@ -26,6 +26,17 @@ const std::vector<ShaderInfo>& ShaderResource::GetShaderInfo() const
     return m_Info;
 }
 
+const std::vector<ShaderType> ShaderResource::GetShaderTypes() const
+{
+    std::vector<ShaderType> types;
+    types.reserve(m_Info.size());
+    for (std::size_t index = 0; index < m_Info.size(); index++)
+    {
+        types[index] = m_Info[index].shaderType;
+    }
+    return types;
+}
+
 const std::vector<std::string>& ShaderResource::GetShaderSources() const
 {
     return m_ShaderSource;

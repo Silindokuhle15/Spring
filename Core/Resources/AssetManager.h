@@ -80,9 +80,10 @@ public:
 				infos[0].filePath = resource.m_Filepath;
 				infos[0].shaderType = ShaderType::COMPUTE;
 				ShaderResource r{ infos};
-				Shader shader{ r };
+				const auto& types = r.GetShaderTypes();
+				const auto& sources = r.GetShaderSources();
 				m_ShaderResourceMap[assetHandle] = r;
-				m_ShaderMap[assetHandle] = shader;
+				m_ShaderMap[assetHandle] = Shader{ types, sources };
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
 				m_AssetHandleAndResourceMap[assetHandle] = resource;
 			}
@@ -98,9 +99,10 @@ public:
 				infos[1].filePath = path2;
 				infos[1].shaderType = ShaderType::PIXEL;
 				ShaderResource r { infos};
-				Shader shader{ r };
+				const auto& types = r.GetShaderTypes();
+				const auto& sources = r.GetShaderSources();
 				m_ShaderResourceMap[assetHandle] = r;
-				m_ShaderMap[assetHandle] = shader;
+				m_ShaderMap[assetHandle] = Shader{types, sources};
 				m_AssetResourceAndHandleMap[resource] = assetHandle;
 				m_AssetHandleAndResourceMap[assetHandle] = resource;
 

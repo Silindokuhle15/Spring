@@ -9,6 +9,8 @@ namespace scripting
 	{
 	public:
 		explicit ScriptSystem();
+		ScriptSystem(const scripting::ScriptSystem&) = delete;
+		ScriptSystem operator = (const scripting::ScriptSystem&) = delete;
 		~ScriptSystem();
 		void Update(Scene& scene, float time_step);
 		void ExposeScene(Scene* p_scene, const char* title);

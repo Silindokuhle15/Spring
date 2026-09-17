@@ -62,7 +62,7 @@ public:
 	void SetAssetManager(AssetManager* pAsset_manager) { m_AssetManager = pAsset_manager; }
 
 	Scene(const std::string& path = "");
-
+	~Scene();
 	virtual bool Serialize();
 	virtual bool Deserialize();
 

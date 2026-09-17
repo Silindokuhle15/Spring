@@ -1,16 +1,9 @@
 #include "ScriptSystem.h"
 #include "Scene.h"
-
 scripting::ScriptSystem::ScriptSystem()
 {
 	m_pLuaState = luaL_newstate();
 	luaL_openlibs(m_pLuaState);
-	scripting::ScriptMgr::register_input(m_pLuaState);
-	scripting::ScriptMgr::register_scene(m_pLuaState);
-	scripting::ScriptMgr::register_scene_camera(m_pLuaState);
-	scripting::ScriptMgr::register_character(m_pLuaState);
-	//scripting::ScriptMgr::register_vector3(m_pLuaState);
-	scripting::ScriptMgr::register_physicsstate(m_pLuaState);
 }
 
 scripting::ScriptSystem::~ScriptSystem()

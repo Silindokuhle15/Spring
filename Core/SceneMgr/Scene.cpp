@@ -10,6 +10,10 @@ Scene::Scene(const std::string& path)
 {
 }
 
+Scene::~Scene()
+{
+}
+
 bool Scene::Serialize()
 {
 	auto title = stringUtils::GetFilenameWithoutExtension(m_Title);
@@ -130,56 +134,17 @@ Character* Scene::GetSceneCharacter(entt::entity& id)
 
 void Scene::OnCreateSceneObjects()
 {
-	/*
-	for (size_t index = 0; index < dynamic_mesh_paths.size(); index++)
-	{
-		AssetResource meshR{ AssetType::MeshResource, dynamic_mesh_paths[index] };
-		auto meshHandle = m_AssetManager->GetResourceHandle(meshR);
-		auto* ch = CreateSceneObject();
-		primitives::MeshInstance meshInstance{ meshHandle };
-		ch->AddComponent<primitives::MeshInstance>(meshInstance);
-		ch->AddComponent<primitives::RenderComponent>(primitives::RenderComponent{ 0, 0 });
-		ch->AddComponent<std::string>(m_TempNames[index]);
-
-		AssetResource scriptResource{ AssetType::ScriptResource, m_TempControlScripts[index] };
-		auto scriptHandle = m_AssetManager->GetResourceHandle(scriptResource);
-		auto scriptData = ReadLuaScriptFromDisk(m_TempControlScripts[index]);
-		scripting::ControlScript script{ scriptHandle, scriptData};
-		scripting::ScriptMgr::InitScript(lua_state, ch, script);
-		scripting::ScriptMgr::CallOnInit(lua_state, ch->GetCharacterID(), script);
-		ch->AddComponent<scripting::ControlScript>(script);
-
-		auto parentEntity = ch->GetCharacterID();
-		auto* child = CreateSceneObject();
-		auto childEntity = child->GetCharacterID();
-		child->AddComponent<std::string>(std::string{ "Child" });
-		child->AddComponent<primitives::Parent>(primitives::Parent{ parentEntity });
-
-		std::string combinedShaderPaths = "C:/dev/Spring/Assets/Shaders/ParticleCompute.glsl";
-		AssetResource shaderResource{ AssetType::ComputeShaderResource, combinedShaderPaths };
-		auto computeHandle = m_AssetManager->GetResourceHandle(shaderResource);
-		primitives::ParticleSystem ps;
-		ps.m_EmitterInfo.m_Shape = primitives::EmitterShape::CONE;
-		ps.m_EmitterInfo.m_Flags.m_IsEnabled = true;
-		ps.m_EmitterInfo.m_Flags.m_Fill = false;
-		ps.m_EmitterInfo.m_VectorOne = glm::vec4(0, -5, 0, 15.0f);
-		ps.m_EmitterInfo.m_VectorTwo = glm::vec4(0, 1, -1, 10.0f);
-		ps.m_Ts = 0.0f;
-		ps.m_AccumulatedTime = 0.0f;
-		ps.m_Duration = 100.0f;
-		ps.m_BufferOffset = -1;
-		ps.m_NumParticles = 0;
-		ps.m_MaxNumParticles = 1024;
-		ps.m_ParticleRate = 2;
-		ps.m_ShaderHandle = computeHandle;
-		child->AddComponent<primitives::ParticleSystem>(ps);
-	}
-	//*/
 	Deserialize();
 }
 
 void Scene::OnInit()
 {
+	auto luaState = m_ScriptSystem.GetLuaState();
+	scripting::ScriptMgr::register_input(luaState);
+	scripting::ScriptMgr::register_scene(luaState);
+	scripting::ScriptMgr::register_scene_camera(luaState);
+	scripting::ScriptMgr::register_character(luaState);
+	scripting::ScriptMgr::register_physicsstate(luaState);
 	m_ScriptSystem.ExposeScene(this, "Scene");
 }
 

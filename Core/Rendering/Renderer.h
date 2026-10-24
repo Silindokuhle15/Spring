@@ -8,6 +8,15 @@
 #include "VertexBuffer.h"
 #include "RenderCommand.h"
 
+namespace bufferIndices
+{
+    constexpr GLuint GPU_POSITION_BUFFER = 3;
+    constexpr GLuint GPU_VELOCITY_BUFFER = 4;
+    constexpr GLuint GPU_LIFETIME_AND_SIZE_BUFFER = 5;
+    constexpr GLuint GPU_COLOR_BUFFER = 6;
+    constexpr GLuint GPU_CONTROL_POINT_BUFFER = 7;
+    constexpr GLuint GPU_KNOT_BUFFER = 8;
+}
 constexpr uint64_t U64_DEF = 14757395258967641292;
 
 struct ParticleSystemBuffer
@@ -77,14 +86,27 @@ public:
 
     uint32_t AllocateParticles(uint32_t num_particles);
     bool DeallocateParticles(primitives::Range range);
-    void MergeFreeRanges();
-    void DebugParticleRanges();
+    void MergeFreeParticleRanges();
     void ParticleSystemSync(Scene* scene);
 
+    uint32_t AllocateCurves(uint32_t num_curves);
+    bool DeallocateCurves(primitives::Range range);
+    void MergeFreeCurveRanges();
+
     Renderer();
+    Renderer(const Renderer&) = delete;
+    Renderer operator=(const Renderer&) = delete;
     ~Renderer();
     std::vector<RenderCommand> m_CommandBuffer;
-
+private:
+    uint32_t AllocateRange(uint32_t size, std::vector<primitives::Range>& allocated_ranges, std::vector<primitives::Range>& free_ranges) const;
+    bool DeallocateRange(const primitives::Range& range, std::vector<primitives::Range>& allocated_ranges, std::vector<primitives::Range>& free_ranges) const;
+    void MergeFreeRanges(std::vector<primitives::Range>& free_ranges) const;
+    void DebugRanges(std::vector<primitives::Range>& allocated_ranges, std::vector<primitives::Range>& free_ranges) const;
+private:
+    void EnsureParticleAllocation(Scene* scene);
+    void ReinstantiateParticleInstances(Scene* scene);
+    void UpdateGPUParticleStates(Scene* scene);
 private:
     std::shared_ptr<Camera> m_pActiveCamera;
     std::vector<std::vector<RenderCommand>> m_InstanceGroups;
@@ -92,9 +114,12 @@ private:
     std::map<int, std::vector<RenderCommand>> m_InstanceGroupsMap;
     std::vector<glm::mat4> m_ModelMatrices;
 
-    std::vector<primitives::Range> m_AllocatedRanges;
-    std::vector<primitives::Range> m_FreeRanges;
+    std::vector<primitives::Range> m_AllocatedParticleRanges;
+    std::vector<primitives::Range> m_FreeParticleRanges;
     ParticleSystemBuffer m_GpuBuffers;
+
+    std::vector<primitives::Range> m_AllocatedCurveRanges;
+    std::vector<primitives::Range> m_FreeCurveRanges;
     SplineBuffer m_SplineBuffer;
 };
 

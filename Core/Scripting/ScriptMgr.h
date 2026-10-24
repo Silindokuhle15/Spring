@@ -1,6 +1,5 @@
-#pragma once
-#include "lua.hpp"
-#include "luaconf.h"
+#ifndef _SCRIPT_MGR_H_
+#define _SCRIPT_MGR_H_
 #include <memory>
 #include <vector>
 #include <string>
@@ -75,7 +74,8 @@ namespace scripting
 		static int lua_Character_GetRenderComponent(lua_State* L);
 		static int lua_Character_AddPhysicsState(lua_State* L);
 		static int lua_Character_GetPhysicsState(lua_State* L);
-		static int lua_Character_ApplyForce(lua_State* L);
+		static int lua_Character_ApplyLocalAcceleration(lua_State* L);
+		static int lua_Character_ApplyWorldAcceleration(lua_State* L);
 		static int lua_Character_ApplyRotation(lua_State* L);
 		static int lua_Character_GetLocalForward(lua_State* L);
 		static int lua_Character_GetLocalRight(lua_State* L);
@@ -89,3 +89,4 @@ namespace scripting
 		// --------------------Forces---------------------
 	};
 }
+#endif

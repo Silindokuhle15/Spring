@@ -1,6 +1,6 @@
 #pragma once
-#include <GL/glew.h>
-#include <GL/wglew.h>
+//#include <GL/glew.h>
+//#include <GL/wglew.h>
 #include "Win32Window.h"
 #include "Camera.h"
 #include "Mouse.h"

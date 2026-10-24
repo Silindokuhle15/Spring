@@ -356,7 +356,7 @@ namespace scripting {
         return 1;
     }
 
-    int ScriptMgr::lua_Character_ApplyForce(lua_State* L)
+    int ScriptMgr::lua_Character_ApplyLocalAcceleration(lua_State* L)
     {
         Character* character = lua_checkCharacter(L, 1);
         float temp[] = { 0,0,0 };
@@ -370,13 +370,30 @@ namespace scripting {
                 lua_pop(L, 1);
             }
         }
-
-        glm::vec3 vt{ temp[0], temp[1], temp[2] };
         physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
         glm::vec3 fLocal{ temp[0], temp[1], temp[2] };
         glm::vec3 fWorld = state->orientation * fLocal;
-        state->position += fWorld * 0.0167f;
-        // TO DO... Change this to not manipulate the object direct, but queue the application of the force into a physics tasks buffer maybe? anything better than this
+        state->linear_acceleration += fWorld;
+        return 0;
+    }
+
+    int ScriptMgr::lua_Character_ApplyWorldAcceleration(lua_State* L)
+    {
+        Character* character = lua_checkCharacter(L, 1);
+        float temp[] = { 0,0,0 };
+        if (lua_istable(L, 2))
+        {
+            for (int i = 0; i < 3; ++i) {
+                lua_rawgeti(L, 2, i + 1);
+                if (lua_isnumber(L, -1)) {
+                    temp[i] = static_cast<float>(lua_tonumber(L, -1));
+                }
+                lua_pop(L, 1);
+            }
+        }
+        glm::vec3 acceleration{ temp[0], temp[1], temp[2] };
+        physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
+        state->linear_acceleration += acceleration;
         return 0;
     }
 
@@ -401,9 +418,8 @@ namespace scripting {
         {
             glm::quat rotation{ temp[0]/sq, temp[1]/sq, temp[2]/sq,temp[3]/sq };
             physics::PhysicsState* state = &character->GetComponent<physics::PhysicsState>();
-            //state->orientation = glm::lerp(state->orientation,  state->orientation * rotation, 0.0166f);
-            state->orientation = glm::slerp(state->orientation,  state->orientation * rotation, 0.0166f);
-            //state->orientation = glm::normalize(state->orientation * rotation);
+            //state->orientation = glm::slerp(state->orientation,  state->orientation * rotation, 0.01667f);
+            state->orientation = glm::normalize(state->orientation * rotation);
         }
         return 0;
     }
@@ -473,8 +489,11 @@ namespace scripting {
         lua_pushcfunction(L, lua_Character_GetPhysicsState);
         lua_setfield(L, -2, "GetPhysicsState");
 
-        lua_pushcfunction(L, lua_Character_ApplyForce);
-        lua_setfield(L, -2, "ApplyForce");
+        lua_pushcfunction(L, lua_Character_ApplyLocalAcceleration);
+        lua_setfield(L, -2, "ApplyLocalAcceleration");
+
+        lua_pushcfunction(L, lua_Character_ApplyWorldAcceleration);
+        lua_setfield(L, -2, "ApplyWorldAcceleration");
 
         lua_pushcfunction(L, lua_Character_ApplyRotation);
         lua_setfield(L, -2, "ApplyRotation");

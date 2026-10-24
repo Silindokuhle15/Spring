@@ -93,6 +93,7 @@ bool Scene::Deserialize()
 		auto child = CreateSceneObject((uint32_t)id);
 		child->AddComponent<std::string>(tag);
 		child->AddComponent<primitives::Parent>(primitives::Parent{ entt::entity(parent) });
+		child->AddComponent<primitives::Transform>();
 		//child->AddComponent<primitives::ParticleSystem>(particleSystem);
 	}
 	ifs.close();

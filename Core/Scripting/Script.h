@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _SCRIPT_H_
+#define _SCRIPT_H_
 #include "lua.hpp"
 #include "luaconf.h"
 #include "UUID.h"
@@ -54,3 +55,4 @@ namespace scripting
 	private:
 	};
 }
+#endif

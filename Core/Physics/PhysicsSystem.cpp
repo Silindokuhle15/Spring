@@ -1,6 +1,5 @@
 #include "PhysicsSystem.h"
-#include "Scene.h"
-
+#include "Character.h"
 void physics::PhysicsSystem::AddBVBoundEntry(const entt::entity& entity, const physics::PhysicsState& physics_state, const primitives::Bound3D& bound)
 {
 	uint32_t bits = 21;
@@ -47,7 +46,10 @@ void physics::PhysicsSystem::Update(Scene& scene, float time_step)
 	for (auto [entity, physicsState] : physicsStateView.each())
 	{
 		//TO DO: Implement proper physics simulation, this is only a hack to have objects move forward in there local space
-		physicsState.position += physicsState.orientation * physicsState.linear_acceleration * time_step;
+		//physicsState.position += physicsState.orientation * physicsState.linear_acceleration * time_step;
+		physicsState.velocity += physicsState.linear_acceleration * time_step;
+		physicsState.position += physicsState.velocity * time_step;
+		physicsState.linear_acceleration = glm::vec3(0);
 	}
 
 	auto boundView = scene.GetView< physics::PhysicsState, primitives::Bound3D>();
@@ -60,6 +62,25 @@ void physics::PhysicsSystem::Update(Scene& scene, float time_step)
 	for (auto& bound : m_BVEntries)
 	{
 		detect_overlapping_bounds<primitives::Bound3D>(bound, m_BVHTreeRoot, m_CollisionPairs, m_NodeBuffer);
+	}
+
+	auto hierarchyView = scene.GetView<primitives::Parent, primitives::Transform>();
+	for (auto [entity, parent, transform] : hierarchyView.each())
+	{
+		if (scene.IsValidCharacter(parent.ParentEntity))
+		{
+			auto character = scene.GetSceneCharacter(parent.ParentEntity);
+			if (character->HasComponent<physics::PhysicsState>())
+			{
+				auto& physicsState = character->GetComponent<physics::PhysicsState>();
+				auto& parentPos = physicsState.position;
+				auto& parentOrientation = physicsState.orientation;
+				transform.worldPosition = parentPos + parentOrientation * transform.localPosition;
+				//transform.worldOrientation = parentOrientation * transform.localOrientation;
+				transform.worldOrientation = parentOrientation;
+
+			}
+		}
 	}
 }
 

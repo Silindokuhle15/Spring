@@ -566,6 +566,10 @@ void BaseApplication::DrawComponentsPanel()
 		{
 			ImGui::Button("Particle Instance");
 		}
+		if (character->HasComponent<primitives::Transform>())
+		{
+			ImGui::Button("Transform");
+		}
 
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) &&
 			ImGui::IsMouseReleased(ImGuiMouseButton_Right))
@@ -650,6 +654,13 @@ void BaseApplication::DrawComponentsPanel()
 							ImGui::OpenPopup("Add Particle Instance");
 						}
 					}
+					if (!character->HasComponent<primitives::Transform>())
+					{
+						if (ImGui::Button("Transform"))
+						{
+							character->AddComponent<primitives::Transform>();
+						}
+					}
 				}
 				if (ImGui::BeginPopup("Add Particle Instance"))
 				{
@@ -663,7 +674,7 @@ void BaseApplication::DrawComponentsPanel()
 							primitives::ParticleSystemInstance psInstance{};
 							psInstance.m_AccumulatedTime = 0.0f;
 							psInstance.m_Allocation.Offset = -1;
-							psInstance.m_Allocation.Size = psConfig.m_MaxNumParticles;
+							//psInstance.m_Allocation.Size = psConfig.m_MaxNumParticles;
 							psInstance.m_ConfigIndex = static_cast<uint32_t>(index);
 							psInstance.m_Duration = psConfig.m_Duration;
 							psInstance.m_IsEnabled = true;
@@ -709,6 +720,13 @@ void BaseApplication::DrawComponentsPanel()
 						if (ImGui::Button("Particle Instance"))
 						{
 							character->RemoveComponent<primitives::ParticleSystemInstance>();
+						}
+					}
+					if (character->HasComponent<primitives::Transform>())
+					{
+						if (ImGui::Button("Transform"))
+						{
+							character->RemoveComponent<primitives::Transform>();
 						}
 					}
 				}

@@ -6,6 +6,7 @@
 #include "PhysicsState.h"
 #include "CollisionDescription.h"
 #include "BVH.h"
+#include "Transform.h"
 class Scene;
 namespace physics {
 	class PhysicsSystem
